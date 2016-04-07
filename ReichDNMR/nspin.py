@@ -145,6 +145,6 @@ if __name__ == '__main__':
     from nmrplot import nmrplot as nmrplt
 
     # spinsystem_list = reich_list()
-    test_freqs, test_couplings = reich_list()[8]
+    test_freqs, test_couplings = reich_list()[6]
     test_spectrum = nspinspec(test_freqs, test_couplings)
     nmrplt(test_spectrum, y=24)
