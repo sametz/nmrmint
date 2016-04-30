@@ -146,5 +146,6 @@ if __name__ == '__main__':
 
     # spinsystem_list = reich_list()
     test_freqs, test_couplings = reich_list()[6]
+    test_couplings = test_couplings.todense()
     test_spectrum = nspinspec(test_freqs, test_couplings)
-    nmrplt(test_spectrum, y=24)
+    nmrplt(test_spectrum, y=2.5)

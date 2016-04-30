@@ -192,5 +192,5 @@ if __name__ == '__main__':
 
     # refactor reich_list to do this!
     test_couplings = test_couplings.todense()
-    spectrum = nspinspec(test_frequencies, test_couplings)
-    #nmrplt(nspinspec(test_freqs, test_couplings), y=24)
+    #spectrum = nspinspec(test_freqs, test_couplings)
+    nmrplt(nspinspec(test_freqs, test_couplings), y=24)
