@@ -83,11 +83,6 @@ from scipy.linalg import eigh
 #         testspec = sorted(simsignals(hamiltonian(freqlist, J), 3))
 #         np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
-def test_nlist():
-    assert nlist(3) == [[], [], []]
-    assert nlist(1) == [[]]
-    assert nlist(0) == []
-
 
 def test_popcount():
     assert popcount(0) == 0
@@ -113,12 +108,13 @@ def test_transition_matrix():
         [0, 0, 1, 0, 1, 0, 0, 1],
         [0, 0, 0, 1, 0, 1, 1, 0]
     ])
-    np.testing.assert_array_equal(T,  transition_matrix(8).toarray())
+    np.testing.assert_array_equal(T, transition_matrix(8).toarray())
 
 
 def test_hamiltonian():
     freqlist = [430, 265, 300]
-    J = lil_matrix((3, 3))
+    freqarray = np.array(freqlist)
+    J = np.zeros((3, 3))
     J[0, 1] = 7
     J[0, 2] = 15
     J[1, 2] = 1.5
@@ -127,9 +123,10 @@ def test_hamiltonian():
     # print(J.todense())
     v = [-491.625, -230.963, -200.306, -72.106, 61.883, 195.524, 234.217,
          503.375]
-    H = hamiltonian(freqlist, J)
+    H = hamiltonian(freqarray, J)
     # print(H).real
-    eigvals = eigh(H.todense(), eigvals_only=True)
+    eigvals = np.linalg.eigvals(H)
+    eigvals.sort()
     np.testing.assert_array_equal(eigvals, sorted(eigvals))
     np.testing.assert_array_almost_equal(eigvals, v, decimal=3)
 
@@ -148,17 +145,31 @@ def test_simsignals():
                (434.52319595017991, 0.92017735031402692),
                (441.49158288423155, 0.85028549285752886)]
     freqlist = [430, 265, 300]
-    J = lil_matrix((3, 3))
+    freqarray = np.array(freqlist)
+    J = np.zeros((3, 3))
     J[0, 1] = 7
     J[0, 2] = 15
     J[1, 2] = 1.5
     J = J + J.T
-    H = hamiltonian(freqlist, J)
-    testspec = sorted(simsignals(H,3))
+    H = hamiltonian(freqarray, J)
+    testspec = sorted(simsignals(H, 3))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
+def test_AB():
+    from reichdefaults import ABdict
+    refspec = [(134.39531364385073, 0.3753049524455757),
+               (146.39531364385073, 1.6246950475544244),
+               (153.60468635614927, 1.6246950475544244),
+               (165.60468635614927, 0.3753049524455757)]
+    Jab = ABdict['Jab']
+    Vab = ABdict['Vab']
+    Vcentr = ABdict['Vcentr']
+    Wa = ABdict['Wa']
+    RightHz = ABdict['Right-Hz']
+    WdthHz = ABdict['WdthHz']
+    testspec = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
+    np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
+
 # def test_derp():
 #     assert 1 + 1 == 3
-
-

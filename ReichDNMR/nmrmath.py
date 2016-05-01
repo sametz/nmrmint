@@ -10,6 +10,10 @@ import numpy as np
 from scipy.linalg import eigh
 from scipy.sparse import kron, csc_matrix, csr_matrix, lil_matrix, bmat
 
+##############################################################################
+# Second-order, Quantum Mechanics routines
+##############################################################################
+
 
 def popcount(n=0):
     """
@@ -54,8 +58,8 @@ def transition_matrix(n):
     # function was optimized by only calculating upper triangle and then adding
     # the lower.
     T = lil_matrix((n, n))  # sparse matrix created
-    for i in range(n-1):
-        for j in range(i+1, n):
+    for i in range(n - 1):
+        for j in range(i + 1, n):
             if is_allowed(i, j):
                 T[i, j] = 1
     T = T + T.T
@@ -182,6 +186,40 @@ def nspinspec(freqs, couplings):
     nspins = len(freqs)
     H = hamiltonian(freqs, couplings)
     return simsignals(H, nspins)
+
+
+##############################################################################
+# Non-QM solutions for specific multiplets
+##############################################################################
+
+
+def AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz):
+    """
+    Reich-style inputs for AB quartet.
+    Jab is the A-B coupling constant (Hz)
+    Vab is the difference in nuclei frequencies in the absence of coupling (Hz)
+    Vcentr is the frequency for the center of the AB quartet
+    Wa is width of peak at half-height (not implemented yet)
+    RightHz is the lower frequency limit for the window
+    WdthHz is the width of the window in Hz
+    return: peaklist of (frequency, intensity) tuples
+    """
+    J = Jab
+    dv = Vab
+    c = ((dv ** 2 + J ** 2) ** 0.5) / 2
+    center = Vcentr
+    v1 = center - c - (J / 2)
+    v2 = v1 + J
+    v3 = center + c - (J / 2)
+    v4 = v3 + J
+    dI = J / (2 * c)
+    I1 = 1 - dI
+    I2 = 1 + dI
+    I3 = I2
+    I4 = I1
+    vList = [v1, v2, v3, v4]
+    IList = [I1, I2, I3, I4]
+    return list(zip(vList, IList))
 
 
 if __name__ == '__main__':
