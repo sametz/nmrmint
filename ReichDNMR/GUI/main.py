@@ -50,7 +50,7 @@ class CalcTypeFrame(GuiMixin, RadioFrame):
 
 class ModelFrames(GuiMixin, Frame):
     """
-    Creates a frame that will store and manage the individual button menus
+    Creates a frame that stores and manages the individual button menus
     for the different calc types, which will be selected by
     CalcTypeFrame.
     """
@@ -108,19 +108,63 @@ class ModelFrames(GuiMixin, Frame):
                 self.framedic[key].grid_remove()
 
 
+class VarBox(GuiMixin, Frame):
+    """
+    Eventually will emulate what the Reich entry box does, more or less.
+    Idea is to fill the VarFrame with these modules.
+    Current version: checks that only numbers are entered; returns contents
+    in a popup.
+    Looking ahead: trick may be linking their contents with the calls to
+    nmrmath. Also, need to make sure floats, not ints, are returned. Can
+    change the is_number routine so that if integer entered, replaced with
+    float?
+    Inputs:
+    -text: appears above the entry box
+    -default: default value in entry
+    """
+    def __init__(self, parent=None, text='', default=0.00, **options):
+        Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
+        Label(self, text=text).pack(side=TOP)
+
+        ent = Entry(self, validate='key')  # prohibits non-numerical entries
+        ent.insert(0, default)
+        ent.pack(side=TOP, fill=X)
+        value = ent.get()
+        ent.bind('<Return>', lambda event: self.result(value))
+
+        # check on each keypress if new result will be a number
+        ent['validatecommand'] = (self.register(self.is_number), '%P')
+        # current design decision: sound 'bell' if bad keypress
+        ent['invalidcommand'] = 'bell'
+
+    def result(self, value):
+        self.infobox('Return', value)
+
+    @staticmethod
+    def is_number(entry):
+        if not entry:
+            return True
+        try:
+            float(entry)
+            return True
+        except ValueError:
+            return False
+
+
 # Create the main application window:
 root = Tk()
 root.title('ReichDNMR')  # working title only!
 
 # Create the basic GUI structure: sidebar, topbar, and display area
 # First, pack a sidebar frame to contain widgets
-sideFrame = Frame(root, relief=RIDGE, borderwidth=3, bg='orange')
+sideFrame = Frame(root, relief=RIDGE, borderwidth=3)
 sideFrame.pack(side=LEFT, expand=NO, fill=Y)
 
 # Next, pack the top frame where function variables will be entered
 variableFrame = Frame(root, relief=RIDGE, borderwidth=1)
 variableFrame.pack(side=TOP, expand=NO, fill=X)
-Label(variableFrame, text='variables go here').pack()
+VarTest = VarBox(variableFrame, text='Test')
+VarTest.pack(side=LEFT)
 
 # Remaining lower right area will be for a Canvas or matplotlib spectrum frame
 # Because we want the spectrum clipped first, will pack it last
