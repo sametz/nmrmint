@@ -4,8 +4,6 @@ Currently defines the structure of the window: sidebar with subwidgets,
 top bar to hold variable input (currently AB quartet only), display in lower
 right. AB quartet toolbar causes a matplotlib plot to pop up.
 To do next:
--after ToolBar creation, need to initialize its dictionary, either just as a
-dictionary, or by importing default values from the child widgets
 -need to either embed the matplotlib graph as a tkinter widget in lieu of the
 canvas, or learn how to plot directly to the canvas
 -add "not implemented yet" ToolBars as placeholders fon unimplemented models,
@@ -156,8 +154,8 @@ class VarBox(Frame):
         self.value = StringVar()
         ent.config(textvariable=self.value)
         self.value.set(str(default))
-        ent.bind('<Return>', lambda event: self.to_dict(event))
-        ent.bind('<FocusOut>', lambda event: self.to_dict(event))
+        ent.bind('<Return>', lambda event: self.on_event(event))
+        ent.bind('<FocusOut>', lambda event: self.on_event(event))
 
         # check on each keypress if new result will be a number
         ent['validatecommand'] = (self.register(self.is_number), '%P')
@@ -178,7 +176,12 @@ class VarBox(Frame):
         except ValueError:
             return False
 
-    def to_dict(self, event):
+    def on_event(self, event):
+        self.to_dict()
+        self.master.call_model()
+        event.widget.tk_focusNext().focus()
+
+    def to_dict(self):
         """
         On event: Records widget's status to the container's dictionary of
         values, fills the entry with 0.00 if it was empty, tells the container
@@ -189,8 +192,6 @@ class VarBox(Frame):
             self.value.set(0.00)  # fill it with zero
         # Add the widget's status to the container's dictionary
         self.master.vars[self.widgetName] = float(self.value.get())
-        self.master.call_model()
-        event.widget.tk_focusNext().focus()
 
 
 # def warw(bar): pass
@@ -205,7 +206,6 @@ class VarBox(Frame):
     """
 
 
-
 class AB_Bar(ToolBar):
     """
     Creates a bar of AB quartet inputs.
@@ -218,6 +218,9 @@ class AB_Bar(ToolBar):
         Jab.pack(side=LEFT)
         Vab.pack(side=LEFT)
         Vcentr.pack(side=LEFT)
+        # initialize self.vars with toolbox defaults
+        for child in self.winfo_children():
+            child.to_dict()
 
     def call_model(self):
         _Jab = self.vars['Jab']
