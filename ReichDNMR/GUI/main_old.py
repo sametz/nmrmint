@@ -1,26 +1,16 @@
 """
 The main console for ReichDNMR
 Currently defines the structure of the window: sidebar with subwidgets,
-top bar to hold variable input (currently AB quartet only), display in lower
-right. AB quartet toolbar causes a matplotlib plot to pop up.
+top bar to hold variable input, display in lower right.
 To do next:
--after ToolBar creation, need to initialize its dictionary, either just as a
-dictionary, or by importing default values from the child widgets
--need to either embed the matplotlib graph as a tkinter widget in lieu of the
-canvas, or learn how to plot directly to the canvas
--add "not implemented yet" ToolBars as placeholders fon unimplemented models,
-and/or grey out radio buttons for unimplemented routines
--add more models
-eventually use warw() to add widgets to the toolbars, *after* nmrmath/nmrplot
-is refactored to actually use them
-"""
+-determine correct order of packing (widgets then container, or vice versa)
+-adjust packing behavior in preparation for menuFrame .grid()
+-have CalcTypeFrame control which menu displays in menuFrame
+-have menuFrame choice create the top bar
+-have top bar call a spectrum (probably a matplotlib popup for testing)"""
 
-import matplotlib
-matplotlib.use("TkAgg")
-from ReichDNMR.nmrplot import nmrplot as nmrplt
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
-from ReichDNMR.nmrmath import AB
 
 
 class RadioFrame(Frame):
@@ -80,7 +70,7 @@ class ModelFrames(GuiMixin, Frame):
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
 
         # 'ABC...' menu: QM approach
-        abc_buttons = (('AB', lambda: AB_bar()),
+        abc_buttons = (('AB', lambda: none),
                        ('3-Spin', lambda: None),
                        ('4-Spin', lambda: None),
                        ('5-Spin', lambda: None),
@@ -118,20 +108,7 @@ class ModelFrames(GuiMixin, Frame):
                 self.framedic[key].grid_remove()
 
 
-class ToolBar(Frame):
-    """
-    A frame object that contains entry widgets, a dictionary of
-    their current contents, and a function to call the appropriate model.
-    """
-    def __init__(self, parent=None, **options):
-        Frame.__init__(self, parent, **options)
-        self.vars = {}
-
-    def call_model(self):
-        print('Sending to dummy_model: ', self.vars)
-
-
-class VarBox(Frame):
+class VarBox(GuiMixin, Frame):
     """
     Eventually will emulate what the Reich entry box does, more or less.
     Idea is to fill the VarFrame with these modules.
@@ -145,86 +122,34 @@ class VarBox(Frame):
     -text: appears above the entry box
     -default: default value in entry
     """
-    def __init__(self, parent=None, name='', default=0.00, **options):
+    def __init__(self, parent=None, text='', default=0.00, **options):
         Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
-        Label(self, text=name).pack(side=TOP)
-        self.widgetName = name  # will be key in dictionary
+        Label(self, text=text).pack(side=TOP)
 
-        # Entries will be limited to numerical
-        ent = Entry(self, validate='key')  # check for number on keypress
+        ent = Entry(self, validate='key')  # prohibits non-numerical entries
+        ent.insert(0, default)
         ent.pack(side=TOP, fill=X)
-        self.value = StringVar()
-        ent.config(textvariable=self.value)
-        self.value.set(str(default))
-        ent.bind('<Return>', lambda event: self.to_dict(event))
-        ent.bind('<FocusOut>', lambda event: self.to_dict(event))
+        value = ent.get()
+        ent.bind('<Return>', lambda event: self.result(value))
 
         # check on each keypress if new result will be a number
         ent['validatecommand'] = (self.register(self.is_number), '%P')
-        # sound 'bell' if bad keypress
+        # current design decision: sound 'bell' if bad keypress
         ent['invalidcommand'] = 'bell'
+
+    def result(self, value):
+        self.infobox('Return', value)
 
     @staticmethod
     def is_number(entry):
-        """
-        tests to see if entry is acceptable (either empty, or able to be
-        converted to a float.)
-        """
         if not entry:
-            return True  # Empty string: OK if entire entry deleted
+            return True
         try:
             float(entry)
             return True
         except ValueError:
             return False
 
-    def to_dict(self, event):
-        """
-        On event: Records widget's status to the container's dictionary of
-        values, fills the entry with 0.00 if it was empty, tells the container
-        to send data to the model, and shifts focus to the next entry box (after
-        Return or Tab).
-        """
-        if not self.value.get():  # if entry left blank,
-            self.value.set(0.00)  # fill it with zero
-        # Add the widget's status to the container's dictionary
-        self.master.vars[self.widgetName] = float(self.value.get())
-        self.master.call_model()
-        event.widget.tk_focusNext().focus()
-
-
-# def warw(bar): pass
-    """
-    Many of the models include Wa (width), Right-Hz, and WdthHz boxes.
-    This function tacks these boxes onto a ToolBar.
-    Input:
-    -ToolBar that has been filled out
-    Output:
-    -frame with these three boxes and default values left-packed on end
-    ***actually, this could be a function in the ToolBar class definition!
-    """
-
-
-
-class AB_Bar(ToolBar):
-    """
-    Creates a bar of AB quartet inputs.
-    """
-    def __init__(self, parent=None, **options):
-        ToolBar.__init__(self, parent, **options)
-        Jab    = VarBox(self, name='Jab',    default=12.00)
-        Vab    = VarBox(self, name='Vab',    default=15.00)
-        Vcentr = VarBox(self, name='Vcentr', default=150)
-        Jab.pack(side=LEFT)
-        Vab.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
-
-    def call_model(self):
-        _Jab = self.vars['Jab']
-        _Vab = self.vars['Vab']
-        _Vcentr = self.vars['Vcentr']
-        spectrum = AB(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
-        nmrplt(spectrum)
 
 # Create the main application window:
 root = Tk()
@@ -238,9 +163,8 @@ sideFrame.pack(side=LEFT, expand=NO, fill=Y)
 # Next, pack the top frame where function variables will be entered
 variableFrame = Frame(root, relief=RIDGE, borderwidth=1)
 variableFrame.pack(side=TOP, expand=NO, fill=X)
-variableFrame.grid_rowconfigure(0, weight=1)
-variableFrame.grid_columnconfigure(0, weight=1)
-AB_Bar(variableFrame).grid(sticky=W)
+VarTest = VarBox(variableFrame, text='Test')
+VarTest.pack(side=LEFT)
 
 # Remaining lower right area will be for a Canvas or matplotlib spectrum frame
 # Because we want the spectrum clipped first, will pack it last

@@ -28,13 +28,11 @@ class RadioFrame(Frame):
 class CalcTypeFrame(GuiMixin, RadioFrame):
     """ Defines the Calc Type button frame for the upper left corner"""
     def __init__(self, parent=None, **options):
-        title = 'Calc Type'
-        buttons = (('Multiplet',
+        title = 'Task'
+        buttons = (('Simple',
                     lambda: Models.select_frame('multiplet')),
-                   ('ABC...',
-                    lambda: Models.select_frame('abc')),
-                   ('DNMR', lambda: Models.select_frame('dnmr')),
-                   ('Custom', lambda: Models.select_frame('custom')))
+                   ('Complicated',
+                    lambda: Models.select_frame('abc')))
         RadioFrame.__init__(self, parent, buttons=buttons, title=title)
 
     def show_selection(self):
@@ -55,15 +53,15 @@ class ModelFrames(GuiMixin, Frame):
 
         # menu placeholders: callbacks will be added as functionality added
         # 'Multiplet' menu: "canned" solutions for common spin systems
-        multiplet_buttons = (('AB', lambda: None),
-                             ('AB2', lambda: None))
+        multiplet_buttons = (('Simple Calc I', lambda: None),
+                             ('Not So Simple Calc II', lambda: None))
         self.MultipletButtons = RadioFrame(self,
                                            buttons=multiplet_buttons,
-                                           title='Multiplet')
+                                           title='Simple Task')
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
 
         # 'ABC...' menu: QM approach
-        abc_buttons = (('AB', lambda: none),
+        abc_buttons = (('AB', lambda: AB_bar()),
                        ('3-Spin', lambda: None),
                        ('4-Spin', lambda: None),
                        ('5-Spin', lambda: None),
@@ -122,8 +120,8 @@ class VarBox(GuiMixin, Frame):
         ent = Entry(self, validate='key')  # prohibits non-numerical entries
         ent.insert(0, default)
         ent.pack(side=TOP, fill=X)
-        value = ent.get()
-        ent.bind('<Return>', lambda event: self.result(value))
+        self.value = ent.get()
+        ent.bind('<Return>', lambda event: self.result(self.value))
 
         # check on each keypress if new result will be a number
         ent['validatecommand'] = (self.register(self.is_number), '%P')
@@ -147,10 +145,17 @@ class VarBox(GuiMixin, Frame):
 class VarFrame(Frame):
     """
     A frame for holding the variable boxes and dictionary of contents
+
     """
     def __init__(self, parent=None, **options):
         Frame.__init__(self, parent, **options)
+        self.dic = {}
         Label(self, text='text goes here').pack(side=TOP, expand=NO)
+
+    def update(self):
+        Label.text = str(self.dic)
+
+
 
 
 def warw(bar):
@@ -164,6 +169,25 @@ def warw(bar):
     """
     pass
 
+class AB_bar(VarFrame):
+    """
+    Creates a bar of AB quartet inputs.
+    """
+    def __init__(self, parent=None, **options):
+        VarFrame.__init__(self, parent, **options)
+        #a = VarBox(self, text='Variable A', default=1.3)
+        #a.pack(side=LEFT)
+        #a.bind("<FocusOut>", lambda: to_dict(a))
+        c = VarBox(self, text='Variable C', default=2.6)
+        c.pack(side=LEFT)
+        q = VarBox(self, text='Variable Q', default=3.9)
+        q.pack(side=LEFT)
+        self.grid(sticky=W)
+
+    def to_dict(self, entrybox):
+        self.dic[entrybox.__name__] = entrybox.get()
+        update()
+
 
 # Create the main application window:
 root = Tk()
@@ -175,10 +199,13 @@ sideFrame = Frame(root, relief=RIDGE, borderwidth=3)
 sideFrame.pack(side=LEFT, expand=NO, fill=Y)
 
 # Next, pack the top frame where function variables will be entered
+Label(root, text='Simple Task Toolbar').pack(side=TOP, expand=YES, fill=X)
 variableFrame = Frame(root, relief=RIDGE, borderwidth=1)
 variableFrame.pack(side=TOP, expand=NO, fill=X)
-VarTest = VarBox(variableFrame, text='Test')
-VarTest.pack(side=LEFT)
+variableFrame.grid_rowconfigure(0, weight=1)
+variableFrame.grid_columnconfigure(0, weight=1)
+AB_bar()
+Label(variableFrame, text='placeholder').pack()
 
 # Remaining lower right area will be for a Canvas or matplotlib spectrum frame
 # Because we want the spectrum clipped first, will pack it last
