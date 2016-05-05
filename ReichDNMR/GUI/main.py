@@ -15,10 +15,17 @@ is refactored to actually use them
 
 import matplotlib
 matplotlib.use("TkAgg")
-from ReichDNMR.nmrplot import nmrplot as nmrplt
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,\
+    NavigationToolbar2TkAgg
+# implement the default mpl key bindings
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
+from ReichDNMR.nmrplot import tkplot
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
 from ReichDNMR.nmrmath import AB
+from numpy import arange, pi, sin, cos
 
 
 class RadioFrame(Frame):
@@ -121,6 +128,16 @@ class ToolBar(Frame):
     A frame object that contains entry widgets, a dictionary of
     their current contents, and a function to call the appropriate model.
     """
+    # f = Figure(figsize=(5, 4), dpi=100)
+    # a = f.add_subplot(111)
+
+    # canvas = FigureCanvasTkAgg(f, master=root)
+    # canvas.show()
+    # canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+    # toolbar = NavigationToolbar2TkAgg(canvas, root)
+    # toolbar.update()
+    # canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+
     def __init__(self, parent=None, **options):
         Frame.__init__(self, parent, **options)
         self.vars = {}
@@ -208,7 +225,9 @@ class VarBox(Frame):
 
 class AB_Bar(ToolBar):
     """
-    Creates a bar of AB quartet inputs.
+    Creates a bar of AB quartet inputs. Currently assumes "canvas" is the
+    MPLGraph instance.
+    Dependencies: nmrplot.tkplot, nmrmath.AB
     """
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
@@ -227,7 +246,37 @@ class AB_Bar(ToolBar):
         _Vab = self.vars['Vab']
         _Vcentr = self.vars['Vcentr']
         spectrum = AB(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
-        nmrplt(spectrum)
+        x, y = tkplot(spectrum)
+        canvas.clear()
+        canvas.plot(x, y)
+
+
+class MPLgraph(FigureCanvasTkAgg):
+    def __init__(self, f, master=None, **options):
+        FigureCanvasTkAgg.__init__(self, f, master, **options)
+        self.f = f
+        self.a = f.add_subplot(111)
+        self.show()
+        self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        self.toolbar = NavigationToolbar2TkAgg(self, master)
+        self.toolbar.update()
+
+    def plot(self, x, y):
+        self.a.plot(x, y)
+        self.f.canvas.draw()  # DRAW IS CRITICAL TO REFRESH
+
+    def clear(self):
+        self.a.clear()
+        self.f.canvas.draw()
+
+def plotcos(canvas):
+    """Used for debugging; soon to be removed"""
+    print('plotcos called')
+    c = cos(2*pi*t)
+    canvas.a.clear()
+    print('canvas.a.clear() called')
+    canvas.plot(t, c)
+    print('cosplot called')
 
 # Create the main application window:
 root = Tk()
@@ -266,7 +315,21 @@ clickyFrame = Frame(sideFrame, relief=SUNKEN, borderwidth=1)
 clickyFrame.pack(side=TOP, expand=YES, fill=X)
 Label(clickyFrame, text='clickys go here').pack()
 
-specCanvas = Canvas(root, width=800, height=600, bg='beige')
-specCanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+#specCanvas = Canvas(root, width=800, height=600, bg='beige')
+#specCanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
+t = arange(0.0, 3.0, 0.01)
+s = sin(2*pi*t)
+
+f = Figure(figsize=(5, 4), dpi=100)
+canvas = MPLgraph(f, root)
+canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+canvas.plot(t, s)
+# c = cos(2*pi*t)
+# canvas.a.clear()
+# canvas.a.plot(t, c)
+clear = Button(root, text='clear', command=lambda: canvas.clear())
+cosbutton = Button(root, text='cos', command=lambda: plotcos(canvas))
+clear.pack(side=BOTTOM)
+cosbutton.pack(side=BOTTOM)
 root.mainloop()

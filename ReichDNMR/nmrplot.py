@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 
 
 def lorentz(v, v0, T2):
@@ -60,6 +61,16 @@ def nmrplot(spectrum, y=1):
 
     plt.show()
     return
+
+
+def tkplot(spectrum, y=1):
+    spectrum.sort()
+    r_limit = spectrum[-1][0] + 50
+    l_limit = spectrum[0][0] - 50
+    x = np.linspace(l_limit, r_limit, 800)
+    y = adder(x, spectrum, Q=4)
+    return x, y
+
 
 # print('Plotting individual signals')
 # x = np.linspace(250, 500, 800)
