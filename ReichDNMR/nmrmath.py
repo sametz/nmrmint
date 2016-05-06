@@ -6,6 +6,7 @@ better than the original code.
 """
 
 import numpy as np
+from math import sqrt
 
 from scipy.linalg import eigh
 from scipy.sparse import kron, csc_matrix, csr_matrix, lil_matrix, bmat
@@ -222,6 +223,83 @@ def AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz):
     return list(zip(vList, IList))
 
 
+def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
+    """
+    Reich-style inputs for AB2 spin system.
+    Jab is the A-B coupling constant (Hz)
+    Vab is the difference in nuclei frequencies in the absence of coupling (Hz)
+    Vcentr is the frequency for the center of the AB2 signal
+    Wa is width of peak at half-height (not implemented yet)
+    RightHz is the lower frequency limit for the window
+    WdthHz is the width of the window in Hz
+    return: peaklist of (frequency, intensity) tuples
+    """
+    # for now, old Jupyter code using Pople equations kept hashed out for now
+    # Reich vs. Pople variable names are confused, e.g. Vab
+    # So, variables being placed by position in the def header--CAUTION
+    # From main passed in order of: Jab, Vab, Vcentr, Wa, RightHz, WdthHz
+    # Here read in as:              J,   dV,  Vab,    "     "        "
+    #dV = va - vb  # Reich: used d = Vb - vA and then mucked with sign of d
+    #Vab = (va + vb) / 2  # Reich: ABOff
+    dV = - dV
+    va = Vab + (dV / 2)
+    vb = va - dV
+    Jmod = J * (3 / 4)  # This factor used in frequency calculations
+
+    # In Reich's code, the definitions of cp/cm (for C_plus/C_minus) were
+    # swapped, and then modifications using sign of d were employed. This
+    # code hews closer to Pople definitions
+    C_plus = sqrt(dV ** 2 + dV * J + (9 / 4) * (J ** 2)) / 2
+    C_minus = sqrt(dV ** 2 - dV * J + (9 / 4) * (J ** 2)) / 2
+
+    sin2theta_plus = J / (sqrt(2) * C_plus)  # Reich: sin2x
+    sin2theta_minus = J / (sqrt(2) * C_minus)  # Reich: sin2y
+    cos2theta_plus = (dV / 2 + J / 4) / C_plus  # Reich: cos2x
+    cos2theta_minus = (dV / 2 - J / 4) / C_minus  # Reich: cos2y
+
+    # This code differs from Reich's in the calculation of
+    # the sin/cos x/y values
+
+    sintheta_plus = sqrt((1 - cos2theta_plus) / 2)  # Reich: sinx
+    sintheta_minus = sqrt((1 - cos2theta_minus) / 2)  # Reich: siny
+    costheta_plus = sqrt((1 + cos2theta_plus) / 2)  # Reich: cosx
+    costheta_minus = sqrt((1 + cos2theta_minus) / 2)  # Reich: cosy
+
+    # Intensity formulas use the sin and cos of (theta_plus - theta_minus)
+    # sin_dtheta is Reich's qq; cos_dtheta is Reich's rr
+
+    sin_dtheta = sintheta_plus * costheta_minus - costheta_plus * sintheta_minus
+    cos_dtheta = costheta_plus * costheta_minus + sintheta_plus * sintheta_minus
+
+    # Calculate the frequencies and intensities.
+    # V1-V4 are "Origin: A" (PSB Table 6-8);
+    # V5-V8 are "Origin: B";
+    # V9-V12 are "Origin: Comb."
+
+    V1 = Vab + Jmod + C_plus
+    V2 = vb + C_plus + C_minus
+    V3 = va
+    V4 = Vab - Jmod + C_minus
+    V5 = vb + C_plus - C_minus
+    V6 = Vab + Jmod - C_plus
+    V7 = vb - C_plus + C_minus
+    V8 = Vab - Jmod - C_minus
+    V9 = vb - C_plus - C_minus
+
+    I1 = (sqrt(2)*sintheta_plus - costheta_plus) ** 2
+    I2 = (sqrt(2)*sin_dtheta + costheta_plus*costheta_minus) ** 2
+    I3 = 1
+    I4 = (sqrt(2)*sintheta_minus + costheta_minus) ** 2
+    I5 = (sqrt(2)*cos_dtheta + costheta_plus*sintheta_minus) ** 2
+    I6 = (sqrt(2)*costheta_plus + sintheta_plus) ** 2
+    I7 = (sqrt(2)*cos_dtheta - sintheta_plus*costheta_minus) ** 2
+    I8 = (sqrt(2)*costheta_minus - sintheta_minus) ** 2
+    I9 = (sqrt(2)*sin_dtheta + sintheta_plus*sintheta_minus) ** 2
+    vList = [V1, V2, V3, V4, V5, V6, V7, V8, V9]
+    IList = [I1, I2, I3, I4, I5, I6, I7, I8, I9]
+    return list(zip(vList, IList))
+
+
 if __name__ == '__main__':
     from nspin import reich_list
     from nmrplot import nmrplot as nmrplt
@@ -229,6 +307,9 @@ if __name__ == '__main__':
     test_freqs, test_couplings = reich_list()[8]
 
     # refactor reich_list to do this!
-    test_couplings = test_couplings.todense()
+    #test_couplings = test_couplings.todense()
     #spectrum = nspinspec(test_freqs, test_couplings)
-    nmrplt(nspinspec(test_freqs, test_couplings), y=24)
+    #nmrplt(nspinspec(test_freqs, test_couplings), y=24)
+    ab2test = AB2(7.9, 26.5, 13.25, 0.5, 0, 300)
+    nmrplt(ab2test)
+    print(ab2test)

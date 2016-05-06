@@ -171,5 +171,29 @@ def test_AB():
     testspec = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
+
+def test_AB2():
+    from reichdefaults import dcp
+    refspec = [(-8.892448165479056, 0.5434685012269458),
+               (-2.300397938882746, 0.7780710767178313),
+               (0.0, 1),
+               (6.59205022659631, 1.6798068052995172),
+               (22.865501607924635, 2.6784604220552235),
+               (23.542448165479055, 2.4565314987730544),
+               (30.134498392075365, 1.5421221179826525),
+               (31.75794977340369, 1.3201931947004837),
+               (55.300397938882746, 0.001346383244293953)]
+
+
+    Jab = dcp['Jab']
+    Vab = dcp['Vab']
+    Vcentr = dcp['Vcentr']
+    Wa = dcp['Wa']
+    RightHz = dcp['Right-Hz']
+    WdthHz = dcp['WdthHz']
+    testspec = AB2(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
+    np.testing.assert_array_almost_equal(sorted(testspec), refspec, decimal=2)
+
+
 # def test_derp():
 #     assert 1 + 1 == 3

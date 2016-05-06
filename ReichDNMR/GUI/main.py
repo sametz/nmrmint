@@ -15,7 +15,7 @@ is refactored to actually use them
 
 import matplotlib
 matplotlib.use("TkAgg")
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,\
     NavigationToolbar2TkAgg
 # implement the default mpl key bindings
@@ -24,8 +24,9 @@ from matplotlib.figure import Figure
 from ReichDNMR.nmrplot import tkplot
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
-from ReichDNMR.nmrmath import AB
+from ReichDNMR.nmrmath import AB, AB2
 from numpy import arange, pi, sin, cos
+from collections import deque
 
 
 class RadioFrame(Frame):
@@ -77,7 +78,7 @@ class ModelFrames(GuiMixin, Frame):
 
         # menu placeholders: callbacks will be added as functionality added
         # 'Multiplet' menu: "canned" solutions for common spin systems
-        multiplet_buttons = (('AB', lambda: None),
+        multiplet_buttons = (('AB', lambda: MultipletTools.add_toolbar(AB_Bar)),
                              ('AB2', lambda: None))
         self.MultipletButtons = RadioFrame(self,
                                            buttons=multiplet_buttons,
@@ -85,7 +86,7 @@ class ModelFrames(GuiMixin, Frame):
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
 
         # 'ABC...' menu: QM approach
-        abc_buttons = (('AB', lambda: AB_bar()),
+        abc_buttons = (('AB', lambda: None),
                        ('3-Spin', lambda: None),
                        ('4-Spin', lambda: None),
                        ('5-Spin', lambda: None),
@@ -121,6 +122,28 @@ class ModelFrames(GuiMixin, Frame):
                 self.framedic[key].grid()
             else:
                 self.framedic[key].grid_remove()
+
+
+class ToolBox(Frame):
+    """
+    A frame object that will contain multiple toolbars gridded to (0,0).
+    It will maintain a deque of [current, last] toolbars used. When a new model
+    is selected by ModelFrames, the new ToolBar is added to the front of the
+    deque and .grid(), the current toolbar is pushed down to the last
+    position and .grid_remove(), and the previous last toolbar is knocked out
+    of the deque.
+    """
+    def __init__(self, parent=None, **options):
+        Frame.__init__(self, parent, **options)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.toolbars = deque([], 2)
+
+    def add_toolbar(self, toolbar):
+        self.toolbars.appendleft(toolbar)
+        toolbar.grid(self)
+        if len(self.toolbars) > 1:
+            self.toolbars[1].grid_remove()
 
 
 class ToolBar(Frame):
@@ -251,6 +274,34 @@ class AB_Bar(ToolBar):
         canvas.plot(x, y)
 
 
+class AB2_Bar(ToolBar):
+    """
+    Creates a bar of AB2 spin system inputs. Currently assumes "canvas" is the
+    MPLGraph instance.
+    Dependencies: nmrplot.tkplot, nmrmath.AB2
+    """
+    def __init__(self, parent=None, **options):
+        ToolBar.__init__(self, parent, **options)
+        Jab    = VarBox(self, name='Jab',    default=12.00)
+        Vab    = VarBox(self, name='Vab',    default=15.00)
+        Vcentr = VarBox(self, name='Vcentr', default=150)
+        Jab.pack(side=LEFT)
+        Vab.pack(side=LEFT)
+        Vcentr.pack(side=LEFT)
+        # initialize self.vars with toolbox defaults
+        for child in self.winfo_children():
+            child.to_dict()
+
+    def call_model(self):
+        _Jab = self.vars['Jab']
+        _Vab = self.vars['Vab']
+        _Vcentr = self.vars['Vcentr']
+        spectrum = AB2(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
+        x, y = tkplot(spectrum)
+        canvas.clear()
+        canvas.plot(x, y)
+
+
 class MPLgraph(FigureCanvasTkAgg):
     def __init__(self, f, master=None, **options):
         FigureCanvasTkAgg.__init__(self, f, master, **options)
@@ -272,7 +323,7 @@ class MPLgraph(FigureCanvasTkAgg):
 def plotcos(canvas):
     """Used for debugging; soon to be removed"""
     print('plotcos called')
-    c = cos(2*pi*t)
+    c = cos(2 * pi * t)
     canvas.a.clear()
     print('canvas.a.clear() called')
     canvas.plot(t, c)
@@ -288,11 +339,17 @@ sideFrame = Frame(root, relief=RIDGE, borderwidth=3)
 sideFrame.pack(side=LEFT, expand=NO, fill=Y)
 
 # Next, pack the top frame where function variables will be entered
-variableFrame = Frame(root, relief=RIDGE, borderwidth=1)
-variableFrame.pack(side=TOP, expand=NO, fill=X)
-variableFrame.grid_rowconfigure(0, weight=1)
-variableFrame.grid_columnconfigure(0, weight=1)
-AB_Bar(variableFrame).grid(sticky=W)
+TopFrame = Frame(root, relief=RIDGE, borderwidth=1)
+TopFrame.pack(side=TOP, expand=NO, fill=X)
+TopFrame.grid_rowconfigure(0, weight=1)
+TopFrame.grid_columnconfigure(0, weight=1)
+
+# Initially we'll have the MultipletTools bar at the top
+MultipletTools = ToolBox(TopFrame)
+MultipletTools.grid()
+MultipletTools.add_toolbar(AB_Bar)
+AB_Bar(MultipletTools).grid(sticky=W)
+AB2_Bar(MultipletTools).grid(sticky=W)
 
 # Remaining lower right area will be for a Canvas or matplotlib spectrum frame
 # Because we want the spectrum clipped first, will pack it last
@@ -315,11 +372,12 @@ clickyFrame = Frame(sideFrame, relief=SUNKEN, borderwidth=1)
 clickyFrame.pack(side=TOP, expand=YES, fill=X)
 Label(clickyFrame, text='clickys go here').pack()
 
-#specCanvas = Canvas(root, width=800, height=600, bg='beige')
-#specCanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+# currently not using tkinter canvas, but matplotlib widget
+# specCanvas = Canvas(root, width=800, height=600, bg='beige')
+# specCanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
 t = arange(0.0, 3.0, 0.01)
-s = sin(2*pi*t)
+s = sin(2 * pi * t)
 
 f = Figure(figsize=(5, 4), dpi=100)
 canvas = MPLgraph(f, root)
