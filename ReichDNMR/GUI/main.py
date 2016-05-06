@@ -1,25 +1,14 @@
 """
-The main console for ReichDNMR
-Currently defines the structure of the window: sidebar with subwidgets,
-top bar to hold variable input (currently AB quartet only), display in lower
-right. AB quartet toolbar causes a matplotlib plot to pop up.
-To do next:
--need to either embed the matplotlib graph as a tkinter widget in lieu of the
-canvas, or learn how to plot directly to the canvas
--add "not implemented yet" ToolBars as placeholders fon unimplemented models,
-and/or grey out radio buttons for unimplemented routines
--add more models
-eventually use warw() to add widgets to the toolbars, *after* nmrmath/nmrplot
-is refactored to actually use them
+Rethought the toolbar concept. More straightforward if the ModelFrames
+directly controls the top bar contents.
 """
 
 import matplotlib
 matplotlib.use("TkAgg")
-# from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,\
     NavigationToolbar2TkAgg
 # implement the default mpl key bindings
-from matplotlib.backend_bases import key_press_handler
+from matplotlib.backend_bases import key_press_handler  # unused for now
 from matplotlib.figure import Figure
 from ReichDNMR.nmrplot import tkplot
 from tkinter import *
@@ -61,6 +50,7 @@ class CalcTypeFrame(GuiMixin, RadioFrame):
         RadioFrame.__init__(self, parent, buttons=buttons, title=title)
 
     def show_selection(self):
+        """for debugging"""
         self.infobox(self.var.get(), self.var.get())
 
 
@@ -76,16 +66,39 @@ class ModelFrames(GuiMixin, Frame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
+        self.add_multiplet_buttons()  # Creates 'Multiplet' radio button menu
+        self.add_abc_buttons()        # Creates 'ABC...' radio button menu
+        self.add_dnmr_buttons()       # Creates 'DNMR' radio button menu
+        self.add_custom_buttons()     # Creates 'Custom' radio bar menu
+
+        # framedic makes it more convenient to control individual frames
+        self.framedic = {'multiplet': self.MultipletButtons,
+                         'abc': self.ABC_Buttons,
+                         'dnmr': self.DNMR_Buttons,
+                         'custom': self.Custom}
+
+        # Initialize with default frame and toolbar
+        self.currentframe = 'multiplet'
+        self.currentbar = self.ab     # On program start, simulation set to ABq
+        self.currentbar.grid(sticky=W)
+        self.currentbar.call_model()
+
+
         # menu placeholders: callbacks will be added as functionality added
-        # 'Multiplet' menu: "canned" solutions for common spin systems
-        multiplet_buttons = (('AB', lambda: MultipletTools.add_toolbar(AB_Bar)),
-                             ('AB2', lambda: None))
+
+    def add_multiplet_buttons(self):
+        """"'Multiplet' menu: 'canned' solutions for common spin systems"""
+        multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
+                             ('AB2', lambda: self.select_toolbar(self.ab2)))
         self.MultipletButtons = RadioFrame(self,
                                            buttons=multiplet_buttons,
                                            title='Multiplet')
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
+        self.ab = AB_Bar(TopFrame)
+        self.ab2 = AB2_Bar(TopFrame)
 
-        # 'ABC...' menu: QM approach
+    def add_abc_buttons(self):
+        """ 'ABC...' menu: Quantum Mechanics approach"""
         abc_buttons = (('AB', lambda: None),
                        ('3-Spin', lambda: None),
                        ('4-Spin', lambda: None),
@@ -96,32 +109,33 @@ class ModelFrames(GuiMixin, Frame):
         self.ABC_Buttons = RadioFrame(self,
                                       buttons=abc_buttons,
                                       title='2-7 Spins')
-        self.ABC_Buttons.grid(row=0, column=0, sticky=N)
 
-        # 'DNMR': models for DNMR line shape analysis
+    def add_dnmr_buttons(self):
+        """'DNMR': models for DNMR line shape analysis"""
         dnmr_buttons = (('2-spin', lambda: none),
                         ('AB Coupled', lambda: None))
         self.DNMR_Buttons = RadioFrame(self,
                                        buttons=dnmr_buttons,
                                        title='DNMR')
-        self.DNMR_Buttons.grid(row=0, column=0, sticky=N)
 
+    def add_custom_buttons(self):
         # Custom: not implemented yet. Placeholder follows
         self.Custom = Label(self, text='Custom models not implemented yet')
-        self.Custom.grid(row=0, column=0)
-
-        self.framedic = {'multiplet': self.MultipletButtons,
-                         'abc': self.ABC_Buttons,
-                         'dnmr': self.DNMR_Buttons,
-                         'custom': self.Custom}
-        self.select_frame('multiplet')
 
     def select_frame(self, frame):
-        for key in self.framedic:
-            if key == frame:
-                self.framedic[key].grid()
-            else:
-                self.framedic[key].grid_remove()
+        if frame != self.currentframe:
+            self.framedic[self.currentframe].grid_remove()
+            self.currentframe = frame
+            self.framedic[self.currentframe].grid()
+
+    def select_toolbar(self, toolbar):
+        self.currentbar.grid_remove()
+        self.currentbar = toolbar
+        self.currentbar.grid(sticky=W)
+        try:
+            self.currentbar.call_model()
+        except ValueError:
+            print('No model yet for this bar')
 
 
 class ToolBox(Frame):
@@ -146,6 +160,14 @@ class ToolBox(Frame):
             self.toolbars[1].grid_remove()
 
 
+class MultipletBox(ToolBox):
+    """
+    A ToolBox for holding and controlling  a ToolBar for each Multiplet model.
+    """
+    def __init__(self, parent=None, **options):
+        ToolBox.__init__(self, parent, **options)
+        
+
 class ToolBar(Frame):
     """
     A frame object that contains entry widgets, a dictionary of
@@ -167,6 +189,13 @@ class ToolBar(Frame):
 
     def call_model(self):
         print('Sending to dummy_model: ', self.vars)
+
+
+class EmptyToolBar(Frame):
+    def __init__(self, parent=None, name='noname', **opitons):
+        Frame.__init__(self, parent, **options)
+        Label(self, text=name + ' model not implemented yet').pack()
+        self.pack()
 
 
 class VarBox(Frame):
@@ -345,14 +374,16 @@ TopFrame.grid_rowconfigure(0, weight=1)
 TopFrame.grid_columnconfigure(0, weight=1)
 
 # Initially we'll have the MultipletTools bar at the top
-MultipletTools = ToolBox(TopFrame)
-MultipletTools.grid()
-MultipletTools.add_toolbar(AB_Bar)
-AB_Bar(MultipletTools).grid(sticky=W)
-AB2_Bar(MultipletTools).grid(sticky=W)
+# MultipletTools = ToolBox(TopFrame)
+# MultipletTools.grid()
+# MultipletTools.add_toolbar(AB_Bar)
+# AB_Bar(MultipletTools).grid(sticky=W)
+# AB2_Bar(MultipletTools).grid(sticky=W)
 
 # Remaining lower right area will be for a Canvas or matplotlib spectrum frame
 # Because we want the spectrum clipped first, will pack it last
+f = Figure(figsize=(5, 4), dpi=100)
+canvas = MPLgraph(f, root)
 
 # Create sidebar widgets:
 
@@ -372,22 +403,8 @@ clickyFrame = Frame(sideFrame, relief=SUNKEN, borderwidth=1)
 clickyFrame.pack(side=TOP, expand=YES, fill=X)
 Label(clickyFrame, text='clickys go here').pack()
 
-# currently not using tkinter canvas, but matplotlib widget
-# specCanvas = Canvas(root, width=800, height=600, bg='beige')
-# specCanvas.pack(anchor=SE, expand=YES, fill=BOTH)
-
-t = arange(0.0, 3.0, 0.01)
-s = sin(2 * pi * t)
-
-f = Figure(figsize=(5, 4), dpi=100)
-canvas = MPLgraph(f, root)
 canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
-canvas.plot(t, s)
-# c = cos(2*pi*t)
-# canvas.a.clear()
-# canvas.a.plot(t, c)
-clear = Button(root, text='clear', command=lambda: canvas.clear())
-cosbutton = Button(root, text='cos', command=lambda: plotcos(canvas))
-clear.pack(side=BOTTOM)
-cosbutton.pack(side=BOTTOM)
+
+Button(root, text='clear', command=lambda: canvas.clear()).pack(side=BOTTOM)
+
 root.mainloop()
