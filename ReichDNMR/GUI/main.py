@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from ReichDNMR.nmrplot import tkplot
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
-from ReichDNMR.nmrmath import AB, AB2, ABX, ABX3, AAXX, first_order
+from ReichDNMR.nmrmath import AB, AB2, ABX, ABX3, AAXX, first_order, AABB
 from numpy import arange, pi, sin, cos
 from collections import deque
 
@@ -93,7 +93,8 @@ class ModelFrames(GuiMixin, Frame):
                              ("AA'XX'", lambda: self.select_toolbar(self.aaxx)),
                              ('ABX3', lambda: self.select_toolbar(self.abx3)),
                              ('1stOrd',
-                              lambda: self.select_toolbar(self.firstorder)))
+                              lambda: self.select_toolbar(self.firstorder)),
+                             ("AA'BB'", lambda: self.select_toolbar(self.aabb)))
         self.MultipletButtons = RadioFrame(self,
                                            buttons=multiplet_buttons,
                                            title='Multiplet')
@@ -104,6 +105,7 @@ class ModelFrames(GuiMixin, Frame):
         self.abx3 = ABX3_Bar(TopFrame)
         self.aaxx = AAXX_Bar(TopFrame)
         self.firstorder = FirstOrder_Bar(TopFrame)
+        self.aabb = AABB_Bar(TopFrame)
 
     def add_abc_buttons(self):
         """ 'ABC...' menu: Quantum Mechanics approach"""
@@ -518,6 +520,45 @@ class AAXX_Bar(ToolBar):
         _Jax_prime = self.vars["JAX'"]
         _Vcentr = self.vars["Vcentr"]
         spectrum = AAXX(_Jaa, _Jxx, _Jax, _Jax_prime, _Vcentr,
+                        Wa=0.5, RightHz=0, WdthHz=300)
+        x, y = tkplot(spectrum)
+        canvas.clear()
+        canvas.plot(x, y)
+
+
+class AABB_Bar(ToolBar):
+    """
+    Creates a bar of AA'BB' spin system inputs. Currently assumes "canvas" is
+    the MPLGraph instance.
+    Dependencies: nmrplot.tkplot, nmrmath.AABB
+    """
+
+    def __init__(self, parent=None, **options):
+        ToolBar.__init__(self, parent, **options)
+        Vab = VarBox(self, name='VAB', default=40.00)
+        Jaa = VarBox(self, name="JAA'", default=15.00)
+        Jbb = VarBox(self, name="JBB'", default=-10.00)
+        Jab = VarBox(self, name="JAB", default=40.00)
+        Jab_prime = VarBox(self, name="JAB'", default=6.00)
+        Vcentr = VarBox(self, name="Vcentr", default=150)
+        Vab.pack(side=LEFT)
+        Jaa.pack(side=LEFT)
+        Jbb.pack(side=LEFT)
+        Jab.pack(side=LEFT)
+        Jab_prime.pack(side=LEFT)
+        Vcentr.pack(side=LEFT)
+        # initialize self.vars with toolbox defaults
+        for child in self.winfo_children():
+            child.to_dict()
+
+    def call_model(self):
+        _Vab = self.vars['VAB']
+        _Jaa = self.vars["JAA'"]
+        _Jbb = self.vars["JBB'"]
+        _Jab = self.vars["JAB"]
+        _Jab_prime = self.vars["JAB'"]
+        _Vcentr = self.vars["Vcentr"]
+        spectrum = AABB(_Vab, _Jaa, _Jbb, _Jab, _Jab_prime, _Vcentr,
                         Wa=0.5, RightHz=0, WdthHz=300)
         x, y = tkplot(spectrum)
         canvas.clear()

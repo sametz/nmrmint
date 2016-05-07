@@ -183,6 +183,9 @@ def nspinspec(freqs, couplings):
         of nuclei in the list corresponds to the column and row order in the
         matrix, e.g. couplings[0][1] and [1]0] are the J coupling between
         the nuclei of freqs[0] and freqs [1].
+    Returns:
+    -spectrum: a list of (frequency, intensity) tuples.
+    Dependencies: hamiltonian, simsignals
     """
     nspins = len(freqs)
     H = hamiltonian(freqs, couplings)
@@ -581,6 +584,25 @@ def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
     return list(zip(VList, IList))
 
 
+def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, Wa, RightHz, WdthHz):
+    """
+    A wrapper for a second-order AA'BB' calculation, but using the
+    values taken from the WINDNMR-style AA'BB' bar selected by the Multiplet
+    menu.
+    """
+    va = Vcentr - Vab/2
+    vb = Vcentr + Vab/2
+    freqlist = [va, va, vb, vb]
+    J = np.zeros((4, 4))
+    J[0, 1] = Jaa
+    J[0, 2] = Jab
+    J[0, 3] = Jab_prime
+    J[1, 2] = Jab_prime
+    J[1, 3] = Jab
+    J[2, 3] = Jbb
+    J = J + J.T
+    return nspinspec(freqlist, J)
+
 if __name__ == '__main__':
     from nspin import reich_list
     from nmrplot import nmrplot as nmrplt
@@ -588,10 +610,10 @@ if __name__ == '__main__':
     test_freqs, test_couplings = reich_list()[8]
 
     # refactor reich_list to do this!
-    #test_couplings = test_couplings.todense()
-    #spectrum = nspinspec(test_freqs, test_couplings)
-    #nmrplt(nspinspec(test_freqs, test_couplings), y=24)
-    #ab2test = AB2(7.9, 26.5, 13.25, 0.5, 0, 300)
+    # test_couplings = test_couplings.todense()
+    # spectrum = nspinspec(test_freqs, test_couplings)
+    # nmrplt(nspinspec(test_freqs, test_couplings), y=24)
+    # ab2test = AB2(7.9, 26.5, 13.25, 0.5, 0, 300)
     # abxtest = ABX(12.0, 2.0, 8.0, 15.0, 7.5, 0.5, 0, 300)
     # nmrplt(abxtest)
     # print(abxtest)
@@ -624,6 +646,9 @@ if __name__ == '__main__':
     # nmrplt(m3)
     # abx3spec = ABX3(-12.0, 7.0, 7.0, 14.0, 150.0, 0.5, 0.0, 300.0)
     # nmrplt(abx3spec)
-    aaxxspec = AAXX(15, -10, 40, 6, 150, 0.5, 0, 300)
-    print(sorted(aaxxspec))
-    nmrplt(aaxxspec)
+    # aaxxspec = AAXX(15, -10, 40, 6, 150, 0.5, 0, 300)
+    # print(sorted(aaxxspec))
+    # nmrplt(aaxxspec)
+    aabbspec = AABB(40, 15, -10, 40, 6, 150, 0.5, 0, 300)
+    print(sorted(aabbspec))
+    nmrplt(aabbspec)
