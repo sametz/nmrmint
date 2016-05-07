@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from ReichDNMR.nmrplot import tkplot
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
-from ReichDNMR.nmrmath import AB, AB2, ABX
+from ReichDNMR.nmrmath import AB, AB2, ABX, first_order
 from numpy import arange, pi, sin, cos
 from collections import deque
 
@@ -89,7 +89,9 @@ class ModelFrames(GuiMixin, Frame):
         """"'Multiplet' menu: 'canned' solutions for common spin systems"""
         multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
                              ('AB2', lambda: self.select_toolbar(self.ab2)),
-                             ('ABX', lambda: self.select_toolbar(self.abx)))
+                             ('ABX', lambda: self.select_toolbar(self.abx)),
+                             ('1stOrd',
+                              lambda: self.select_toolbar(self.firstorder)))
         self.MultipletButtons = RadioFrame(self,
                                            buttons=multiplet_buttons,
                                            title='Multiplet')
@@ -97,6 +99,7 @@ class ModelFrames(GuiMixin, Frame):
         self.ab = AB_Bar(TopFrame)
         self.ab2 = AB2_Bar(TopFrame)
         self.abx = ABX_Bar(TopFrame)
+        self.firstorder = FirstOrder_Bar(TopFrame)
 
     def add_abc_buttons(self):
         """ 'ABC...' menu: Quantum Mechanics approach"""
@@ -276,6 +279,82 @@ class VarBox(Frame):
     """
 
 
+class IntBox(Frame):
+    """
+    A modification of VarBox code. Restricts inputs to integers.
+    Inputs:
+    -text: appears above the entry box
+    -default: default value in entry
+    """
+    # Future refactor options: either create a base class for an input box
+    # that varies in its input restriction (float, int, str etc), and/or
+    # look into tkinter built-in entry boxes as component.
+    def __init__(self, parent=None, name='', default=0.00, **options):
+        Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
+        Label(self, text=name).pack(side=TOP)
+        self.widgetName = name  # will be key in dictionary
+
+        # Entries will be limited to numerical
+        ent = Entry(self, validate='key')  # check for int on keypress
+        ent.pack(side=TOP, fill=X)
+        self.value = StringVar()
+        ent.config(textvariable=self.value)
+        self.value.set(str(default))
+        ent.bind('<Return>', lambda event: self.on_event(event))
+        ent.bind('<FocusOut>', lambda event: self.on_event(event))
+
+        # check on each keypress if new result will be a number
+        ent['validatecommand'] = (self.register(self.is_int), '%P')
+        # sound 'bell' if bad keypress
+        ent['invalidcommand'] = 'bell'
+
+    @staticmethod
+    def is_int(entry):
+        """
+        tests to see if entry string can be converted to integer
+        """
+        if not entry:
+            return True  # Empty string: OK if entire entry deleted
+        try:
+            int(entry)
+            return True
+        except ValueError:
+            return False
+
+    def on_event(self, event):
+        """
+        On event: Records widget's status to the container's dictionary of
+        values, fills the entry with 0 if it was empty, tells the container
+        to send data to the model, and shifts focus to the next entry box (after
+        Return or Tab).
+        """
+        self.to_dict()
+        self.master.call_model()
+        event.widget.tk_focusNext().focus()
+
+    def to_dict(self):
+        """
+        Converts entry to integer, and stores data in container's vars
+        dictionary.
+        """
+        if not self.value.get():  # if entry left blank,
+            self.value.set(0)  # fill it with zero
+        # Add the widget's status to the container's dictionary
+        self.master.vars[self.widgetName] = int(self.value.get())
+
+
+# def warw(bar): pass
+    """
+    Many of the models include Wa (width), Right-Hz, and WdthHz boxes.
+    This function tacks these boxes onto a ToolBar.
+    Input:
+    -ToolBar that has been filled out
+    Output:
+    -frame with these three boxes and default values left-packed on end
+    ***actually, this could be a function in the ToolBar class definition!
+    """
+
+
 class AB_Bar(ToolBar):
     """
     Creates a bar of AB quartet inputs. Currently assumes "canvas" is the
@@ -363,6 +442,57 @@ class ABX_Bar(ToolBar):
         _Vcentr = self.vars['Vcentr']
         spectrum = ABX(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
                        WdthHz=300)
+        x, y = tkplot(spectrum)
+        canvas.clear()
+        canvas.plot(x, y)
+
+
+class FirstOrder_Bar(ToolBar):
+    """
+    Creates a bar of first-order coupling inputs. Currently assumes "canvas"
+    is the MPLGraph instance.
+    Dependencies: nmrplot.tkplot, nmrmath.first_order
+    """
+
+    def __init__(self, parent=None, **options):
+        ToolBar.__init__(self, parent, **options)
+        Jax = VarBox(self, name='JAX', default=7.00)
+        a = IntBox(self, name='#A', default=2)
+        Jbx = VarBox(self, name='JBX', default=3.00)
+        b = IntBox(self, name='#B', default=1)
+        Jcx = VarBox(self, name='JCX', default=2.00)
+        c = IntBox(self, name='#C', default=0)
+        Jdx = VarBox(self, name='JDX', default=7.00)
+        d = IntBox(self, name='#D', default=0)
+        Vcentr = VarBox(self, name='Vcentr', default=150)
+        Jax.pack(side=LEFT)
+        a.pack(side=LEFT)
+        Jbx.pack(side=LEFT)
+        b.pack(side=LEFT)
+        Jcx.pack(side=LEFT)
+        c.pack(side=LEFT)
+        Jdx.pack(side=LEFT)
+        d.pack(side=LEFT)
+        Vcentr.pack(side=LEFT)
+        # initialize self.vars with toolbox defaults
+        for child in self.winfo_children():
+            child.to_dict()
+
+    def call_model(self):
+        _Jax = self.vars['JAX']
+        _a   = self.vars['#A']
+        _Jbx = self.vars['JBX']
+        _b = self.vars['#B']
+        _Jcx = self.vars['JCX']
+        _c   = self.vars['#C']
+        _Jdx = self.vars['JDX']
+        _d = self.vars['#D']
+        _Vcentr = self.vars['Vcentr']
+        singlet = (_Vcentr, 1)  # using default intensity of 1
+        allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
+        couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
+        spectrum = first_order(singlet, couplings,
+                               Wa=0.5, RightHz=0, WdthHz=300)
         x, y = tkplot(spectrum)
         canvas.clear()
         canvas.plot(x, y)

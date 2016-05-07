@@ -193,6 +193,105 @@ def nspinspec(freqs, couplings):
 # Non-QM solutions for specific multiplets
 ##############################################################################
 
+# doublet, multiplet, add_peaks, and reduce_peaks are used to generate
+# first-order splitting patterns
+
+def doublet(plist, J):
+    """
+    plist: a list of (frequency{Hz}, intensity) tuples;
+    J: a coupling constant {Hz}
+    returns: a plist of the result of splitting every peak in plist by J
+    """
+    res=[]
+    for v, i in plist:
+        res.append((v - J/2, i/2))
+        res.append((v + J/2, i/2))
+    return res
+
+
+def multiplet(plist, couplings):
+    """
+    plist: a list of (frequency{Hz}, intensity) tuples;
+    couplings: one or more (J, # of nuclei) tuples.
+    e.g. to split a signal into a dt, J = 8, 5 Hz, use:
+        couplings = [(8, 2), (5, 3)]
+    Dependency: doublet function
+    returns: a plist of the multiplet that results from splitting the plist
+    signal(s) by each J.
+    The order of the tuples in couplings does not matter
+    """
+    res = plist
+    for coupling in couplings:
+        for i in range(coupling[1]):
+            res = doublet(res, coupling[0])
+    return res
+
+
+def add_peaks(plist):
+    """
+    condenses a list of (frequency, intensity) tuples
+    input: a list of (v, i) tuples
+    output: a tuple of (average v, total i)
+    """
+    if len(plist) == 1:
+        return plist[0]  # nothing to add
+    v_total = 0
+    i_total = 0
+    for v, i in plist:
+        v_total += v
+        i_total += i
+    return v_total / len(plist), i_total
+
+
+def reduce_peaks(plist, tolerance=0):
+    """
+    Takes an ordered list of (x, y) tuples and adds together tuples whose first
+    values are within a certain tolerance limit.
+    Dependency: add_peaks
+    Input:
+        plist: a *sorted* list of (x, y) tuples (sorted by x)
+        tolerance: tuples that differ in x by <= tolerance are combined
+        using add_peaks
+
+    Output:
+        a list of (x, y) tuples where all x values differ by > tolerance
+
+    """
+    res = []
+    work = [plist[0]]  # an accumulator of peaks to be processed
+    for i in range(1, len(plist)):
+        if not work:
+            work.append(plist)
+            continue
+        if plist[i][0] - work[-1][0] <= tolerance:
+            work.append(plist[i])  # accumulate close peaks
+            continue
+        else:
+            res.append(add_peaks(work))
+            work = [plist[i]]
+    if work:
+        res.append(add_peaks(work))
+
+    return res
+
+
+def first_order(signal, couplings, Wa=0.5, RightHz=0, WdthHz=300):
+    """Uses the above functions to split a signal into a first-order
+    multiplet.
+    Input:
+    -signal: a (frequency, intensity) tuple
+    -Couplings: a list of (J, # of nuclei) tuples. See multiplet
+    docstring for more info.
+    -intensity (optional): the intensity of the signal
+    Output:
+    a plist-style spectrum (list of (frequency, intensity) tuples)
+    Dependencies: doublet, multiplet, reduce_peaks, add_peaks
+    """
+    # Possible future refactor: if function used a list of signals,
+    # may be useful in other situations?
+    signallist = [signal]
+    return reduce_peaks(sorted(multiplet(signallist, couplings)))
+
 
 def AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz):
     """
@@ -400,6 +499,33 @@ if __name__ == '__main__':
     #spectrum = nspinspec(test_freqs, test_couplings)
     #nmrplt(nspinspec(test_freqs, test_couplings), y=24)
     #ab2test = AB2(7.9, 26.5, 13.25, 0.5, 0, 300)
-    abxtest = ABX(12.0, 2.0, 8.0, 15.0, 7.5, 0.5, 0, 300)
-    nmrplt(abxtest)
-    print(abxtest)
+    # abxtest = ABX(12.0, 2.0, 8.0, 15.0, 7.5, 0.5, 0, 300)
+    # nmrplt(abxtest)
+    # print(abxtest)
+
+    v1 = (1200, 2)
+    v2 = (450, 2)
+    v3 = (300, 3)
+    J12 = 7
+    J23 = 7
+    m1 = first_order(v1, [(J12, 2)])
+    m2 = first_order(v2, [(J12, 2), (J23, 3)])
+    m3 = first_order(v3, [(J23, 2)])
+    testspec = reduce_peaks(sorted(m1 + m2 + m3))
+    print(testspec)
+    # nmrplt(testspec)
+    # nmrplt(m1)
+    # # print(m2)
+    # nmrplt(m2)
+    # nmrplt(m3)
+
+    # m1 = multiplet(v1, [(J12, 2)])
+    # m2 = multiplet(v2, [(J12, 2), (J23, 3)])
+    # m3 = multiplet(v3, [(J23, 2)])
+    #
+    # testspec = sorted(m1 + m2 + m3)
+    # print(testspec)
+    # nmrplt(testspec)
+    # nmrplt(m1)
+    # nmrplt(m2)
+    # nmrplt(m3)
