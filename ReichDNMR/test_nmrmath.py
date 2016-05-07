@@ -194,5 +194,37 @@ def test_AB2():
     np.testing.assert_array_almost_equal(sorted(testspec), refspec, decimal=2)
 
 
+def test_ABX():
+    from reichdefaults import ABXdict
+    refspec = sorted([(-9.48528137423857, 0.2928932188134524),
+                      (-6.816653826391969, 0.44529980377477096),
+                      (2.5147186257614305, 1.7071067811865475),
+                      (5.183346173608031, 1.554700196225229),
+                      (7.4852813742385695, 1.7071067811865475),
+                      (14.816653826391969, 1.554700196225229),
+                      (19.485281374238568, 0.2928932188134524),
+                      (26.81665382639197, 0.44529980377477096),
+                      (95.0, 1),
+                      (102.3313724521534, 0.9902903378454601),
+                      (97.6686275478466, 0.9902903378454601),
+                      (105.0, 1),
+                      (80.69806479936946, 0.009709662154539944),
+                      (119.30193520063054, 0.009709662154539944)])
+    Jab = ABXdict['Jab']
+    Jax = ABXdict['Jax']
+    Jbx = ABXdict['Jbx']
+    Vab = ABXdict['Vab']
+    Vcentr = ABXdict['Vcentr']
+    Wa = ABXdict['Wa']
+    RightHz = ABXdict['Right-Hz']
+    WdthHz = ABXdict['WdthHz']
+    testspec = sorted(ABX(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz))
+    np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
+
+
+def test_ABX3():
+    from reichdefaults import ABX3dict
+
+
 # def test_derp():
 #     assert 1 + 1 == 3

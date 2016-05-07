@@ -67,7 +67,7 @@ def tkplot(spectrum, y=1):
     spectrum.sort()
     r_limit = spectrum[-1][0] + 50
     l_limit = spectrum[0][0] - 50
-    x = np.linspace(l_limit, r_limit, 800)
+    x = np.linspace(l_limit, r_limit, 2400)
     y = adder(x, spectrum, Q=4)
     return x, y
 

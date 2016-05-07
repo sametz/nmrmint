@@ -163,8 +163,8 @@ def simsignals(H, nspins):
     I = np.square(I.todense())
 
     spectrum = []
-    for i in range(m-1):
-        for j in range(i+1, m):
+    for i in range(m - 1):
+        for j in range(i + 1, m):
             if I[i, j] > 0.01:  # consider making this minimum intensity
                                 # cutoff a function arg, for flexibility
                 v = abs(E[i] - E[j])
@@ -227,11 +227,11 @@ def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
     """
     Reich-style inputs for AB2 spin system.
     Jab is the A-B coupling constant (Hz)
-    Vab is the difference in nuclei frequencies in the absence of coupling (Hz)
-    Vcentr is the frequency for the center of the AB2 signal
+    dV is the difference in nuclei frequencies in the absence of coupling (Hz)
+    Vab is the frequency for the center of the AB2 signal
     Wa is width of peak at half-height (not implemented yet)
-    RightHz is the lower frequency limit for the window
-    WdthHz is the width of the window in Hz
+    RightHz is the lower frequency limit for the window (not implemented yet)
+    WdthHz is the width of the window in Hz (not implemented yet)
     return: peaklist of (frequency, intensity) tuples
     """
     # for now, old Jupyter code using Pople equations kept hashed out for now
@@ -239,8 +239,8 @@ def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
     # So, variables being placed by position in the def header--CAUTION
     # From main passed in order of: Jab, Vab, Vcentr, Wa, RightHz, WdthHz
     # Here read in as:              J,   dV,  Vab,    "     "        "
-    #dV = va - vb  # Reich: used d = Vb - vA and then mucked with sign of d
-    #Vab = (va + vb) / 2  # Reich: ABOff
+    # dV = va - vb  # Reich: used d = Vb - vA and then mucked with sign of d
+    # Vab = (va + vb) / 2  # Reich: ABOff
     dV = - dV
     va = Vab + (dV / 2)
     vb = va - dV
@@ -286,18 +286,107 @@ def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
     V8 = Vab - Jmod - C_minus
     V9 = vb - C_plus - C_minus
 
-    I1 = (sqrt(2)*sintheta_plus - costheta_plus) ** 2
-    I2 = (sqrt(2)*sin_dtheta + costheta_plus*costheta_minus) ** 2
+    I1 = (sqrt(2) * sintheta_plus - costheta_plus) ** 2
+    I2 = (sqrt(2) * sin_dtheta + costheta_plus * costheta_minus) ** 2
     I3 = 1
-    I4 = (sqrt(2)*sintheta_minus + costheta_minus) ** 2
-    I5 = (sqrt(2)*cos_dtheta + costheta_plus*sintheta_minus) ** 2
-    I6 = (sqrt(2)*costheta_plus + sintheta_plus) ** 2
-    I7 = (sqrt(2)*cos_dtheta - sintheta_plus*costheta_minus) ** 2
-    I8 = (sqrt(2)*costheta_minus - sintheta_minus) ** 2
-    I9 = (sqrt(2)*sin_dtheta + sintheta_plus*sintheta_minus) ** 2
+    I4 = (sqrt(2) * sintheta_minus + costheta_minus) ** 2
+    I5 = (sqrt(2) * cos_dtheta + costheta_plus * sintheta_minus) ** 2
+    I6 = (sqrt(2) * costheta_plus + sintheta_plus) ** 2
+    I7 = (sqrt(2) * cos_dtheta - sintheta_plus * costheta_minus) ** 2
+    I8 = (sqrt(2) * costheta_minus - sintheta_minus) ** 2
+    I9 = (sqrt(2) * sin_dtheta + sintheta_plus * sintheta_minus) ** 2
     vList = [V1, V2, V3, V4, V5, V6, V7, V8, V9]
     IList = [I1, I2, I3, I4, I5, I6, I7, I8, I9]
     return list(zip(vList, IList))
+
+
+def ABX(Jab, Jbx, Jax, dVab, Vab, Wa, RightHz, WdthHz):
+    """
+    Reich-style inputs for AB2 spin system.
+    Jab is the A-B coupling constant (Hz)
+    dV is the difference in nuclei frequencies in the absence of coupling (Hz)
+    Vab is the frequency for the center of the AB2 signal
+    Wa is width of peak at half-height (not implemented yet)
+    RightHz is the lower frequency limit for the window (not implemented yet)
+    WdthHz is the width of the window in Hz (not implemented yet)
+    return: peaklist of (frequency, intensity) tuples
+    """
+    # Another function where Reich vs. non-Reich variable names gets confusing
+    # See comments in AB2 function
+    # So, variables being placed by position in the def header--CAUTION
+    # From main passed in order of: Jab, Jax, Jbx, Vab,  Vcentr, ...
+    # Here read in as:              Jab, Jbx, Jax, dVab, Vab,    ...
+
+    # dVab = va - vb  # Reich: Vab
+    # Vab = (va + vb) / 2  # Reich: ABOff
+
+    # Reich's ABX: vx initialized as vb + 100
+    vx = Vab - (dVab / 2) + 100
+
+    dJx = Jax - Jbx  # GMS stepping-stone constant for readability
+
+    # Retaining Reich names for next two constants
+    cm = dJx / 2
+    cp = Jax + Jbx
+
+    # Reich re-defines constants m and l
+    # (declaration/garbage-collection efficiency?)
+    # GMS: using M and L for the first instance, m and n for second
+    # (avoid lower-case l for variables)
+    # Reich redefines m a third time for calculating X intensities
+    # GMS: uses t
+
+    M = dVab + cm
+    L = dVab - cm
+
+    D_plus = sqrt(M ** 2 + Jab ** 2) / 2
+    D_minus = sqrt(L ** 2 + Jab ** 2) / 2
+
+    sin2phi_plus = Jab / (2 * D_plus)  # Reich: sin2x
+    sin2phi_minus = Jab / (2 * D_minus)  # Reich: sin2y
+    cos2phi_plus = M / (2 * D_plus)  # Reich: cos2x
+    cos2phi_minus = L / (2 * D_minus)  # Reich: cos2y
+
+    m = (cp + 2 * Jab) / 4
+    n = (cp - 2 * Jab) / 4  # Reich: l
+
+    t = cos2phi_plus * cos2phi_minus + sin2phi_plus * sin2phi_minus
+    # Calculate the frequencies and intensities.
+    # V1-V4 are "Origin: B" (PSB Table 6-15);
+    # V5-V8 are "Origin: A";
+    # V9-V12 are "Origin: X" and V13-14 are "Origin: Comb. (X)"
+
+    V1 = Vab - m - D_minus
+    V2 = Vab + n - D_plus
+    V3 = Vab - n - D_minus
+    V4 = Vab + m - D_plus
+    V5 = Vab - m + D_minus
+    V6 = Vab + n + D_plus
+    V7 = Vab - n + D_minus
+    V8 = Vab + m + D_plus
+    V9 = vx - cp / 2
+    V10 = vx + D_plus - D_minus
+    V11 = vx - D_plus + D_minus
+    V12 = vx + cp / 2
+    V13 = vx - D_plus - D_minus
+    V14 = vx + D_plus + D_minus
+    I1 = 1 - sin2phi_minus
+    I2 = 1 - sin2phi_plus
+    I3 = 1 + sin2phi_minus
+    I4 = 1 + sin2phi_plus
+    I5 = I3
+    I6 = I4
+    I7 = I1
+    I8 = I2
+    I9 = 1
+    I10 = (1 + t) / 2
+    I11 = I10
+    I12 = 1
+    I13 = (1 - t) / 2
+    I14 = I13
+    VList = [V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14]
+    IList = [I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14]
+    return list(zip(VList, IList))
 
 
 if __name__ == '__main__':
@@ -310,6 +399,7 @@ if __name__ == '__main__':
     #test_couplings = test_couplings.todense()
     #spectrum = nspinspec(test_freqs, test_couplings)
     #nmrplt(nspinspec(test_freqs, test_couplings), y=24)
-    ab2test = AB2(7.9, 26.5, 13.25, 0.5, 0, 300)
-    nmrplt(ab2test)
-    print(ab2test)
+    #ab2test = AB2(7.9, 26.5, 13.25, 0.5, 0, 300)
+    abxtest = ABX(12.0, 2.0, 8.0, 15.0, 7.5, 0.5, 0, 300)
+    nmrplt(abxtest)
+    print(abxtest)

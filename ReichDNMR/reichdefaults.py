@@ -17,3 +17,10 @@ dcp = {'Jab': 7.9,
         'Vab': 26.5,
         'Vcentr': 13.25,
         'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
+
+ABXdict={'Jab': 12.0,
+         'Jax': 2.0,
+         'Jbx': 8.0,
+         'Vab': 15.0,
+         'Vcentr': 7.5,
+         'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}

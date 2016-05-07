@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from ReichDNMR.nmrplot import tkplot
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
-from ReichDNMR.nmrmath import AB, AB2
+from ReichDNMR.nmrmath import AB, AB2, ABX
 from numpy import arange, pi, sin, cos
 from collections import deque
 
@@ -83,19 +83,20 @@ class ModelFrames(GuiMixin, Frame):
         self.currentbar.grid(sticky=W)
         self.currentbar.call_model()
 
-
-        # menu placeholders: callbacks will be added as functionality added
+    # menu placeholders: callbacks will be added as functionality added
 
     def add_multiplet_buttons(self):
         """"'Multiplet' menu: 'canned' solutions for common spin systems"""
         multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
-                             ('AB2', lambda: self.select_toolbar(self.ab2)))
+                             ('AB2', lambda: self.select_toolbar(self.ab2)),
+                             ('ABX', lambda: self.select_toolbar(self.abx)))
         self.MultipletButtons = RadioFrame(self,
                                            buttons=multiplet_buttons,
                                            title='Multiplet')
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
         self.ab = AB_Bar(TopFrame)
         self.ab2 = AB2_Bar(TopFrame)
+        self.abx = ABX_Bar(TopFrame)
 
     def add_abc_buttons(self):
         """ 'ABC...' menu: Quantum Mechanics approach"""
@@ -192,7 +193,7 @@ class ToolBar(Frame):
 
 
 class EmptyToolBar(Frame):
-    def __init__(self, parent=None, name='noname', **opitons):
+    def __init__(self, parent=None, name='noname', **options):
         Frame.__init__(self, parent, **options)
         Label(self, text=name + ' model not implemented yet').pack()
         self.pack()
@@ -331,11 +332,48 @@ class AB2_Bar(ToolBar):
         canvas.plot(x, y)
 
 
+class ABX_Bar(ToolBar):
+    """
+    Creates a bar of ABX spin system inputs. Currently assumes "canvas" is the
+    MPLGraph instance.
+    Dependencies: nmrplot.tkplot, nmrmath.ABX
+    """
+
+    def __init__(self, parent=None, **options):
+        ToolBar.__init__(self, parent, **options)
+        Jab = VarBox(self, name='Jab', default=12.00)
+        Jax = VarBox(self, name='Jax', default=2.00)
+        Jbx = VarBox(self, name='Jbx', default=8.00)
+        Vab = VarBox(self, name='Vab', default=15.00)
+        Vcentr = VarBox(self, name='Vcentr', default=118)
+        Jab.pack(side=LEFT)
+        Jax.pack(side=LEFT)
+        Jbx.pack(side=LEFT)
+        Vab.pack(side=LEFT)
+        Vcentr.pack(side=LEFT)
+        # initialize self.vars with toolbox defaults
+        for child in self.winfo_children():
+            child.to_dict()
+
+    def call_model(self):
+        _Jab = self.vars['Jab']
+        _Jax = self.vars['Jax']
+        _Jbx = self.vars['Jbx']
+        _Vab = self.vars['Vab']
+        _Vcentr = self.vars['Vcentr']
+        spectrum = ABX(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
+                       WdthHz=300)
+        x, y = tkplot(spectrum)
+        canvas.clear()
+        canvas.plot(x, y)
+
+
 class MPLgraph(FigureCanvasTkAgg):
     def __init__(self, f, master=None, **options):
         FigureCanvasTkAgg.__init__(self, f, master, **options)
         self.f = f
         self.a = f.add_subplot(111)
+        self.a.invert_xaxis()
         self.show()
         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.toolbar = NavigationToolbar2TkAgg(self, master)
@@ -349,14 +387,6 @@ class MPLgraph(FigureCanvasTkAgg):
         self.a.clear()
         self.f.canvas.draw()
 
-def plotcos(canvas):
-    """Used for debugging; soon to be removed"""
-    print('plotcos called')
-    c = cos(2 * pi * t)
-    canvas.a.clear()
-    print('canvas.a.clear() called')
-    canvas.plot(t, c)
-    print('cosplot called')
 
 # Create the main application window:
 root = Tk()
@@ -373,36 +403,25 @@ TopFrame.pack(side=TOP, expand=NO, fill=X)
 TopFrame.grid_rowconfigure(0, weight=1)
 TopFrame.grid_columnconfigure(0, weight=1)
 
-# Initially we'll have the MultipletTools bar at the top
-# MultipletTools = ToolBox(TopFrame)
-# MultipletTools.grid()
-# MultipletTools.add_toolbar(AB_Bar)
-# AB_Bar(MultipletTools).grid(sticky=W)
-# AB2_Bar(MultipletTools).grid(sticky=W)
-
 # Remaining lower right area will be for a Canvas or matplotlib spectrum frame
 # Because we want the spectrum clipped first, will pack it last
 f = Figure(figsize=(5, 4), dpi=100)
 canvas = MPLgraph(f, root)
 
 # Create sidebar widgets:
-
-# CalcTypeFrame will select which frame of Models displays
 CalcTypeFrame(sideFrame, relief=SUNKEN, borderwidth=1).pack(side=TOP,
                                                             expand=NO,
                                                             fill=X)
-
-# modelFrame container will use .grid() to stack multiple RadioFrames
-# these RadioFrames will be raised as dictated by the CalcTypeFrame
 Models = ModelFrames(sideFrame, relief=SUNKEN, borderwidth=1)
 Models.pack(side=TOP, expand=YES, fill=X, anchor=N)
 
 # The clickyFrame for clicking on peaks and calculating frequency differences
-# wil not be implemented until much later:
+# will not be implemented until much later:
 clickyFrame = Frame(sideFrame, relief=SUNKEN, borderwidth=1)
 clickyFrame.pack(side=TOP, expand=YES, fill=X)
 Label(clickyFrame, text='clickys go here').pack()
 
+# Now we can pack the canvas (want it to be clipped first)
 canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
 Button(root, text='clear', command=lambda: canvas.clear()).pack(side=BOTTOM)

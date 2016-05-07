@@ -59,7 +59,7 @@ class CalcTypeFrame(GuiMixin, RadioFrame):
                    ('Custom', lambda: Models.select_frame('custom')))
         RadioFrame.__init__(self, parent, buttons=buttons, title=title)
 
-    def change_models(self):
+    def change_models(self): pass
 
 
     def show_selection(self):
