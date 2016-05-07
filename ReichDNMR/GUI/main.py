@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from ReichDNMR.nmrplot import tkplot
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
-from ReichDNMR.nmrmath import AB, AB2, ABX, first_order
+from ReichDNMR.nmrmath import AB, AB2, ABX, ABX3, first_order
 from numpy import arange, pi, sin, cos
 from collections import deque
 
@@ -90,6 +90,7 @@ class ModelFrames(GuiMixin, Frame):
         multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
                              ('AB2', lambda: self.select_toolbar(self.ab2)),
                              ('ABX', lambda: self.select_toolbar(self.abx)),
+                             ('ABX3', lambda: self.select_toolbar(self.abx3)),
                              ('1stOrd',
                               lambda: self.select_toolbar(self.firstorder)))
         self.MultipletButtons = RadioFrame(self,
@@ -99,6 +100,7 @@ class ModelFrames(GuiMixin, Frame):
         self.ab = AB_Bar(TopFrame)
         self.ab2 = AB2_Bar(TopFrame)
         self.abx = ABX_Bar(TopFrame)
+        self.abx3 = ABX3_Bar(TopFrame)
         self.firstorder = FirstOrder_Bar(TopFrame)
 
     def add_abc_buttons(self):
@@ -222,7 +224,8 @@ class VarBox(Frame):
         self.widgetName = name  # will be key in dictionary
 
         # Entries will be limited to numerical
-        ent = Entry(self, validate='key')  # check for number on keypress
+        ent = Entry(self, width=7,
+                    validate='key')  # check for number on keypress
         ent.pack(side=TOP, fill=X)
         self.value = StringVar()
         ent.config(textvariable=self.value)
@@ -291,12 +294,12 @@ class IntBox(Frame):
     # look into tkinter built-in entry boxes as component.
     def __init__(self, parent=None, name='', default=0.00, **options):
         Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
-        Label(self, text=name).pack(side=TOP)
+        Label(self, text=name).pack(side=TOP, expand=NO, fill=NONE)
         self.widgetName = name  # will be key in dictionary
 
         # Entries will be limited to numerical
-        ent = Entry(self, validate='key')  # check for int on keypress
-        ent.pack(side=TOP, fill=X)
+        ent = Entry(self, width=7, validate='key')  # check for int on keypress
+        ent.pack(side=TOP, expand=NO, fill=NONE)
         self.value = StringVar()
         ent.config(textvariable=self.value)
         self.value.set(str(default))
@@ -442,6 +445,42 @@ class ABX_Bar(ToolBar):
         _Vcentr = self.vars['Vcentr']
         spectrum = ABX(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
                        WdthHz=300)
+        x, y = tkplot(spectrum)
+        canvas.clear()
+        canvas.plot(x, y)
+
+
+class ABX3_Bar(ToolBar):
+    """
+    Creates a bar of ABX3 spin system inputs. Currently assumes "canvas" is the
+    MPLGraph instance.
+    Dependencies: nmrplot.tkplot, nmrmath.ABX3
+    """
+
+    def __init__(self, parent=None, **options):
+        ToolBar.__init__(self, parent, **options)
+        Jab = VarBox(self, name='Jab', default=-12.00)
+        Jax = VarBox(self, name='Jax', default=7.00)
+        Jbx = VarBox(self, name='Jbx', default=7.00)
+        Vab = VarBox(self, name='Vab', default=14.00)
+        Vcentr = VarBox(self, name='Vcentr', default=150)
+        Jab.pack(side=LEFT)
+        Jax.pack(side=LEFT)
+        Jbx.pack(side=LEFT)
+        Vab.pack(side=LEFT)
+        Vcentr.pack(side=LEFT)
+        # initialize self.vars with toolbox defaults
+        for child in self.winfo_children():
+            child.to_dict()
+
+    def call_model(self):
+        _Jab = self.vars['Jab']
+        _Jax = self.vars['Jax']
+        _Jbx = self.vars['Jbx']
+        _Vab = self.vars['Vab']
+        _Vcentr = self.vars['Vcentr']
+        spectrum = ABX3(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
+                        WdthHz=300)
         x, y = tkplot(spectrum)
         canvas.clear()
         canvas.plot(x, y)

@@ -299,8 +299,75 @@ def test_ABX():
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
+def test_AMX3():
+    from reichdefaults import AMX3dict
+    refspec = sorted(
+        [(136.2804555427071, 0.20634892168199606),
+         (143.2804555427071, 0.6190467650459882),
+         (150.2804555427071, 0.6190467650459882),
+         (157.2804555427071, 0.20634892168199606),
+         (124.2804555427071, 0.04365107831800394),
+         (131.2804555427071, 0.13095323495401182),
+         (138.2804555427071, 0.13095323495401182),
+         (145.2804555427071, 0.04365107831800394),
+         (154.7195444572929, 0.04365107831800394),
+         (161.7195444572929, 0.13095323495401182),
+         (168.7195444572929, 0.13095323495401182),
+         (175.7195444572929, 0.04365107831800394),
+         (142.7195444572929, 0.20634892168199606),
+         (149.7195444572929, 0.6190467650459882),
+         (156.7195444572929, 0.6190467650459882),
+         (163.7195444572929, 0.20634892168199606)]
+
+    )
+    Jab = AMX3dict['Jab']
+    Jax = AMX3dict['Jax']
+    Jbx = AMX3dict['Jbx']
+    Vab = AMX3dict['Vab']
+    Vcentr = AMX3dict['Vcentr']
+    Wa = AMX3dict['Wa']
+    RightHz = AMX3dict['Right-Hz']
+    WdthHz = AMX3dict['WdthHz']
+
+    testspec = sorted(AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz))
+    np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
+
+
 def test_ABX3():
     from reichdefaults import ABX3dict
+    refspec = (
+        [(124.2804555427071, 0.04365107831800394),
+         (131.2804555427071, 0.13095323495401182),
+         (136.2804555427071, 0.20634892168199606),
+         (138.2804555427071, 0.13095323495401182),
+         (142.7195444572929, 0.20634892168199606),
+         (143.2804555427071, 0.6190467650459882),
+         (145.2804555427071, 0.04365107831800394),
+         (149.7195444572929, 0.6190467650459882),
+         (150.2804555427071, 0.6190467650459882),
+         (154.7195444572929, 0.04365107831800394),
+         (156.7195444572929, 0.6190467650459882),
+         (157.2804555427071, 0.20634892168199606),
+         (161.7195444572929, 0.13095323495401182),
+         (163.7195444572929, 0.20634892168199606),
+         (168.7195444572929, 0.13095323495401182),
+         (175.7195444572929, 0.04365107831800394)]
+    )
+    Jab = ABX3dict['Jab']
+    Jax = ABX3dict['Jax']
+    Jbx = ABX3dict['Jbx']
+    Vab = ABX3dict['Vab']
+    Vcentr = ABX3dict['Vcentr']
+    Wa = ABX3dict['Wa']
+    RightHz = ABX3dict['Right-Hz']
+    WdthHz = ABX3dict['WdthHz']
+
+    testspec = sorted(ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz))
+    np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
+
+
+def test_AAXX():
+    from reichdefaults import AAXXdict
 
 
 # def test_derp():

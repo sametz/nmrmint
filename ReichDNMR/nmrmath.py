@@ -488,6 +488,42 @@ def ABX(Jab, Jbx, Jax, dVab, Vab, Wa, RightHz, WdthHz):
     return list(zip(VList, IList))
 
 
+def AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
+    """
+    Uses the AMX approximate solution described on Reich's website.
+    However, WINDNMR uses a true ABX3 solution. AMX3 included here
+    for future consideration.
+    """
+    # This was the function taken from the Jupyter ABX3 notebook, but
+    # I think this needs to be fixed to make use of Jbx.
+    abq = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
+    print('ABQ result is:\n', abq)
+    # return abq
+    res = reduce_peaks(sorted(multiplet(abq, [(Jax, 3)])))
+    print('AMX3 result is:\n', sorted(res))
+    return res
+
+
+def ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
+    """
+    Refactoring of Reich's code for simulating the ABX3 system.
+    """
+    va = Vcentr - Vab/2
+    vb = Vcentr + Vab/2
+    a_quartet = first_order((va, 1), [(Jax, 3)])
+    b_quartet = first_order((vb, 1), [(Jbx, 3)])
+    res = []
+    for i in range(4):
+        dv = b_quartet[i][0] - a_quartet[i][0]
+        abcenter = (b_quartet[i][0] + a_quartet[i][0]) / 2
+        sub_abq = AB(Jab, dv, abcenter, Wa, RightHz, WdthHz)
+        scale_factor = a_quartet[i][1]
+        scaled_sub_abq = [(v, i * scale_factor) for v, i in sub_abq]
+        print('sub abq =\n', scaled_sub_abq)
+        res.extend(scaled_sub_abq)
+    print('res:\n', sorted(res))
+    return res
+
 if __name__ == '__main__':
     from nspin import reich_list
     from nmrplot import nmrplot as nmrplt
@@ -503,16 +539,16 @@ if __name__ == '__main__':
     # nmrplt(abxtest)
     # print(abxtest)
 
-    v1 = (1200, 2)
-    v2 = (450, 2)
-    v3 = (300, 3)
-    J12 = 7
-    J23 = 7
-    m1 = first_order(v1, [(J12, 2)])
-    m2 = first_order(v2, [(J12, 2), (J23, 3)])
-    m3 = first_order(v3, [(J23, 2)])
-    testspec = reduce_peaks(sorted(m1 + m2 + m3))
-    print(testspec)
+    # v1 = (1200, 2)
+    # v2 = (450, 2)
+    # v3 = (300, 3)
+    # J12 = 7
+    # J23 = 7
+    # m1 = first_order(v1, [(J12, 2)])
+    # m2 = first_order(v2, [(J12, 2), (J23, 3)])
+    # m3 = first_order(v3, [(J23, 2)])
+    # testspec = reduce_peaks(sorted(m1 + m2 + m3))
+    # print(testspec)
     # nmrplt(testspec)
     # nmrplt(m1)
     # # print(m2)
@@ -529,3 +565,5 @@ if __name__ == '__main__':
     # nmrplt(m1)
     # nmrplt(m2)
     # nmrplt(m3)
+    abx3spec = ABX3(-12.0, 7.0, 7.0, 14.0, 150.0, 0.5, 0.0, 300.0)
+    nmrplt(abx3spec)

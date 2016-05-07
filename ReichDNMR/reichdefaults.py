@@ -24,3 +24,17 @@ ABXdict={'Jab': 12.0,
          'Vab': 15.0,
          'Vcentr': 7.5,
          'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
+
+AMX3dict = {'Jab': -12.0,
+           'Jax': 7.0,
+           'Jbx': 7.0,
+           'Vab': 14.0,
+           'Vcentr': 150,
+           'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
+
+ABX3dict = {'Jab': -12.0,
+            'Jax': 7.0,
+            'Jbx': 7.0,
+            'Vab': 14.0,
+            'Vcentr': 150,
+            'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
