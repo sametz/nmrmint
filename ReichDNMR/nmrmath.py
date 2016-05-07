@@ -497,10 +497,8 @@ def AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
     # This was the function taken from the Jupyter ABX3 notebook, but
     # I think this needs to be fixed to make use of Jbx.
     abq = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
-    print('ABQ result is:\n', abq)
     # return abq
     res = reduce_peaks(sorted(multiplet(abq, [(Jax, 3)])))
-    print('AMX3 result is:\n', sorted(res))
     return res
 
 
@@ -519,10 +517,69 @@ def ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
         sub_abq = AB(Jab, dv, abcenter, Wa, RightHz, WdthHz)
         scale_factor = a_quartet[i][1]
         scaled_sub_abq = [(v, i * scale_factor) for v, i in sub_abq]
-        print('sub abq =\n', scaled_sub_abq)
         res.extend(scaled_sub_abq)
-    print('res:\n', sorted(res))
     return res
+
+
+def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
+    """
+    Simulates an AA'XX' spin system. Frequencies and Js in Hz.
+    Ja is the JAA' coupling constant, Jx the JXX', Jax2 the JAX,
+    and JAX2 the JAX'.
+    va is the frequency for the center of the signal.
+    Wa is width of peak at half-height (not implemented yet)
+    RightHz is the lower frequency limit for the window
+    WdthHz is the width of the window in Hz
+    return: peaklist of (frequency, intensity) tuples
+    """
+    # Define the constants required to calculate frequencies and intensities
+
+    # K, L, M, N are as defined in PSB
+    K = Ja + Jx  # Reich: K
+    M = Ja - Jx  # Reich: l
+    L = Jax1 - Jax2  # Reich: m
+    N = Jax1 + Jax2  # Reich: n
+
+    # Retaining Reich names for next two constants
+    # Suggested refactoring: don't divide by 2 here; can simplify later formulas
+
+    p = sqrt((K ** 2 + L ** 2)) / 2
+    r = sqrt((M ** 2 + L ** 2)) / 2
+
+    sin2theta_s = (1 - K / (2 * p)) / 2
+    sin2theta_a = (1 - M / (2 * r)) / 2
+    cos2theta_s = (1 + K / (2 * p)) / 2
+    cos2theta_a = (1 + M / (2 * r)) / 2
+
+    # Calculate the frequencies and intensities.
+    # See PSB Table 6-18. Transitions 1-4 are condensed into V1 and V2.
+
+    V1 = va + N / 2
+    V2 = va - N / 2
+    V3 = va + K / 2 + p
+    V4 = va - K / 2 + p
+    V5 = va + K / 2 - p
+    V6 = va - K / 2 - p
+    V7 = va + M / 2 + r
+    V8 = va - M / 2 + r
+    V9 = va + M / 2 - r
+    V10 = va - M / 2 - r
+
+    I1 = 2
+    I2 = I1
+    I3 = sin2theta_s
+    I4 = cos2theta_s
+    I5 = I4
+    I6 = I3
+    I7 = sin2theta_a
+    I8 = cos2theta_a
+    I9 = I8
+    I10 = I7
+
+    VList = [V1, V2, V3, V4, V5, V6, V7, V8, V9, V10]
+    IList = [I1, I2, I3, I4, I5, I6, I7, I8, I9, I10]
+    return list(zip(VList, IList))
+
 
 if __name__ == '__main__':
     from nspin import reich_list
@@ -565,5 +622,8 @@ if __name__ == '__main__':
     # nmrplt(m1)
     # nmrplt(m2)
     # nmrplt(m3)
-    abx3spec = ABX3(-12.0, 7.0, 7.0, 14.0, 150.0, 0.5, 0.0, 300.0)
-    nmrplt(abx3spec)
+    # abx3spec = ABX3(-12.0, 7.0, 7.0, 14.0, 150.0, 0.5, 0.0, 300.0)
+    # nmrplt(abx3spec)
+    aaxxspec = AAXX(15, -10, 40, 6, 150, 0.5, 0, 300)
+    print(sorted(aaxxspec))
+    nmrplt(aaxxspec)

@@ -229,7 +229,6 @@ def test_first_order():
     m2 = first_order(v2, [(J12, 2), (J23, 3)])
     m3 = first_order(v3, [(J23, 2)])
     testspec = reduce_peaks(sorted(m1 + m2 + m3))
-    print('testspec final:\n', testspec)
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
@@ -368,6 +367,32 @@ def test_ABX3():
 
 def test_AAXX():
     from reichdefaults import AAXXdict
+    refspec = sorted(
+        [(173.0, 2), (127.0, 2), (169.6828402774396, 0.4272530047525843),
+         (164.6828402774396, 0.5727469952474157),
+         (135.3171597225604, 0.5727469952474157),
+         (130.3171597225604, 0.4272530047525843),
+         (183.6009478460092, 0.20380477476124093),
+         (158.6009478460092, 0.7961952252387591),
+         (141.3990521539908, 0.7961952252387591),
+         (116.39905215399081, 0.20380477476124093)]
+    )
+    Jaa = AAXXdict["Jaa'"]
+    Jxx = AAXXdict["Jxx'"]
+    Jax = AAXXdict["Jax"]
+    Jax_prime = AAXXdict["Jax'"]
+    Vcentr = AAXXdict['Vcentr']
+    Wa = AAXXdict['Wa']
+    RightHz = AAXXdict['Right-Hz']
+    WdthHz = AAXXdict['WdthHz']
+
+    testspec = sorted(AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr,
+                           Wa, RightHz, WdthHz))
+    np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
+
+
+def test_AABB():
+    from reichdefaults import AABBdict
 
 
 # def test_derp():

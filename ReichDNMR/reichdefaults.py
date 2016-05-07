@@ -38,3 +38,10 @@ ABX3dict = {'Jab': -12.0,
             'Vab': 14.0,
             'Vcentr': 150,
             'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
+
+AAXXdict = {"Jaa'": 15.0,
+            "Jxx'": -10.0,
+            "Jax": 40.0,
+            "Jax'": 6.0,
+            'Vcentr': 150,
+            'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
