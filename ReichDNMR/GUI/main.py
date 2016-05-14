@@ -90,8 +90,8 @@ class ModelFrames(GuiMixin, Frame):
         multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
                              ('AB2', lambda: self.select_toolbar(self.ab2)),
                              ('ABX', lambda: self.select_toolbar(self.abx)),
-                             ("AA'XX'", lambda: self.select_toolbar(self.aaxx)),
                              ('ABX3', lambda: self.select_toolbar(self.abx3)),
+                             ("AA'XX'", lambda: self.select_toolbar(self.aaxx)),
                              ('1stOrd',
                               lambda: self.select_toolbar(self.firstorder)),
                              ("AA'BB'", lambda: self.select_toolbar(self.aabb)))
@@ -234,8 +234,11 @@ class VarBox(Frame):
         self.value = StringVar()
         ent.config(textvariable=self.value)
         self.value.set(str(default))
-        ent.bind('<Return>', lambda event: self.on_event(event))
-        ent.bind('<FocusOut>', lambda event: self.on_event(event))
+
+        # Default behavior: both return and tab will shift focus to next
+        # widget; only save data and ping model if a change is made
+        ent.bind('<Return>', lambda event: self.on_return(event))
+        ent.bind('<Tab>', lambda event: self.on_tab())
 
         # check on each keypress if new result will be a number
         ent['validatecommand'] = (self.register(self.is_number), '%P')
@@ -256,10 +259,19 @@ class VarBox(Frame):
         except ValueError:
             return False
 
-    def on_event(self, event):
-        self.to_dict()
-        self.master.call_model()
+    def entry_is_changed(self):
+        return self.master.vars[self.widgetName] != float(self.value.get())
+
+    def on_return(self, event):
+        if self.entry_is_changed():
+            self.to_dict()
+            self.master.call_model()
         event.widget.tk_focusNext().focus()
+
+    def on_tab(self):
+        if self.entry_is_changed():
+            self.to_dict()
+            self.master.call_model()
 
     def to_dict(self):
         """

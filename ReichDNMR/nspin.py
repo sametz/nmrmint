@@ -1,7 +1,3 @@
-import numpy as np
-
-from scipy.sparse import lil_matrix
-
 """
 This module uses the default WINDNMR spinsystem data for 4-spin through
 8-spin and creates a list of (frequency, J couplings) tuples.
@@ -11,8 +7,12 @@ The J couplings are in sparse matrices. J[i,j] corresponds to the coupling
 between nuclei i and j, using the same ordering of nuclei as the frequencies
 in v.
 The list of spinsystems begins with empty tuples. This allows intuitive
-access to a particular spin system. For example,
+access to a particular spin system. So, spinsystem[4] is the data for the
+4-spin system.
 """
+
+import numpy as np
+from scipy.sparse import lil_matrix
 
 
 def spin4():
@@ -140,12 +140,25 @@ def reich_list():
     spinsystem = [(), (), (), (), spin4(), spin5(), spin6(), spin7(), spin8()]
     return spinsystem
 
+
+def get_reich_default(n):
+    """
+    Fetches the default (frequencies, J) tuple for the n-spin second-order
+    simulation.
+    Maybe a dictionary would be better.
+    """
+    spinsystem = [(), (), (), (), spin4(), spin5(), spin6(), spin7(), spin8()]
+    tuple_ = spinsystem[n]
+    return tuple_
+
+
 if __name__ == '__main__':
     from nmrmath import nspinspec
     from nmrplot import nmrplot as nmrplt
 
     # spinsystem_list = reich_list()
-    test_freqs, test_couplings = reich_list()[6]
+    # test_freqs, test_couplings = reich_list()[6]
+    test_freqs, test_couplings = get_reich_default(8)
     test_couplings = test_couplings.todense()
     test_spectrum = nspinspec(test_freqs, test_couplings)
-    nmrplt(test_spectrum, y=2.5)
+    nmrplt(test_spectrum, y=25)
