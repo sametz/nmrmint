@@ -15,6 +15,16 @@ import numpy as np
 from scipy.sparse import lil_matrix
 
 
+def spin3():
+    v = np.array([115, 140, 190])
+    J = lil_matrix((3, 3))
+    J[0, 1] = 6
+    J[0, 2] = 12
+    J[1, 2] = 3
+    J = J + J.T
+    return v, J
+
+
 def spin4():
     v = np.array([105, 140, 180, 205])
     J = lil_matrix((4, 4))
@@ -150,7 +160,8 @@ def get_reich_default(n):
     and not a sparse matrix (since sparse matrices are no longer used). Was
     easier to convert the above data this way than to rewrite it all.
     """
-    spinsystem = [(), (), (), (), spin4(), spin5(), spin6(), spin7(), spin8()]
+    spinsystem = [(), (), (), spin3(), spin4(), spin5(), spin6(), spin7(),
+                  spin8()]
 
     # Changes to modules require frequency to be a (0,n) 2D array, and J to
     # be an array and not a sparse matrix.

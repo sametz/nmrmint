@@ -111,17 +111,23 @@ class ModelFrames(GuiMixin, Frame):
 
     def add_abc_buttons(self):
         """ 'ABC...' menu: Quantum Mechanics approach"""
-        abc_buttons = (('AB', lambda: None),
-                       ('3-Spin', lambda: None),
+        abc_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
+                       ('3-Spin', lambda: self.select_toolbar(self.spin3)),
                        ('4-Spin', lambda: self.select_toolbar(self.spin4)),
-                       ('5-Spin', lambda: None),
-                       ('6-Spin', lambda: None),
-                       ('7-Spin', lambda: None),
-                       ('8-Spin', lambda: None))  # 'Custom' omitted for now
+                       ('5-Spin', lambda: self.select_toolbar(self.spin5)),
+                       ('6-Spin', lambda: self.select_toolbar(self.spin6)),
+                       ('7-Spin', lambda: self.select_toolbar(self.spin7)),
+                       ('8-Spin', lambda: self.select_toolbar(self.spin8)))
+        # 'Custom' omitted for now
         self.ABC_Buttons = RadioFrame(self,
                                       buttons=abc_buttons,
                                       title='2-7 Spins')
+        self.spin3 = nSpinBar(TopFrame, n=3)
         self.spin4 = nSpinBar(TopFrame, n=4)
+        self.spin5 = nSpinBar(TopFrame, n=5)
+        self.spin6 = nSpinBar(TopFrame, n=6)
+        self.spin7 = nSpinBar(TopFrame, n=7)
+        self.spin8 = nSpinBar(TopFrame, n=8)
 
     def add_dnmr_buttons(self):
         """'DNMR': models for DNMR line shape analysis"""
@@ -151,6 +157,7 @@ class ModelFrames(GuiMixin, Frame):
             print('No model yet for this bar')
 
 
+# ToolBox no longer needed? Delete?
 class ToolBox(Frame):
     """
     A frame object that will contain multiple toolbars gridded to (0,0).
@@ -173,6 +180,7 @@ class ToolBox(Frame):
             self.toolbars[1].grid_remove()
 
 
+# MultipletBox no longer needed? Delete?
 class MultipletBox(ToolBox):
     """
     A ToolBox for holding and controlling  a ToolBar for each Multiplet model.
@@ -214,19 +222,54 @@ class nSpinBar(Frame):
     Dependencies:
         nmrmath.nspinspec
         nspin.get_reich_default for WINDNMR default values
+        nmrplot.tkplot for displaying spectrum
     """
     def __init__(self, parent=None, n=4, **options):
         Frame.__init__(self, parent, **options)
-        # self.v = np.zeros((1, n), dtype=float)
-        # self.v_obj = np.zeros((1, n), dtype=object)
-        # self.j = np.zeros((n, n), dtype=float)
-        # self.j_obj = np.zeros((n, n), dtype=object)
+        self.v_obj = np.zeros(n, dtype=object)
         self.v, self.j = get_reich_default(n)
         for freq in range(n):
             vbox = ArrayBox(self, a=self.v, coord=(0, freq),
                             name='V' + str(freq + 1))
-            # self.v_obj[0, freq] = vbox
+            self.v_obj[freq] = vbox
             vbox.pack(side=LEFT)
+        vj_button = Button(self, text="Enter Js",
+                           command=lambda: self.vj_popup(n))
+        vj_button.pack(side=LEFT, expand=N, fill=NONE)
+
+    def vj_popup(self, n):
+        tl = Toplevel()
+        Label(tl, text='Second-Order Simulation').pack(side=TOP)
+        datagrid = ArrayFrame(tl, self.call_model, self.v_obj)
+
+        # For gridlines, background set to the line color (e.g. 'black')
+        datagrid.config(background='black')
+
+        Label(datagrid, bg='gray90').grid(row=0, column=0, sticky=NSEW,
+                                          padx=1, pady=1)
+        for col in range(1, n + 1):
+            Label(datagrid, text='V%d' % col, width=8, height=3,
+                  bg='gray90').grid(
+                row=0, column=col, sticky=NSEW, padx=1, pady=1)
+
+        for row in range(1, n + 1):
+            vtext = "V" + str(row)
+            v = ArrayBox(datagrid, a=self.v,
+                         coord=(0, row - 1),  # V1 stored in v[0, 0], etc.
+                         name=vtext, color='gray90')
+            v.grid(row=row, column=0, sticky=NSEW, padx=1, pady=1)
+            for col in range(1, n + 1):
+                if col < row:
+                    j = ArrayBox(datagrid, a=self.j,
+                                 # J12 stored in j[0, 1] (and j[1, 0]) etc
+                                 coord=(col - 1, row - 1),
+                                 name="J%d%d" % (col, row))
+                    j.grid(row=row, column=col, sticky=NSEW, padx=1, pady=1)
+                else:
+                    Label(datagrid, bg='grey').grid(
+                        row=row, column=col, sticky=NSEW, padx=1, pady=1)
+
+        datagrid.pack()
 
     def call_model(self):
         spectrum = nspinspec(self.v[0, :], self.j)
@@ -330,6 +373,21 @@ class VarBox(Frame):
     """
 
 
+class ArrayFrame(Frame):
+    """
+    A frame used for holding a grid of ArrayBox entries, passing their
+    call_model requests up to the provided func, and passing changes to V
+    entries to the toolbar.
+    Arguments:
+        func: the actual function the ArrayBox calls to update model.
+        v.obj: the array of frequency ArrayBox widgets in the upper tool bar
+    """
+    def __init__(self, parent, func, v_obj, **options):
+        Frame.__init__(self, parent, **options)
+        self.call_model = func
+        self.v_obj = v_obj
+
+
 class ArrayBox(Frame):
     """
     A version of VarBox that will save its entry to an array. It will be
@@ -365,6 +423,7 @@ class ArrayBox(Frame):
         # widget; only save data and ping model if a change is made
         ent.bind('<Return>', lambda event: self.on_return(event))
         ent.bind('<Tab>', lambda event: self.on_tab())
+        ent.bind('<FocusOut>', lambda event: self.on_tab())
 
         # check on each keypress if new result will be a number
         ent['validatecommand'] = (self.register(self.is_number), '%P')
@@ -407,7 +466,13 @@ class ArrayBox(Frame):
         if not self.value.get():  # if entry left blank,
             self.value.set(0.00)  # fill it with zero
         # Add the widget's status to the container's dictionary
-        self.a[self.row, self.col] = float(self.value.get())
+        value = float(self.value.get())
+        self.a[self.row, self.col] = value
+        if self.a.shape[0] > 1:   # if more than one row, assume J matrix
+            self.a[self.col, self.row] = value  # fill cross-diagonal element
+        else:                     # otherwise, assume value is a V
+            print(self.master.v_obj[self.col])
+            self.master.v_obj[self.col].value.set(value)
 
 
 # def warw(bar): pass
