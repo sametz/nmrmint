@@ -145,11 +145,20 @@ def get_reich_default(n):
     """
     Fetches the default (frequencies, J) tuple for the n-spin second-order
     simulation.
-    Maybe a dictionary would be better.
+    Currently returns a frequencies, J tuple where frequencies is a (0,
+    n) 2D array (to easily work with main's ArrayBox), and J is a 2D array
+    and not a sparse matrix (since sparse matrices are no longer used). Was
+    easier to convert the above data this way than to rewrite it all.
     """
     spinsystem = [(), (), (), (), spin4(), spin5(), spin6(), spin7(), spin8()]
-    tuple_ = spinsystem[n]
-    return tuple_
+
+    # Changes to modules require frequency to be a (0,n) 2D array, and J to
+    # be an array and not a sparse matrix.
+    freq, J = spinsystem[n]
+    freq2D = np.array([freq])  # converts to 2D array
+    J = J.todense()
+
+    return freq2D, J
 
 
 if __name__ == '__main__':

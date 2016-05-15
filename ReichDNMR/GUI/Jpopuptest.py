@@ -118,7 +118,7 @@ def rowentry():
     j_entries = np.empty((4, 4), dtype=object)
 
     Label(datagrid, bg='gray90').grid(row=0, column=0, sticky=NSEW,
-                                    padx=1, pady=1)
+                                      padx=1, pady=1)
     for col in range(1, 5):
         Label(datagrid, text='V%d' % col, width=8, height=3,
               bg='gray90').grid(
@@ -131,7 +131,7 @@ def rowentry():
         v.grid(row=row, column=0, sticky=NSEW, padx=1, pady=1)
         for col in range(1, 5):
             if col < row:
-                j=VarBox(datagrid, name="J%d%d" % (col, row))
+                j = VarBox(datagrid, name="J%d%d" % (col, row))
                 j.grid(row=row, column=col, sticky=NSEW, padx=1, pady=1)
                 j_entries[row - 1, col - 1] = j
             else:
@@ -157,8 +157,7 @@ def colentry2():
 
     for row in range(1, 4):
         Label(datagrid, text='V%d' % (row + 1), width=8, height=3,
-              bg='gray90').grid(
-                row=row, column=0, sticky=NSEW, padx=1, pady=1)
+              bg='gray90').grid(row=row, column=0, sticky=NSEW, padx=1, pady=1)
         for col in range(1, 5):
             if col <= row:
                 VarBox(datagrid, name="J%d%d" % (col, row + 1)).grid(
