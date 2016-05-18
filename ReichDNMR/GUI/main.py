@@ -19,6 +19,11 @@ from ReichDNMR.nmrmath import nspinspec
 from numpy import arange, pi, sin, cos
 from collections import deque
 
+up_arrow = u"\u21e7"
+down_arrow = u"\u21e9"
+left_arrow = u"\u21e6"
+right_arrow = u"\u21e8"
+
 
 class RadioFrame(Frame):
     """
@@ -138,11 +143,13 @@ class ModelFrames(GuiMixin, Frame):
 
     def add_dnmr_buttons(self):
         """'DNMR': models for DNMR line shape analysis"""
-        dnmr_buttons = (('2-spin', lambda: none),
+        dnmr_buttons = (('2-spin',
+                         lambda: self.select_toolbar(self.TwoSpinBar)),
                         ('AB Coupled', lambda: None))
         self.DNMR_Buttons = RadioFrame(self,
                                        buttons=dnmr_buttons,
                                        title='DNMR')
+        self.TwoSpinBar = DNMR_TwoSingletBar(TopFrame)
 
     def add_custom_buttons(self):
         # Custom: not implemented yet. Placeholder follows
@@ -290,6 +297,32 @@ class nSpinBar(Frame):
         canvas.plot(x, y)
 
 
+class DNMR_TwoSingletBar(ToolBar):
+    """
+    Placeholder for now (AB system). First need to test "deluxe" entry boxes
+    """
+    def __init__(self, parent=None, **options):
+        ToolBar.__init__(self, parent, **options)
+        Jab = VarButtonBox(self, name='Jab', default=12.00)
+        Vab = VarBox(self, name='Vab', default=15.00)
+        Vcentr = VarBox(self, name='Vcentr', default=150)
+        Jab.pack(side=LEFT)
+        Vab.pack(side=LEFT)
+        Vcentr.pack(side=LEFT)
+        # initialize self.vars with toolbox defaults
+        for child in self.winfo_children():
+            child.to_dict()
+
+    def call_model(self):
+        _Jab = self.vars['Jab']
+        _Vab = self.vars['Vab']
+        _Vcentr = self.vars['Vcentr']
+        spectrum = AB(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
+        x, y = tkplot(spectrum)
+        canvas.clear()
+        canvas.plot(x, y)
+
+
 class EmptyToolBar(Frame):
     def __init__(self, parent=None, name='noname', **options):
         Frame.__init__(self, parent, **options)
@@ -371,6 +404,172 @@ class VarBox(Frame):
             self.value.set(0.00)  # fill it with zero
         # Add the widget's status to the container's dictionary
         self.master.vars[self.widgetName] = float(self.value.get())
+
+
+# def warw(bar): pass
+    """
+    Many of the models include Wa (width), Right-Hz, and WdthHz boxes.
+    This function tacks these boxes onto a ToolBar.
+    Input:
+    -ToolBar that has been filled out
+    Output:
+    -frame with these three boxes and default values left-packed on end
+    ***actually, this could be a function in the ToolBar class definition!
+    """
+
+
+class VarButtonBox(Frame):
+    """
+    A deluxe VarBox that is closer to WINDNMR-style entry boxes.
+    ent = entry that holds the value used for calculations
+    increment = the amount added to or subtracted from ent by the buttons
+    minus and plus buttons subtract/add once;
+    up and down buttons repeat as long as button held down.
+    Arguments:
+    -text: appears above the entry box
+    -default: default value in entry
+    """
+
+    # To do: use inheritance to avoid repeating code for different widgets
+    def __init__(self, parent=None, name='', default=0.00, **options):
+        Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
+        Label(self, text=name).pack(side=TOP)
+
+        self.widgetName = name  # will be key in dictionary
+
+        # Entries will be limited to numerical
+        ent = Entry(self, width=7,
+                    validate='key')  # check for number on keypress
+        ent.pack(side=TOP, fill=X)
+        self.value = StringVar()
+        ent.config(textvariable=self.value)
+        self.value.set(str(default))
+
+        # Default behavior: both return and tab will shift focus to next
+        # widget; only save data and ping model if a change is made
+        # To-Do: consistent routines for VarBox, VarButtonBox, ArrayBox etc.
+        # e.g. rename on_tab for general purpose on focus-out
+        ent.bind('<Return>', lambda event: self.on_return(event))
+        ent.bind('<Tab>', lambda event: self.on_tab())
+
+        # check on each keypress if new result will be a number
+        ent['validatecommand'] = (self.register(self.is_number), '%P')
+        # sound 'bell' if bad keypress
+        ent['invalidcommand'] = 'bell'
+
+        # Create a grid for buttons and increment
+        minus_plus_up = Frame(self)
+        minus_plus_up.rowconfigure(0, minsize=30)  # make 2 rows ~same height
+        minus_plus_up.columnconfigure(2, weight=1)  # lets arrow buttons fill
+        minus_plus_up.pack(side=TOP, expand=Y, fill=X)
+
+        minus = Button(minus_plus_up, text='-',
+                       command=lambda: self.decrease())
+        plus = Button(minus_plus_up, text='+',
+                      command=lambda: self.increase())
+        up = Button(minus_plus_up, text=up_arrow, command=lambda: None)
+        up.bind('<Button-1>', lambda event: self.zoom_up())
+        up.bind('<ButtonRelease-1>', lambda event: self.stop_action())
+
+        self.mouse1 = False  # Flag used to check if left button held down
+
+        minus.grid(row=0, column=0, sticky=NSEW)
+        plus.grid(row=0, column=1, sticky=NSEW)
+        up.grid(row=0, column=2, sticky=NSEW)
+
+        # Increment is also limited to numerical entry
+        increment = Entry(minus_plus_up, width=4, validate='key')
+        increment.grid(row=1, column=0, columnspan=2, sticky=NSEW)
+        self.inc = StringVar()
+        increment.config(textvariable=self.inc)
+        self.inc.set(str(1))  # 1 replaced by argument later?
+        increment['validatecommand'] = (self.register(self.is_number), '%P')
+        increment['invalidcommand'] = 'bell'
+
+        down = Button(minus_plus_up, text=down_arrow, command=lambda: None)
+        down.grid(row=1, column=2, sticky=NSEW)
+        down.bind('<Button-1>', lambda event: self.zoom_down())
+        down.bind('<ButtonRelease-1>', lambda event: self.stop_action())
+
+    @staticmethod
+    def is_number(entry):
+        """
+        tests to see if entry is acceptable (either empty, or able to be
+        converted to a float.)
+        """
+        if not entry:
+            return True  # Empty string: OK if entire entry deleted
+        try:
+            float(entry)
+            return True
+        except ValueError:
+            return False
+
+    def entry_is_changed(self):
+        """True if current entry doesn't match stored entry"""
+        return self.master.vars[self.widgetName] != float(self.value.get())
+
+    def on_return(self, event):
+        """Records change to entry, calls model, and focuses on next widget"""
+        if self.entry_is_changed():
+            self.to_dict()
+            self.master.call_model()
+        event.widget.tk_focusNext().focus()
+
+    def on_tab(self):
+        """Records change to entry, and calls model"""
+        if self.entry_is_changed():
+            self.to_dict()
+            self.master.call_model()
+
+    def to_dict(self):
+        """
+        Records widget's contents to the container's dictionary of
+        values, filling the entry with 0.00 if it was empty.
+        """
+        if not self.value.get():  # if entry left blank,
+            self.value.set(0.00)  # fill it with zero
+        # Add the widget's status to the container's dictionary
+        self.master.vars[self.widgetName] = float(self.value.get())
+
+    def stop_action(self):
+        """ButtonRelease esets self.mouse1 flag to False"""
+        self.mouse1 = False
+
+    def increase(self):
+        """Increases ent by inc"""
+        current = float(self.value.get())
+        increment = float(self.inc.get())
+        self.value.set(str(current + increment))
+        self.on_tab()
+
+    def decrease(self):
+        """Decreases ent by inc"""
+        current = float(self.value.get())
+        decrement = float(self.inc.get())
+        self.value.set(str(current - decrement))
+        self.on_tab()
+
+    def zoom_up(self):
+        """Increases ent by int as long as button-1 held down"""
+        increment = float(self.inc.get())
+        self.mouse1 = True
+        self.change_value(increment)
+
+    def zoom_down(self):
+        """Decreases ent by int as long as button-1 held down"""
+        decrement = - float(self.inc.get())
+        self.mouse1 = True
+        self.change_value(decrement)
+
+    def change_value(self, increment):
+        """Adds increment to the value in ent"""
+        if self.mouse1:
+            self.value.set(str(float(self.value.get()) + increment))
+            self.on_tab()  # store value, call model
+
+            # Delay is set to 10, but really depends on model call time
+            self.after(10, lambda: self.change_value(increment))
 
 
 # def warw(bar): pass
@@ -885,6 +1084,6 @@ Label(clickyFrame, text='clickys go here').pack()
 # Now we can pack the canvas (want it to be clipped first)
 canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
-Button(root, text='clear', command=lambda: canvas.clear()).pack(side=BOTTOM)
+Button(root, text="clear", command=lambda: canvas.clear()).pack(side=BOTTOM)
 
 root.mainloop()
