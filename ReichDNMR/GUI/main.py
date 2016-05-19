@@ -10,7 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,\
 # implement the default mpl key bindings
 from matplotlib.backend_bases import key_press_handler  # unused for now
 from matplotlib.figure import Figure
-from ReichDNMR.nmrplot import tkplot, dnmrplot
+from ReichDNMR.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
 from ReichDNMR.nspin import get_reich_default
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
@@ -145,11 +145,13 @@ class ModelFrames(GuiMixin, Frame):
         """'DNMR': models for DNMR line shape analysis"""
         dnmr_buttons = (('2-spin',
                          lambda: self.select_toolbar(self.TwoSpinBar)),
-                        ('AB Coupled', lambda: None))
+                        ('AB Coupled',
+                         lambda: self.select_toolbar(self.DNMR_AB_Bar)))
         self.DNMR_Buttons = RadioFrame(self,
                                        buttons=dnmr_buttons,
                                        title='DNMR')
         self.TwoSpinBar = DNMR_TwoSingletBar(TopFrame)
+        self.DNMR_AB_Bar = DNMR_AB_Bar(TopFrame)
 
     def add_custom_buttons(self):
         # Custom: not implemented yet. Placeholder follows
@@ -160,7 +162,7 @@ class ModelFrames(GuiMixin, Frame):
             self.framedic[self.currentframe].grid_remove()
             self.currentframe = frame
             self.framedic[self.currentframe].grid()
-            print('Current frame: ', self.currentframe)
+
             # retrieve and select current active bar of frame
             self.select_toolbar(self.active_bar_dict[self.currentframe])
 
@@ -328,9 +330,42 @@ class DNMR_TwoSingletBar(ToolBar):
         _Wa = self.vars['Wa']
         _Wb = self.vars['Wb']
         _pa = self.vars['%a'] / 100
-        print(_Va, _Vb, _ka, _Wa, _Wb, _pa)
-        # spectrum = AB(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
-        x, y = dnmrplot(_Va, _Vb, _ka, _Wa, _Wb, _pa)
+
+        x, y = dnmrplot_2spin(_Va, _Vb, _ka, _Wa, _Wb, _pa)
+        canvas.clear()
+        canvas.plot(x, y)
+
+
+class DNMR_AB_Bar(ToolBar):
+    """
+    DNMR simulation for 2 coupled exchanging nuclei.
+    -Va > Vb are the chemcial shifts (slow exchange limit)
+    -J is the coupling constant
+    -kAB is the exchange rate constant
+    -W is peak width at half-height in absence of exchange
+    """
+    def __init__(self, parent=None, **options):
+        ToolBar.__init__(self, parent, **options)
+        Va = VarButtonBox(self, name='Va', default=165.00)
+        Vb = VarButtonBox(self, name='Vb', default=135.00)
+        J = VarButtonBox(self, name='J', default=12.00)
+        kAB = VarButtonBox(self, name='kAB', default=1.50)
+        W = VarButtonBox(self, name='W', default=0.5)
+        for widget in [Va, Vb, J, kAB, W]:
+            widget.pack(side=LEFT)
+
+        # initialize self.vars with toolbox defaults
+        for child in self.winfo_children():
+            child.to_dict()
+
+    def call_model(self):
+        _Va = self.vars['Va']
+        _Vb = self.vars['Vb']
+        _J  = self.vars['J']
+        _kAB = self.vars['kAB']
+        _W = self.vars['W']
+
+        x, y = dnmrplot_AB(_Va, _Vb, _J, _kAB, _W)
         canvas.clear()
         canvas.plot(x, y)
 

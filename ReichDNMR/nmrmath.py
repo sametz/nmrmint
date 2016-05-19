@@ -635,6 +635,50 @@ def dnmr_2spin(v, va, vb, ka, pa, T2a, T2b):
     return I
 
 
+def dnmr_AB(v, v1, v2, J, k, W):
+    """
+    A translation of the equation from Weil's JCE paper (NOTE: Reich pointed
+    out that it has a sign typo!).
+    p. 14, for the uncoupled 2-site exchange simulation.
+    v: frequency whose amplitude is to be calculated
+    va, vb: frequencies of a and b nuclei (slow exchange limit, no coupling;
+    va > vb)
+    ka: rate constant for state A--> state B
+    pa: fraction of population in state Adv: frequency difference (va - vb) between a and b singlets (slow exchange)
+    T2a, T2b: T2 (transverse relaxation time) for each nuclei
+    returns: amplitude at frequency v
+    """
+    pi = np.pi
+    vo = (v1 + v2) / 2
+    tau = 1 / k
+    tau2 = 1 / (pi * W)
+    a1_plus = 4 * pi ** 2 * (vo - v + J / 2) ** 2
+    a1_minus = 4 * pi ** 2 * (vo - v - J / 2) ** 2
+    a2 = - ((1 / tau) + (1 / tau2)) ** 2
+    a3 = - pi ** 2 * (v1 - v2) ** 2
+    a4 = - pi ** 2 * J ** 2 + (1 / tau ** 2)
+    a_plus = a1_plus + a2 + a3 + a4
+    a_minus = a1_minus + a2 + a3 + a4
+
+    b_plus = 4 * pi * (vo - v + J / 2) * (
+    (1 / tau) + (1 / tau2)) - 2 * pi * J / tau
+    b_minus = 4 * pi * (vo - v - J / 2) * (
+    (1 / tau) + (1 / tau2)) + 2 * pi * J / tau
+
+    r_plus = 2 * pi * (vo - v + J)
+    r_minus = 2 * pi * (vo - v - J)
+
+    s = (2 / tau) + (1 / tau2)
+
+    n1 = r_plus * b_plus - s * a_plus
+    d1 = a_plus ** 2 + b_plus ** 2
+    n2 = r_minus * b_minus - s * a_minus
+    d2 = a_minus ** 2 + b_minus ** 2
+
+    I = (n1 / d1) + (n2 / d2)
+    return I
+
+
 if __name__ == '__main__':
     from nspin import reich_list
     from nmrplot import nmrplot as nmrplt

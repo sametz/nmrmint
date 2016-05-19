@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from ReichDNMR.nmrmath import dnmr_2spin
+from ReichDNMR.nmrmath import dnmr_2spin, dnmr_AB
 
 
 def lorentz(v, v0, T2):
@@ -72,7 +72,7 @@ def tkplot(spectrum, y=1):
     return x, y
 
 
-def dnmrplot(va, vb, ka, pa, T2a, T2b):
+def dnmrplot_2spin(va, vb, ka, pa, T2a, T2b):
     """
     plots the function nmrmath.dnmr_2spin
     Currently assumes va > vb
@@ -85,23 +85,18 @@ def dnmrplot(va, vb, ka, pa, T2a, T2b):
     return x, y
 
 
-# print('Plotting individual signals')
-# x = np.linspace(250, 500, 800)
-# plt.ylim(0, 2)
-# for v, i in spectrum:
-#     # print(v, i)
-#     plt.plot(v, i, 'bo')
-#     multiplier = i/lorentz2(v, v, i, Q=2)
-#     plt.plot(x, lorentz2(x, v, i, Q=2) * multiplier)
-# # print('Bokehfying result')
-# # bokeh.plotting.show(bokeh.mpl.to_bokeh(xkcd=False))
-#
-# print('Plotting spectrum')
-# x = np.linspace(50, 300, 800)
-# plt.ylim(0, 1)
-# plt.plot(x, adder(x, spectrum))
-# # print('Bokehfying result')
-# # bokeh.plotting.show(bokeh.mpl.to_bokeh(xkcd=False))
+def dnmrplot_AB(v1, v2, J, k, W):
+    """
+    plots the function nmrmath.dnmr_AB.
+    Currently assumes va > vb
+    """
+
+    l_limit = v2 - 50
+    r_limit = v1 + 50
+    x = np.linspace(l_limit, r_limit, 800)
+    y = dnmr_AB(x, v1, v2, J, k, W)
+    return x, y
+
 
 if __name__ == '__main__':
     doublet = [(100, 1), (120, 1)]
