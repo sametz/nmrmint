@@ -10,7 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,\
 # implement the default mpl key bindings
 from matplotlib.backend_bases import key_press_handler  # unused for now
 from matplotlib.figure import Figure
-from ReichDNMR.nmrplot import tkplot
+from ReichDNMR.nmrplot import tkplot, dnmrplot
 from ReichDNMR.nspin import get_reich_default
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
@@ -88,7 +88,7 @@ class ModelFrames(GuiMixin, Frame):
         # individual button menu.
         self.active_bar_dict = {'multiplet': self.ab,
                                 'abc': self.ab,
-                                'dnmr': self.ab,
+                                'dnmr': self.TwoSpinBar,
                                 'custom': self.ab}
 
         # Initialize with default frame and toolbar
@@ -299,26 +299,38 @@ class nSpinBar(Frame):
 
 class DNMR_TwoSingletBar(ToolBar):
     """
-    Placeholder for now (AB system). First need to test "deluxe" entry boxes
+    DNMR simulation for 2 uncoupled exchanging nuclei.
+    -Va > Vb are the chemcial shifts (slow exchange limit)
+    -ka is the a-->b rate constant (note: WINDNMR uses ka + kb here)
+    -Wa, Wb are effectively T2a and T2b (check width at half height vs. T2s)
+    -pa is % of molecules in state a. Note for calculation need to /100 to
+    convert to mol fraction.
     """
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
-        Jab = VarButtonBox(self, name='Jab', default=12.00)
-        Vab = VarBox(self, name='Vab', default=15.00)
-        Vcentr = VarBox(self, name='Vcentr', default=150)
-        Jab.pack(side=LEFT)
-        Vab.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
+        Va = VarButtonBox(self, name='Va', default=165.00)
+        Vb = VarButtonBox(self, name='Vb', default=135.00)
+        ka = VarButtonBox(self, name='ka', default=1.50)
+        Wa = VarButtonBox(self, name='Wa', default=0.5)
+        Wb = VarButtonBox(self, name='Wb', default=0.5)
+        pa = VarButtonBox(self, name='%a', default=50)
+        for widget in [Va, Vb, ka, Wa, Wb, pa]:
+            widget.pack(side=LEFT)
+
         # initialize self.vars with toolbox defaults
         for child in self.winfo_children():
             child.to_dict()
 
     def call_model(self):
-        _Jab = self.vars['Jab']
-        _Vab = self.vars['Vab']
-        _Vcentr = self.vars['Vcentr']
-        spectrum = AB(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
-        x, y = tkplot(spectrum)
+        _Va = self.vars['Va']
+        _Vb = self.vars['Vb']
+        _ka = self.vars['ka']
+        _Wa = self.vars['Wa']
+        _Wb = self.vars['Wb']
+        _pa = self.vars['%a'] / 100
+        print(_Va, _Vb, _ka, _Wa, _Wb, _pa)
+        # spectrum = AB(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
+        x, y = dnmrplot(_Va, _Vb, _ka, _Wa, _Wb, _pa)
         canvas.clear()
         canvas.plot(x, y)
 

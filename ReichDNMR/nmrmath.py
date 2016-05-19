@@ -510,7 +510,8 @@ def ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
     Refactoring of Reich's code for simulating the ABX3 system.
     """
     va = Vcentr - Vab/2
-    vb = Vcentr + Vab/2
+    vb = Vcentr + Vab\
+                  /2
     a_quartet = first_order((va, 1), [(Jax, 3)])
     b_quartet = first_order((vb, 1), [(Jbx, 3)])
     res = []
@@ -602,6 +603,37 @@ def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, Wa, RightHz, WdthHz):
     J[2, 3] = Jbb
     J = J + J.T
     return nspinspec(freqlist, J)
+
+
+def dnmr_2spin(v, va, vb, ka, pa, T2a, T2b):
+    """
+    A translation of the equation from Sandström's Dynamic NMR Spectroscopy,
+    p. 14, for the uncoupled 2-site exchange simulation.
+    v: frequency whose amplitude is to be calculated
+    va, vb: frequencies of a and b singlets (slow exchange limit) (va > vb)
+    ka: rate constant for state A--> state B
+    pa: fraction of population in state Adv: frequency difference (va - vb) between a and b singlets (slow exchange)
+    T2a, T2b: T2 (transverse relaxation time) for each nuclei
+    returns: amplitude at frequency v
+    """
+    pi = np.pi
+    pb = 1 - pa
+    tau = pb / ka
+    dv = va - vb
+    Dv = (va + vb) / 2 - v
+
+    P = tau * (1 / (T2a * T2b) - 4 * (pi ** 2) * (Dv ** 2) +
+               (pi ** 2) * (dv ** 2))
+    P += (pa / T2a + pb / T2b)
+
+    Q = tau * (2 * pi * Dv - pi * dv * (pa - pb))
+
+    R = 2 * pi * Dv * (1 + tau * ((1 / T2a) + (1 / T2b)))
+    R += pi * dv * tau * ((1 / T2b) - (1 / T2a)) + pi * dv * (pa - pb)
+
+    I = (P * (1 + tau * ((pb / T2a) + (pa / T2b))) + Q * R) / (P ** 2 + R ** 2)
+    return I
+
 
 if __name__ == '__main__':
     from nspin import reich_list

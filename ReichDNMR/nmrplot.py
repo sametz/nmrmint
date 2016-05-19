@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+from ReichDNMR.nmrmath import dnmr_2spin
 
 
 def lorentz(v, v0, T2):
@@ -53,8 +54,7 @@ def nmrplot(spectrum, y=1):
     l_limit = spectrum[0][0] - 50
     r_limit = spectrum[-1][0] + 50
     x = np.linspace(l_limit, r_limit, 800)
-    plt.ylim(-0.1
-             , y)
+    plt.ylim(-0.1, y)
     plt.gca().invert_xaxis()  # reverses the x axis
     # noinspection PyTypeChecker
     plt.plot(x, adder(x, spectrum, Q=4))
@@ -69,6 +69,19 @@ def tkplot(spectrum, y=1):
     l_limit = spectrum[0][0] - 50
     x = np.linspace(l_limit, r_limit, 2400)
     y = adder(x, spectrum, Q=4)
+    return x, y
+
+
+def dnmrplot(va, vb, ka, pa, T2a, T2b):
+    """
+    plots the function nmrmath.dnmr_2spin
+    Currently assumes va > vb
+    """
+
+    l_limit = vb - 50
+    r_limit = va + 50
+    x = np.linspace(l_limit, r_limit, 800)
+    y = dnmr_2spin(x, va, vb, ka, pa, T2a, T2b)
     return x, y
 
 
