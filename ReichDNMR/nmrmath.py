@@ -591,8 +591,8 @@ def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, Wa, RightHz, WdthHz):
     values taken from the WINDNMR-style AA'BB' bar selected by the Multiplet
     menu.
     """
-    va = Vcentr - Vab/2
-    vb = Vcentr + Vab/2
+    va = Vcentr - Vab / 2
+    vb = Vcentr + Vab / 2
     freqlist = [va, va, vb, vb]
     J = np.zeros((4, 4))
     J[0, 1] = Jaa
@@ -605,26 +605,28 @@ def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, Wa, RightHz, WdthHz):
     return nspinspec(freqlist, J)
 
 
-def dnmr_2spin(v, va, vb, ka, pa, T2a, T2b):
+def dnmr_2spin(v, va, vb, ka, Wa, Wb, pa):
     """
     A translation of the equation from Sandström's Dynamic NMR Spectroscopy,
     p. 14, for the uncoupled 2-site exchange simulation.
     v: frequency whose amplitude is to be calculated
     va, vb: frequencies of a and b singlets (slow exchange limit) (va > vb)
     ka: rate constant for state A--> state B
-    pa: fraction of population in state Adv: frequency difference (va - vb) between a and b singlets (slow exchange)
-    T2a, T2b: T2 (transverse relaxation time) for each nuclei
-    returns: amplitude at frequency v
+    pa: fraction of population in state Adv: frequency difference (va - vb)
+    between a and b singlets (slow exchange)
+    Wa, Wb: peak widths at half height (slow exchange), used to calculate T2s
     """
     pi = np.pi
     pb = 1 - pa
     tau = pb / ka
     dv = va - vb
     Dv = (va + vb) / 2 - v
+    T2a = 1 / (pi * Wa)
+    T2b = 1 / (pi * Wb)
 
-    P = tau * (1 / (T2a * T2b) - 4 * (pi ** 2) * (Dv ** 2) +
+    P = tau * ((1 / (T2a * T2b)) - 4 * (pi ** 2) * (Dv ** 2) +
                (pi ** 2) * (dv ** 2))
-    P += (pa / T2a + pb / T2b)
+    P += ((pa / T2a) + (pb / T2b))
 
     Q = tau * (2 * pi * Dv - pi * dv * (pa - pb))
 
@@ -633,6 +635,77 @@ def dnmr_2spin(v, va, vb, ka, pa, T2a, T2b):
 
     I = (P * (1 + tau * ((pb / T2a) + (pa / T2b))) + Q * R) / (P ** 2 + R ** 2)
     return I
+
+
+def d2s_func(va, vb, ka, Wa, Wb, pa):
+    """
+    A function factory that creates tailored
+    dnmr_2spin-like functions for greater speed.
+    v: frequency whose amplitude is to be calculated
+    va, vb: frequencies of a and b singlets (slow exchange limit) (va > vb)
+    ka: rate constant for state A--> state B
+    pa: fraction of population in state Adv: frequency difference (va - vb)
+    between a and b singlets (slow exchange)
+    Wa, Wb: peak widths at half height (slow exchange), used to calculate T2s
+
+    returns: a function that takes v (x coord or numpy linspace) as an argument
+    and returns intensity (y).
+    """
+    pi = np.pi
+    pi_squared = pi ** 2
+    T2a = 1 / (pi * Wa)
+    T2b = 1 / (pi * Wb)
+    pb = 1 - pa
+    tau = pb / ka
+    dv = va - vb
+    Dv = (va + vb) / 2
+    P = tau * (1 / (T2a * T2b) + pi_squared * (dv ** 2)) + (pa / T2a + pb / T2b)
+    p = 1 + tau * ((pb / T2a) + (pa / T2b))
+    Q = tau * (- pi * dv * (pa - pb))
+    R = pi * dv * tau * ((1 / T2b) - (1 / T2a)) + pi * dv * (pa - pb)
+    r = 2 * pi * (1 + tau * ((1 / T2a) + (1 / T2b)))
+
+    def maker(v):
+        nonlocal Dv, P, Q, R
+        Dv -= v
+        P -= tau * 4 * pi_squared * (Dv ** 2)
+        Q += tau * 2 * pi * Dv
+        R += Dv * r
+        return(P * p + Q * R) / (P ** 2 + R ** 2)
+    return maker
+
+
+def reich(v, va, vb, ka, Wa, Wb, pa):
+    """
+    A traslation of the actual VB code used in WINDNMR. Was used for error
+    checking. Scheduled for deletion.
+    """
+    # print('Reich was entered')
+    PI = np.pi
+    R21 = PI * Wa
+    R22 = PI * Wb
+    mshifts1 = va
+    mshifts2 = vb
+    pop1 = pa
+    pop2 = 1 - pop1  # i.e. pb
+    tau = pop2 / ka
+    deltanu = va - vb
+    r1 = 1 + tau * (R21 + R22)
+    Rr2 = PI * deltanu * tau * (R22 - R21)
+    R3 = PI * deltanu * (pop1 - pop2)
+    p1 = tau * R21 * R22
+    p3 = tau * PI * PI * deltanu * deltanu
+    PI2 = tau * 4 * PI * PI
+    pitau = tau * 2 * PI
+    popratio1 = p1 + p3 + (pop1 * R21) + (pop2 * R22)
+    popratio2 = 1 + tau * ((pop2 * R21) + (pop1 * R22))
+    CentFreq = 0.5 * (mshifts1 + mshifts2)
+    Delfreq = CentFreq - v
+    p2 = PI2 * Delfreq * Delfreq
+    P = -p2 + popratio1
+    Q = pitau * Delfreq - tau * R3
+    R = 2 * PI * Delfreq * r1 + Rr2 + R3
+    return (P * popratio2 + Q * R) / ((P * P) + (R * R))
 
 
 def dnmr_AB(v, v1, v2, J, k, W):
@@ -644,7 +717,8 @@ def dnmr_AB(v, v1, v2, J, k, W):
     va, vb: frequencies of a and b nuclei (slow exchange limit, no coupling;
     va > vb)
     ka: rate constant for state A--> state B
-    pa: fraction of population in state Adv: frequency difference (va - vb) between a and b singlets (slow exchange)
+    pa: fraction of population in state Adv: frequency difference (va - vb)
+    between a and b singlets (slow exchange)
     T2a, T2b: T2 (transverse relaxation time) for each nuclei
     returns: amplitude at frequency v
     """
@@ -661,9 +735,9 @@ def dnmr_AB(v, v1, v2, J, k, W):
     a_minus = a1_minus + a2 + a3 + a4
 
     b_plus = 4 * pi * (vo - v + J / 2) * (
-    (1 / tau) + (1 / tau2)) - 2 * pi * J / tau
+        (1 / tau) + (1 / tau2)) - 2 * pi * J / tau
     b_minus = 4 * pi * (vo - v - J / 2) * (
-    (1 / tau) + (1 / tau2)) + 2 * pi * J / tau
+        (1 / tau) + (1 / tau2)) + 2 * pi * J / tau
 
     r_plus = 2 * pi * (vo - v + J)
     r_minus = 2 * pi * (vo - v - J)

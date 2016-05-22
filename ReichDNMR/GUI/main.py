@@ -1,6 +1,5 @@
 """
-Rethought the toolbar concept. More straightforward if the ModelFrames
-directly controls the top bar contents.
+The main GUI, to be run as the main application.
 """
 import numpy as np
 import matplotlib

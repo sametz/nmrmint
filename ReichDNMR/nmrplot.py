@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from ReichDNMR.nmrmath import dnmr_2spin, dnmr_AB
+from ReichDNMR.nmrmath import dnmr_2spin, dnmr_AB, d2s_func, reich
 
 
 def lorentz(v, v0, T2):
@@ -15,7 +15,7 @@ def lorentz(v, v0, T2):
     returns: intensity (y coordinate)
     """
     pi = np.pi
-    return T2/(pi*(1+(T2**2)*((v-v0)**2)))
+    return T2 / (pi * (1 + (T2**2) * ((v - v0)**2)))
 
 
 def lorentz2(v, v0, I, Q=1):
@@ -29,7 +29,7 @@ def lorentz2(v, v0, I, Q=1):
     :param Q:  fudge factor for line width (defaults to 1)
     """
     pi = np.pi
-    return I/(pi*(1+(Q**2)*((v-v0)**2)))
+    return I / (pi * (1 + (Q**2) * ((v - v0)**2)))
 
 
 def adder(x, plist, Q=2):
@@ -72,7 +72,7 @@ def tkplot(spectrum, y=1):
     return x, y
 
 
-def dnmrplot_2spin(va, vb, ka, pa, T2a, T2b):
+def dnmrplot_2spin(va, vb, ka, Wa, Wb, pa):
     """
     plots the function nmrmath.dnmr_2spin
     Currently assumes va > vb
@@ -81,7 +81,16 @@ def dnmrplot_2spin(va, vb, ka, pa, T2a, T2b):
     l_limit = vb - 50
     r_limit = va + 50
     x = np.linspace(l_limit, r_limit, 800)
-    y = dnmr_2spin(x, va, vb, ka, pa, T2a, T2b)
+    # y = dnmr_2spin(x, va, vb, ka, Wa, Wb, pa)
+
+    # OR:
+
+    dfunc = d2s_func(va, vb, ka, Wa, Wb, pa)
+    y = dfunc(x)
+
+    # OR:
+    # y = reich(x, va, vb, ka, Wa, Wb, pa)
+
     return x, y
 
 
