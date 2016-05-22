@@ -1,6 +1,11 @@
 """
 A stripped-down main.py for the purpose of testing speed of DNMR plots
 and improving animation.
+
+Kernprof test conclusion:
+99.9% of time is spent plotting
+0.1% is spent doing math
+Of plot time, about 71% is canvas.clear() and 29% is canvas.plot()
 """
 import matplotlib
 matplotlib.use("TkAgg")
@@ -185,9 +190,9 @@ class VarButtonBox(Frame):
 
 class ToolBar(Frame):
     """
-    A frame object that contains entry widgets, and a function to call the
-    appropriate model. Used to contain other defaults such as an empty
-    dictionary, etc.
+    A frame object that contains entry widgets, a dictionary for
+    containing the values of children widgets, and a function to call the
+    appropriate model.
     """
 
     def __init__(self, parent=None, **options):
@@ -222,7 +227,18 @@ class DNMR_TwoSingletBar(ToolBar):
         for child in self.winfo_children():
             child.to_dict()
 
-    def call_model(self):
+        Button(self, text='Model 1', bg='blue',
+               command=lambda: self.call_model1()).pack(side=LEFT)
+        Button(self, text='Model 2', command=lambda: self.call_model2()).pack(
+            side=LEFT)
+        self.status = Label(root, text='Model 1')
+        self.status.pack(side=TOP, expand=Y, fill=X)
+        self.call_model = self.call_model1
+
+    # @profile  # comment out when not running kernprof test
+    def call_model1(self):
+        self.status.config(text='Model 1')
+        self.call_model = self.call_model1
         _Va = self.vars['Va']
         _Vb = self.vars['Vb']
         _ka = self.vars['ka']
@@ -230,9 +246,28 @@ class DNMR_TwoSingletBar(ToolBar):
         _Wb = self.vars['Wb']
         _pa = self.vars['%a'] / 100
 
-        x, y = dnmrplot_2spin(_Va, _Vb, _ka, _Wa, _Wb, _pa)
-        canvas.clear()
-        canvas.plot(x, y)
+        print('calling model 1')
+        for i in range(10):
+            x, y = plot1(_Va, _Vb, _ka, _Wa, _Wb, _pa)
+            canvas.clear()
+            canvas.plot(x, y)
+
+    # @profile  # comment out when not running kernprof test
+    def call_model2(self):
+        self.status.config(text='Model 2')
+        self.call_model = self.call_model2
+        _Va = self.vars['Va']
+        _Vb = self.vars['Vb']
+        _ka = self.vars['ka']
+        _Wa = self.vars['Wa']
+        _Wb = self.vars['Wb']
+        _pa = self.vars['%a'] / 100
+
+        print('calling model 2')
+        for i in range(10):
+            x, y = plot2(_Va, _Vb, _ka, _Wa, _Wb, _pa)
+            canvas.clear()
+            canvas.plot(x, y)
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -255,7 +290,7 @@ class MPLgraph(FigureCanvasTkAgg):
         self.f.canvas.draw()
 
 
-def dnmrplot_2spin(va, vb, ka, Wa, Wb, pa):
+def plot1(va, vb, ka, Wa, Wb, pa):
     """
     plots the function nmrmath.dnmr_2spin
     Currently assumes va > vb
@@ -264,20 +299,28 @@ def dnmrplot_2spin(va, vb, ka, Wa, Wb, pa):
     l_limit = vb - 50
     r_limit = va + 50
     x = np.linspace(l_limit, r_limit, 800)
-    # y = dnmr_2spin(x, va, vb, ka, Wa, Wb, pa)
-
-    # OR:
-
-    dfunc = d2s_func(va, vb, ka, Wa, Wb, pa)
-    y = dfunc(x)
-
-    # OR:
-    # y = reich(x, va, vb, ka, Wa, Wb, pa)
+    y = model1(x, va, vb, ka, Wa, Wb, pa)
 
     return x, y
 
 
-def dnmr_2spin(v, va, vb, ka, Wa, Wb, pa):
+def plot2(va, vb, ka, Wa, Wb, pa):
+    """
+    plots the function nmrmath.dnmr_2spin
+    Currently assumes va > vb
+    """
+
+    l_limit = vb - 50
+    r_limit = va + 50
+    x = np.linspace(l_limit, r_limit, 800)
+
+    model2 = model2maker(va, vb, ka, Wa, Wb, pa)
+    y = model2(x)
+
+    return x, y
+
+
+def model1(v, va, vb, ka, Wa, Wb, pa):
     """
     A translation of the equation from Sandström's Dynamic NMR Spectroscopy,
     p. 14, for the uncoupled 2-site exchange simulation.
@@ -310,7 +353,7 @@ def dnmr_2spin(v, va, vb, ka, Wa, Wb, pa):
     return I
 
 
-def d2s_func(va, vb, ka, Wa, Wb, pa):
+def model2maker(va, vb, ka, Wa, Wb, pa):
     """
     Attempt to create a function factory that creates tailored
     dnmr_2spin-like functions for greater speed.
@@ -336,14 +379,14 @@ def d2s_func(va, vb, ka, Wa, Wb, pa):
     R = pi * dv * tau * ((1 / T2b) - (1 / T2a)) + pi * dv * (pa - pb)
     r = 2 * pi * (1 + tau * ((1 / T2a) + (1 / T2b)))
 
-    def maker(v):
+    def model2(v):
         nonlocal Dv, P, Q, R
         Dv -= v
         P -= tau * 4 * pi_squared * (Dv ** 2)
         Q += tau * 2 * pi * Dv
         R += Dv * r
         return(P * p + Q * R) / (P ** 2 + R ** 2)
-    return maker
+    return model2
 
 
 root = Tk()
