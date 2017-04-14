@@ -1133,4 +1133,14 @@ canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
 Button(root, text="clear", command=lambda: canvas.clear()).pack(side=BOTTOM)
 
-root.mainloop()
+#root.mainloop()
+
+#workaround fix for Tk problems and mac mouse/trackpad:
+
+while True:
+    try:
+        root.mainloop()
+        break
+    except UnicodeDecodeError:
+        pass
+
