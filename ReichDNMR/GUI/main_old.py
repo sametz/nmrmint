@@ -122,7 +122,7 @@ class ModelFrames(GuiMixin, Frame):
 
     def add_dnmr_buttons(self):
         """'DNMR': models for DNMR line shape analysis"""
-        dnmr_buttons = (('2-spin', lambda: none),
+        dnmr_buttons = (('2-spin', lambda: None),
                         ('AB Coupled', lambda: None))
         self.DNMR_Buttons = RadioFrame(self,
                                        buttons=dnmr_buttons,
@@ -686,4 +686,13 @@ canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
 Button(root, text='clear', command=lambda: canvas.clear()).pack(side=BOTTOM)
 
-root.mainloop()
+#root.mainloop()
+
+#workaround fix for Tk problems and mac mouse/trackpad:
+
+while True:
+    try:
+        root.mainloop()
+        break
+    except UnicodeDecodeError:
+        pass

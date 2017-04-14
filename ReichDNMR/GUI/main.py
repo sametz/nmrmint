@@ -349,8 +349,9 @@ class DNMR_AB_Bar(ToolBar):
         Vb = VarButtonBox(self, name='Vb', default=135.00)
         J = VarButtonBox(self, name='J', default=12.00)
         kAB = VarButtonBox(self, name='kAB', default=1.50)
-        W = VarButtonBox(self, name='W', default=0.5)
-        for widget in [Va, Vb, J, kAB, W]:
+        W_ = VarButtonBox(self, name='W', default=0.5)  # W is a tkinter string,
+                                                        # so used W_
+        for widget in [Va, Vb, J, kAB, W_]:
             widget.pack(side=LEFT)
 
         # initialize self.vars with toolbox defaults
