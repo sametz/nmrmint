@@ -79,9 +79,9 @@ def hamiltonian(freqlist, couplings):
     nspins = len(freqlist)
 
     # Define Pauli matrices
-    sigma_x = np.matrix([[0, 1/2], [1/2, 0]])
-    sigma_y = np.matrix([[0, -1j/2], [1j/2, 0]])
-    sigma_z = np.matrix([[1/2, 0], [0, -1/2]])
+    sigma_x = np.matrix([[0, 1 / 2], [1 / 2, 0]])
+    sigma_y = np.matrix([[0, -1j / 2], [1j / 2, 0]])
+    sigma_z = np.matrix([[1 / 2, 0], [0, -1 / 2]])
     unit = np.matrix([[1, 0], [0, 1]])
 
     # The following empty arrays will be used to store the
@@ -205,10 +205,10 @@ def doublet(plist, J):
     J: a coupling constant {Hz}
     returns: a plist of the result of splitting every peak in plist by J
     """
-    res=[]
+    res = []
     for v, i in plist:
-        res.append((v - J/2, i/2))
-        res.append((v + J/2, i/2))
+        res.append((v - J / 2, i / 2))
+        res.append((v + J / 2, i / 2))
     return res
 
 
@@ -509,9 +509,8 @@ def ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
     """
     Refactoring of Reich's code for simulating the ABX3 system.
     """
-    va = Vcentr - Vab/2
-    vb = Vcentr + Vab\
-                  /2
+    va = Vcentr - Vab / 2
+    vb = Vcentr + Vab / 2
     a_quartet = first_order((va, 1), [(Jax, 3)])
     b_quartet = first_order((vb, 1), [(Jbx, 3)])
     res = []
@@ -666,6 +665,7 @@ def d2s_func(va, vb, ka, Wa, Wb, pa):
     r = 2 * pi * (1 + tau * ((1 / T2a) + (1 / T2b)))
 
     def maker(v):
+        # TODO: fix this function so inner scope uses _Dv, _P etc
         nonlocal Dv, P, Q, R
         Dv -= v
         P -= tau * 4 * pi_squared * (Dv ** 2)
