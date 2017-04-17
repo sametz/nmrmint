@@ -8,13 +8,11 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,\
     NavigationToolbar2TkAgg
 # implement the default mpl key bindings
-from matplotlib.backend_bases import key_press_handler  # unused for now
 from matplotlib.figure import Figure
-from ReichDNMR.nmrplot import tkplot
+from ReichDNMR.model.nmrplot import tkplot
 from tkinter import *
 from guimixin import GuiMixin  # mix-in class that provides dev tools
-from ReichDNMR.nmrmath import AB, AB2, ABX, ABX3, AAXX, first_order, AABB
-from numpy import arange, pi, sin, cos
+from ReichDNMR.model.nmrmath import AB, AB2, ABX, ABX3, AAXX, first_order, AABB
 from collections import deque
 
 
@@ -122,7 +120,7 @@ class ModelFrames(GuiMixin, Frame):
 
     def add_dnmr_buttons(self):
         """'DNMR': models for DNMR line shape analysis"""
-        dnmr_buttons = (('2-spin', lambda: none),
+        dnmr_buttons = (('2-spin', lambda: None),
                         ('AB Coupled', lambda: None))
         self.DNMR_Buttons = RadioFrame(self,
                                        buttons=dnmr_buttons,
@@ -686,4 +684,13 @@ canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
 Button(root, text='clear', command=lambda: canvas.clear()).pack(side=BOTTOM)
 
-root.mainloop()
+#root.mainloop()
+
+#workaround fix for Tk problems and mac mouse/trackpad:
+
+while True:
+    try:
+        root.mainloop()
+        break
+    except UnicodeDecodeError:
+        pass

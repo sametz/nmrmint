@@ -1,7 +1,7 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from ReichDNMR.nmrmath import dnmr_2spin, dnmr_AB, d2s_func, reich
+import numpy as np
+
+from ReichDNMR.model.nmrmath import dnmr_AB, d2s_func
 
 
 def lorentz(v, v0, T2):
