@@ -17,14 +17,25 @@ from matplotlib.figure import Figure
 
 class MPLgraph(FigureCanvasTkAgg):
     def __init__(self, figure, master=None, **options):
+        print('initializing MPLgraph super')
         FigureCanvasTkAgg.__init__(self, figure, master, **options)
+        print('super initialized')
         self.f = figure
+        print('figure associated with self.f')
         self.add = figure.add_subplot(111)
+        print('called figure.add_subplot')
         self.add.invert_xaxis()
-        self.show()
+        print('inverted x axis')
+        # line below used/worked in past...but is it really needed?
+        # self.show()
+        # print('showing MPLgraph')
         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        print('tk widget packed')
         self.toolbar = NavigationToolbar2TkAgg(self, master)
+        print('created toolbar')
         self.toolbar.update()
+        print('toolbar updated')
+        print('MPLgraph initialized')
 
     def plot(self, x, y):
         self.add.plot(x, y)
@@ -52,8 +63,16 @@ class View(Frame):
         spinbar_kwargs = {'controller': self.controller,
                           'realtime': True}
         self.initialize_spinbars(**spinbar_kwargs)
-        self.add_abc_buttons()
+        self.add_calc_type_frame()
+        print('returned from add_calc_type frame; ')
+        self.add_model_frames()
+        # print('adding abc buttons')
+        # self.add_abc_buttons()
+        print('returned from adding abc buttons')
+        print('adding plot')
         self.add_plot()
+        print('plot added')
+        print('View initialization complete')
 
     def initialize_spinbars(self, **kwargs):
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
@@ -64,6 +83,63 @@ class View(Frame):
         self.currentbar = self.spinbars[0]  # two spins default
         self.currentbar.grid(sticky=W)
 
+    def add_calc_type_frame(self):
+        print('add_calc_type_frame called')
+        title = 'Calc Type'
+        print('assigned title')
+        buttons = (('Multiplet', lambda: self.select_calc_type('multiplet')),
+                   ('ABC...', lambda: self.select_calc_type('abc')),
+                   ('DNMR', lambda: self.select_calc_type('dnmr')),
+                   ('Custom', lambda: self.select_calc_type('custom')))
+        print('defined buttons')
+        self.CalcTypeFrame = RadioFrame(self.SideFrame,
+                                        buttons=buttons, title=title,
+                                        relief=SUNKEN, borderwidth=1)
+        print('instantiated CalcTypeFrame')
+        self.CalcTypeFrame.pack(side=TOP, expand=NO, fill=X)
+        print('packed CalcTypeFrame')
+
+    def add_model_frames(self):
+        # Quick hack to see if we can circumvent bug due to grid/pack mixing
+        self.model_frame = Frame(self.SideFrame)
+        self.model_frame.pack(side=TOP, anchor=N, expand=YES, fill=X)
+        # default grid configures are zero, so next 2 lines unneccessary?
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        # self.add_multiplet_buttons()
+        self.add_abc_buttons()
+        # self.add_dnmr_buttons()
+        self.add_custom_buttons()
+
+        self.framedic = {#'multiplet': self.MultipletButtons,
+                         'abc': self.ABC_Buttons,
+                         #'dnmr': self.DNMR_Buttons,
+                         'custom': self.Custom}
+        self.currentframe = 'abc'  # TODO: change to 'multiplet' when ready
+
+    def add_multiplet_buttons(self):
+        """"'Multiplet' menu: 'canned' solutions for common spin systems"""
+        multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
+                             ('AB2', lambda: self.select_toolbar(self.ab2)),
+                             ('ABX', lambda: self.select_toolbar(self.abx)),
+                             ('ABX3', lambda: self.select_toolbar(self.abx3)),
+                             ("AA'XX'", lambda: self.select_toolbar(self.aaxx)),
+                             ('1stOrd',
+                              lambda: self.select_toolbar(self.firstorder)),
+                             ("AA'BB'", lambda: self.select_toolbar(self.aabb)))
+        self.MultipletButtons = RadioFrame(self.model_frame,
+                                           buttons=multiplet_buttons,
+                                           title='Multiplet')
+        self.MultipletButtons.grid(row=0, column=0, sticky=N)
+        self.ab = AB_Bar(TopFrame)
+        self.ab2 = AB2_Bar(TopFrame)
+        self.abx = ABX_Bar(TopFrame)
+        self.abx3 = ABX3_Bar(TopFrame)
+        self.aaxx = AAXX_Bar(TopFrame)
+        self.firstorder = FirstOrder_Bar(TopFrame)
+        self.aabb = AABB_Bar(TopFrame)
+
     def add_abc_buttons(self):
         """Populates ModelFrame with a RadioFrame for selecting the number of
         nuclei and the corresponding toolbar.
@@ -73,17 +149,46 @@ class View(Frame):
              lambda spins=spins: self.select_toolbar(self.spinbars[spins - 2])
              ) for spins in self.spin_range]
         abc_buttons = tuple(abc_buttons_list)
-        self.ABC_Buttons = RadioFrame(self.SideFrame,
+        self.ABC_Buttons = RadioFrame(self.model_frame,
+                                      # self.SideFrame,
                                       buttons=abc_buttons,
                                       title='Number of Spins')
         self.ABC_Buttons.grid(row=0, column=0, sticky=N)
 
+    def add_dnmr_buttons(self):
+        """'DNMR': models for DNMR line shape analysis"""
+        dnmr_buttons = (('2-spin',
+                         lambda: self.select_toolbar(self.TwoSpinBar)),
+                        ('AB Coupled',
+                         lambda: self.select_toolbar(self.DNMR_AB_Bar)))
+        self.DNMR_Buttons = RadioFrame(self.model_frame,
+                                       buttons=dnmr_buttons,
+                                       title='DNMR')
+        self.TwoSpinBar = DNMR_TwoSingletBar(TopFrame)
+        self.DNMR_AB_Bar = DNMR_AB_Bar(TopFrame)
+
+    def add_custom_buttons(self):
+        # Custom: not implemented yet. Placeholder follows
+        self.Custom = Label(self.model_frame,
+                            text='Custom models not implemented yet')
+
     def add_plot(self):
+        print('creating figure')
         self.figure = Figure(figsize=(5, 4), dpi=100)
+        print('creating canvas')
         self.canvas = MPLgraph(self.figure, self)
+        print('packing canvas')
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+        print('adding clear button')
         Button(self, text="clear", command=lambda: self.canvas.clear()).pack(
             side=BOTTOM)
+        print('finished add_plot')
+
+    def select_calc_type(self, calc_type):
+        if calc_type != self.currentframe:
+            self.framedic[self.currentframe].grid_remove()
+            self.currentframe = calc_type
+            self.framedic[self.currentframe].grid()
 
     def select_toolbar(self, toolbar):
         """When called by a RadioButton, hides the old toolbar, shows the new

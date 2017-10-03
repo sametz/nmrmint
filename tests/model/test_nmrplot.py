@@ -1,6 +1,6 @@
 import numpy as np
 from pytest import approx
-from secondorder.model import nmrplot
+from ReichDNMR.model import nmrplot
 from .accepted_data import ADD_SIGNALS_DATASET
 
 

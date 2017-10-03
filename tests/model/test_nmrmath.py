@@ -1,4 +1,4 @@
-from secondorder.model.nmrmath import *
+from ReichDNMR.model.nmrmath import *
 import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.linalg import eigh

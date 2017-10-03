@@ -4,34 +4,37 @@ import numpy as np
 from ReichDNMR.model.nmrmath import dnmr_AB, d2s_func
 
 
-def lorentz(v, v0, T2):
+def lorentz(v, v0, I, w):
     """
-    Lorentzian line shape function taking the form as in PSB. T2 acts as both
-    a scaling factor and a line-width factor. Smaller T2 gives a shorter and
-    broader signal.
-    :param v: frequency (x coordinate)
-    :param v0: the exact frequency of the peak
-    :param T2: transverse (spin-spin) relaxation rate constant
-    returns: intensity (y coordinate)
+    A lorentz function that takes linewidth at half intensity (w) as a
+    parameter.
+    :param v: Array of values at which to evaluate distribution.
+    :param v0: Center of the distribution.
+    :param w: Peak width at half max intensity
+
+    :returns: Distribution evaluated at points in x.
     """
-    pi = np.pi
-    return T2 / (pi * (1 + (T2**2) * ((v - v0)**2)))
+    return I * ((0.5 * w) ** 2 / ((0.5 * w) ** 2 + (v - v0) ** 2))
 
 
-def lorentz2(v, v0, I, Q=1):
+def add_signals(linspace, peaklist, w):
     """
-    Modified Lorentzian function. T2 replaced by separate inputs for intensity
-    and line width.
-    :param v:  the current frequency being calculated (x coordinate)
-    :param v0: the exact frequency of the signal that is
-        being converted to a Lorentzian distribution
-    :param I:  max intensity
-    :param Q:  fudge factor for line width (defaults to 1)
+    Given a numpy linspace a spectrum as a list of (frequency, intensity)
+    tuples, and a linewidth, returns an array of y coordinates for the
+    lineshape.
+
+    :param linspace: a numpy linspace of x coordinates for the lineshape.
+    :param peaklist: a list of (frequency, intensity) tuples
+    :param w: peak width at half maximum intensity
+    :returns: array of y coordinates for the lineshape
     """
-    pi = np.pi
-    return I / (pi * (1 + (Q**2) * ((v - v0)**2)))
+    result = lorentz(linspace, peaklist[0][0], peaklist[0][1], w)
+    for v, i in peaklist[1:]:
+        result += lorentz(linspace, v, i, w)
+    return result
 
-
+# add_signals should supercede the adder function below--
+# schedule for deletion
 def adder(x, plist, Q=2):
     """
     :param x: the x coordinate (relative frequency in Hz)
@@ -64,12 +67,12 @@ def nmrplot(spectrum, y=1):
     return
 
 
-def tkplot(spectrum, y=4):
+def tkplot(spectrum, w=0.5):
     spectrum.sort()
     r_limit = spectrum[-1][0] + 50
     l_limit = spectrum[0][0] - 50
     x = np.linspace(l_limit, r_limit, 2400)
-    y = adder(x, spectrum, Q=y)
+    y = add_signals(x, spectrum, w)
     return x, y
 
 

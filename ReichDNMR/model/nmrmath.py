@@ -28,7 +28,6 @@ def popcount(n=0):
     return bin(n).count('1')
 
 
-# noinspection PyShadowingNames
 def is_allowed(m=0, n=0):
     """
     determines if a transition between two spin states is allowed or forbidden.
@@ -67,7 +66,6 @@ def transition_matrix(n):
     return T
 
 
-# noinspection PyShadowingNames
 def hamiltonian(freqlist, couplings):
     """
     Computes the spin Hamiltonian for spin-1/2 nuclei.
@@ -119,7 +117,7 @@ def hamiltonian(freqlist, couplings):
 
     # Testing with MATLAB discovered J must be /2.
     # Believe it is related to the fact that in the SpinDynamics.org simulation
-    # freqs are *2pi, but Js by pi only. Video is supposed to explain why.
+    # freqs are *2pi, but Js by pi only.
     scalars = 0.5 * couplings
     scalars = np.multiply(scalars, Lproduct)
     for n in range(nspins):
@@ -129,7 +127,6 @@ def hamiltonian(freqlist, couplings):
     return H
 
 
-# noinspection PyPep8Naming,PyShadowingNames
 def simsignals(H, nspins):
     """
     Solves the spin Hamiltonian H and returns a list of (frequency, intensity)
@@ -173,7 +170,6 @@ def simsignals(H, nspins):
     return spectrum
 
 
-# noinspection PyUnreachableCode,PyPep8Naming,PyShadowingNames
 def nspinspec(freqs, couplings):
     """
     Function that calculates a spectrum for n spin-half nuclei.
