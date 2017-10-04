@@ -103,6 +103,7 @@ class ABX_Bar(ToolBar):
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
+        self.model = 'ABX'
         Jab = VarBox(self, name='Jab', default=12.00)
         Jax = VarBox(self, name='Jax', default=2.00)
         Jbx = VarBox(self, name='Jbx', default=8.00)
@@ -117,17 +118,17 @@ class ABX_Bar(ToolBar):
         for child in self.winfo_children():
             child.to_dict()
 
-    def call_model(self):
-        _Jab = self.vars['Jab']
-        _Jax = self.vars['Jax']
-        _Jbx = self.vars['Jbx']
-        _Vab = self.vars['Vab']
-        _Vcentr = self.vars['Vcentr']
-        spectrum = ABX(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
-                       WdthHz=300)
-        x, y = tkplot(spectrum)
-        canvas.clear()
-        canvas.plot(x, y)
+    # def call_model(self):
+    #     _Jab = self.vars['Jab']
+    #     _Jax = self.vars['Jax']
+    #     _Jbx = self.vars['Jbx']
+    #     _Vab = self.vars['Vab']
+    #     _Vcentr = self.vars['Vcentr']
+    #     spectrum = ABX(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
+    #                    WdthHz=300)
+    #     x, y = tkplot(spectrum)
+    #     canvas.clear()
+    #     canvas.plot(x, y)
 
 
 class ABX3_Bar(ToolBar):

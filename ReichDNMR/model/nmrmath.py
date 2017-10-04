@@ -398,7 +398,7 @@ def AB2(J, dV, Vab):  # Wa, RightHz, WdthHz not implemented yet
     return list(zip(vList, IList))
 
 
-def ABX(Jab, Jbx, Jax, dVab, Vab, Wa, RightHz, WdthHz):
+def ABX(Jab, Jbx, Jax, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB2 spin system.
     Jab is the A-B coupling constant (Hz)
@@ -414,6 +414,12 @@ def ABX(Jab, Jbx, Jax, dVab, Vab, Wa, RightHz, WdthHz):
     # So, variables being placed by position in the def header--CAUTION
     # From main passed in order of: Jab, Jax, Jbx, Vab,  Vcentr, ...
     # Here read in as:              Jab, Jbx, Jax, dVab, Vab,    ...
+
+    # CHANGE: with switch to kwargs used in function calls, the following
+    # code matches this Reich code to the current view dictionary
+    Jbx, Jax = Jax, Jbx
+    dVab = Vab
+    Vab = Vcentr
 
     # dVab = va - vb  # Reich: Vab
     # Vab = (va + vb) / 2  # Reich: ABOff
