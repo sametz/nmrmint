@@ -73,24 +73,25 @@ class AB2_Bar(ToolBar):
     """
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
-        Jab    = VarBox(self, name='Jab',    default=12.00)
-        Vab    = VarBox(self, name='Vab',    default=15.00)
-        Vcentr = VarBox(self, name='Vcentr', default=150)
+        self.model = 'AB2'
+        Jab = VarBox(self, name='J',    default=12.00)
+        dV = VarBox(self, name='dV',    default=15.00)
+        Vab = VarBox(self, name='Vab', default=150)
         Jab.pack(side=LEFT)
+        dV.pack(side=LEFT)
         Vab.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
         # initialize self.vars with toolbox defaults
         for child in self.winfo_children():
             child.to_dict()
 
-    def call_model(self):
-        _Jab = self.vars['Jab']
-        _Vab = self.vars['Vab']
-        _Vcentr = self.vars['Vcentr']
-        spectrum = AB2(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
-        x, y = tkplot(spectrum)
-        canvas.clear()
-        canvas.plot(x, y)
+    # def call_model(self):
+    #     _Jab = self.vars['Jab']
+    #     _Vab = self.vars['Vab']
+    #     _Vcentr = self.vars['Vcentr']
+    #     spectrum = AB2(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
+    #     x, y = tkplot(spectrum)
+    #     canvas.clear()
+    #     canvas.plot(x, y)
 
 
 class ABX_Bar(ToolBar):

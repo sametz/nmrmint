@@ -321,10 +321,10 @@ def AB(Jab, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     return list(zip(vList, IList))
 
 
-def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
+def AB2(J, dV, Vab):  # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB2 spin system.
-    Jab is the A-B coupling constant (Hz)
+    J is the A-B coupling constant (Hz)
     dV is the difference in nuclei frequencies in the absence of coupling (Hz)
     Vab is the frequency for the center of the AB2 signal
     Wa is width of peak at half-height (not implemented yet)

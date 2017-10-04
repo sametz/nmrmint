@@ -11,7 +11,7 @@ Contains:
 import tkinter as tk
 
 from ReichDNMR.GUI.view import View
-from ReichDNMR.model.nmrmath import nspinspec, AB
+from ReichDNMR.model.nmrmath import nspinspec, AB, AB2
 from ReichDNMR.model.nmrplot import tkplot
 
 
@@ -41,7 +41,8 @@ class Controller:
             root: a tkinter.Tk() object
         """
         self.models = {'AB': AB,
-                  'nspin': self.update_with_dict}  # temporary hack
+                       'AB2': AB2,
+                       'nspin': self.update_with_dict}  # temporary hack
 
         self.view = View(root, self)
         self.view.pack(expand=tk.YES, fill=tk.BOTH)
@@ -90,6 +91,8 @@ class Controller:
             self.view.plot(*plotdata)
 
     def new_update(self, model, **data):
+        print('model: ', model)
+        print('data: ', data)
         plotdata = tkplot(self.models[model](**data))
         self.view.clear()
         self.view.plot(*plotdata)

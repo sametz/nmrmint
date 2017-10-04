@@ -202,6 +202,8 @@ class View(Frame):
             self.framedic[self.currentframe].grid_remove()
             self.currentframe = calc_type
             self.framedic[self.currentframe].grid()
+            # retrieve and select current active bar of frame
+            self.select_toolbar(self.active_bar_dict[self.currentframe])
 
     def select_toolbar(self, toolbar):
         """When called by a RadioButton, hides the old toolbar, shows the new
@@ -213,7 +215,8 @@ class View(Frame):
         self.currentbar.grid_remove()
         self.currentbar = toolbar
         self.currentbar.grid(sticky=W)
-
+        # record current bar of currentframe:
+        self.active_bar_dict[self.currentframe] = toolbar
         try:
             self.currentbar.request_plot()
         except ValueError:
