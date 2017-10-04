@@ -292,7 +292,7 @@ def first_order(signal, couplings, Wa=0.5, RightHz=0, WdthHz=300):
     return reduce_peaks(sorted(multiplet(signallist, couplings)))
 
 
-def AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz):
+def AB(Jab, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB quartet.
     Jab is the A-B coupling constant (Hz)

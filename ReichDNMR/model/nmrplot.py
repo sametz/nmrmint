@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 
 from ReichDNMR.model.nmrmath import dnmr_AB, d2s_func

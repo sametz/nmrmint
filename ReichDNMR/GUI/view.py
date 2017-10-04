@@ -7,7 +7,7 @@ import matplotlib
 import numpy as np
 
 from ReichDNMR.GUI.frames import RadioFrame
-from ReichDNMR.GUI.toolbars import SecondOrderSpinBar
+from ReichDNMR.GUI.toolbars import *
 
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
@@ -80,8 +80,8 @@ class View(Frame):
                                             **kwargs)
                          for spins in self.spin_range]
 
-        self.currentbar = self.spinbars[0]  # two spins default
-        self.currentbar.grid(sticky=W)
+        # self.currentbar = self.spinbars[0]  # two spins default
+        # self.currentbar.grid(sticky=W)
 
     def add_calc_type_frame(self):
         print('add_calc_type_frame called')
@@ -107,16 +107,27 @@ class View(Frame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # self.add_multiplet_buttons()
+        self.add_multiplet_buttons()
         self.add_abc_buttons()
         # self.add_dnmr_buttons()
         self.add_custom_buttons()
 
-        self.framedic = {#'multiplet': self.MultipletButtons,
+        # framedic used by CalcTypeFrame to control individual frames
+        self.framedic = {'multiplet': self.MultipletButtons,
                          'abc': self.ABC_Buttons,
                          #'dnmr': self.DNMR_Buttons,
                          'custom': self.Custom}
-        self.currentframe = 'abc'  # TODO: change to 'multiplet' when ready
+
+        # active_bar_dict used to keep track of the active model in each
+        # individual button menu.
+        self.active_bar_dict = {'multiplet': self.ab,
+                                'abc': self.ab,
+                                # 'dnmr': self.TwoSpinBar,
+                                'custom': self.ab}
+        self.currentframe = 'multiplet'
+        self.currentbar = self.ab
+        self.currentbar.grid(sticky=W)
+
 
     def add_multiplet_buttons(self):
         """"'Multiplet' menu: 'canned' solutions for common spin systems"""
@@ -132,13 +143,15 @@ class View(Frame):
                                            buttons=multiplet_buttons,
                                            title='Multiplet')
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
-        self.ab = AB_Bar(TopFrame)
-        self.ab2 = AB2_Bar(TopFrame)
-        self.abx = ABX_Bar(TopFrame)
-        self.abx3 = ABX3_Bar(TopFrame)
-        self.aaxx = AAXX_Bar(TopFrame)
-        self.firstorder = FirstOrder_Bar(TopFrame)
-        self.aabb = AABB_Bar(TopFrame)
+
+        bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+        self.ab = AB_Bar(**bar_kwargs)
+        self.ab2 = AB2_Bar(**bar_kwargs)
+        self.abx = ABX_Bar(**bar_kwargs)
+        self.abx3 = ABX3_Bar(**bar_kwargs)
+        self.aaxx = AAXX_Bar(**bar_kwargs)
+        self.firstorder = FirstOrder_Bar(**bar_kwargs)
+        self.aabb = AABB_Bar(**bar_kwargs)
 
     def add_abc_buttons(self):
         """Populates ModelFrame with a RadioFrame for selecting the number of
@@ -153,7 +166,7 @@ class View(Frame):
                                       # self.SideFrame,
                                       buttons=abc_buttons,
                                       title='Number of Spins')
-        self.ABC_Buttons.grid(row=0, column=0, sticky=N)
+        # self.ABC_Buttons.grid(row=0, column=0, sticky=N)
 
     def add_dnmr_buttons(self):
         """'DNMR': models for DNMR line shape analysis"""
