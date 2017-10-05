@@ -11,7 +11,9 @@ Contains:
 import tkinter as tk
 
 from ReichDNMR.GUI.view import View
-from ReichDNMR.model.nmrmath import nspinspec, AB, AB2, ABX
+from ReichDNMR.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
+                                     first_order)
+
 from ReichDNMR.model.nmrplot import tkplot
 
 
@@ -43,6 +45,10 @@ class Controller:
         self.models = {'AB': AB,
                        'AB2': AB2,
                        'ABX': ABX,
+                       'ABX3': ABX3,
+                       'AABB': AABB,
+                       'AAXX': AAXX,
+                       'first_order': first_order,
                        'nspin': self.update_with_dict}  # temporary hack
 
         self.view = View(root, self)

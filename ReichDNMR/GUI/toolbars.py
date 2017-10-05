@@ -140,6 +140,7 @@ class ABX3_Bar(ToolBar):
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
+        self.model = 'ABX3'
         Jab = VarBox(self, name='Jab', default=-12.00)
         Jax = VarBox(self, name='Jax', default=7.00)
         Jbx = VarBox(self, name='Jbx', default=7.00)
@@ -154,17 +155,17 @@ class ABX3_Bar(ToolBar):
         for child in self.winfo_children():
             child.to_dict()
 
-    def call_model(self):
-        _Jab = self.vars['Jab']
-        _Jax = self.vars['Jax']
-        _Jbx = self.vars['Jbx']
-        _Vab = self.vars['Vab']
-        _Vcentr = self.vars['Vcentr']
-        spectrum = ABX3(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
-                        WdthHz=300)
-        x, y = tkplot(spectrum)
-        canvas.clear()
-        canvas.plot(x, y)
+    # def call_model(self):
+    #     _Jab = self.vars['Jab']
+    #     _Jax = self.vars['Jax']
+    #     _Jbx = self.vars['Jbx']
+    #     _Vab = self.vars['Vab']
+    #     _Vcentr = self.vars['Vcentr']
+    #     spectrum = ABX3(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
+    #                     WdthHz=300)
+    #     x, y = tkplot(spectrum)
+    #     canvas.clear()
+    #     canvas.plot(x, y)
 
 
 class AAXX_Bar(ToolBar):
@@ -175,11 +176,18 @@ class AAXX_Bar(ToolBar):
     """
 
     def __init__(self, parent=None, **options):
+        # WINDNMR uses all caps JAA', JXX', etc. However, the model function
+        # uses Jab, Jax etc. Also, with conversion to using kwargs instead of
+        #  args, can't have dict keys with apostrophes. So, VarBox names
+        # coverted to args in nmrmath.AAXX for now. Future: probably want to
+        # refactor so that toolbar widgets can have separate labels and dict
+        # keys.
         ToolBar.__init__(self, parent, **options)
-        Jaa = VarBox(self, name="JAA'", default=15.00)
-        Jxx = VarBox(self, name="JXX'", default=-10.00)
-        Jax = VarBox(self, name="JAX", default=40.00)
-        Jax_prime = VarBox(self, name="JAX'", default=6.00)
+        self.model = 'AAXX'
+        Jaa = VarBox(self, name="Jaa", default=15.00)
+        Jxx = VarBox(self, name="Jxx", default=-10.00)
+        Jax = VarBox(self, name="Jax", default=40.00)
+        Jax_prime = VarBox(self, name="Jax_prime", default=6.00)
         Vcentr = VarBox(self, name="Vcentr", default=150)
         Jaa.pack(side=LEFT)
         Jxx.pack(side=LEFT)
@@ -190,20 +198,22 @@ class AAXX_Bar(ToolBar):
         for child in self.winfo_children():
             child.to_dict()
 
-    def call_model(self):
-        _Jaa = self.vars["JAA'"]
-        _Jxx = self.vars["JXX'"]
-        _Jax = self.vars["JAX"]
-        _Jax_prime = self.vars["JAX'"]
-        _Vcentr = self.vars["Vcentr"]
-        spectrum = AAXX(_Jaa, _Jxx, _Jax, _Jax_prime, _Vcentr,
-                        Wa=0.5, RightHz=0, WdthHz=300)
-        x, y = tkplot(spectrum)
-        canvas.clear()
-        canvas.plot(x, y)
+    # def call_model(self):
+    #     _Jaa = self.vars["JAA'"]
+    #     _Jxx = self.vars["JXX'"]
+    #     _Jax = self.vars["JAX"]
+    #     _Jax_prime = self.vars["JAX'"]
+    #     _Vcentr = self.vars["Vcentr"]
+    #     spectrum = AAXX(_Jaa, _Jxx, _Jax, _Jax_prime, _Vcentr,
+    #                     Wa=0.5, RightHz=0, WdthHz=300)
+    #     x, y = tkplot(spectrum)
+    #     canvas.clear()
+    #     canvas.plot(x, y)
 
 
 class AABB_Bar(ToolBar):
+    # see comments to AAXX_bar for problem. Here, will try to customize
+    # request_plot to work around the label conflict
     """
     Creates a bar of AA'BB' spin system inputs. Currently assumes "canvas" is
     the MPLGraph instance.
@@ -212,6 +222,7 @@ class AABB_Bar(ToolBar):
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
+        self.model = 'AABB'
         Vab = VarBox(self, name='VAB', default=40.00)
         Jaa = VarBox(self, name="JAA'", default=15.00)
         Jbb = VarBox(self, name="JBB'", default=-10.00)
@@ -228,18 +239,25 @@ class AABB_Bar(ToolBar):
         for child in self.winfo_children():
             child.to_dict()
 
-    def call_model(self):
+    def request_plot(self):
+        kwargs = self.make_kwargs()
+        self.controller.new_update(self.model, **kwargs)
+
+    def make_kwargs(self):
         _Vab = self.vars['VAB']
         _Jaa = self.vars["JAA'"]
         _Jbb = self.vars["JBB'"]
         _Jab = self.vars["JAB"]
         _Jab_prime = self.vars["JAB'"]
         _Vcentr = self.vars["Vcentr"]
-        spectrum = AABB(_Vab, _Jaa, _Jbb, _Jab, _Jab_prime, _Vcentr,
-                        Wa=0.5, RightHz=0, WdthHz=300)
-        x, y = tkplot(spectrum)
-        canvas.clear()
-        canvas.plot(x, y)
+
+        data = {'Vab': _Vab,
+                'Jaa': _Jaa,
+                'Jbb': _Jbb,
+                'Jab': _Jab,
+                'Jab_prime': _Jab_prime,
+                'Vcentr': _Vcentr}
+        return data
 
 
 class FirstOrder_Bar(ToolBar):
@@ -251,6 +269,7 @@ class FirstOrder_Bar(ToolBar):
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
+        self.model = 'first_order'
         Jax = VarBox(self, name='JAX', default=7.00)
         a = IntBox(self, name='#A', default=2)
         Jbx = VarBox(self, name='JBX', default=3.00)
@@ -273,7 +292,11 @@ class FirstOrder_Bar(ToolBar):
         for child in self.winfo_children():
             child.to_dict()
 
-    def call_model(self):
+    def request_plot(self):
+        kwargs = self.make_kwargs()
+        self.controller.new_update(self.model, **kwargs)
+
+    def make_kwargs(self):
         _Jax = self.vars['JAX']
         _a   = self.vars['#A']
         _Jbx = self.vars['JBX']
@@ -286,11 +309,9 @@ class FirstOrder_Bar(ToolBar):
         singlet = (_Vcentr, 1)  # using default intensity of 1
         allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
         couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
-        spectrum = first_order(singlet, couplings,
-                               Wa=0.5, RightHz=0, WdthHz=300)
-        x, y = tkplot(spectrum)
-        canvas.clear()
-        canvas.plot(x, y)
+        data = {'signal': singlet,
+                'couplings': couplings}
+        return data
 
 
 class SecondOrderBar(Frame):
@@ -490,7 +511,7 @@ class VarBox(Frame):
     def on_return(self, event):
         if self.entry_is_changed():
             self.to_dict()
-            self.master.call_model()
+            self.master.request_plot()
         event.widget.tk_focusNext().focus()
 
     def on_tab(self):
@@ -571,7 +592,7 @@ class IntBox(Frame):
         Return or Tab).
         """
         self.to_dict()
-        self.master.call_model()
+        self.master.request_plot()
         event.widget.tk_focusNext().focus()
 
     def to_dict(self):

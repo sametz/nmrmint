@@ -493,7 +493,7 @@ def ABX(Jab, Jbx, Jax, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     return list(zip(VList, IList))
 
 
-def AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
+def AMX3(Jab, Jax, Jbx, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     """
     Uses the AMX approximate solution described on Reich's website.
     However, WINDNMR uses a true ABX3 solution. AMX3 included here
@@ -507,7 +507,7 @@ def AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
     return res
 
 
-def ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
+def ABX3(Jab, Jax, Jbx, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     """
     Refactoring of Reich's code for simulating the ABX3 system.
     """
@@ -519,19 +519,19 @@ def ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
     for i in range(4):
         dv = b_quartet[i][0] - a_quartet[i][0]
         abcenter = (b_quartet[i][0] + a_quartet[i][0]) / 2
-        sub_abq = AB(Jab, dv, abcenter, Wa, RightHz, WdthHz)
+        sub_abq = AB(Jab, dv, abcenter)  #, Wa, RightHz, WdthHz not implemented
         scale_factor = a_quartet[i][1]
         scaled_sub_abq = [(v, i * scale_factor) for v, i in sub_abq]
         res.extend(scaled_sub_abq)
     return res
 
 
-def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
+def AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     """
     Simulates an AA'XX' spin system. Frequencies and Js in Hz.
-    Ja is the JAA' coupling constant, Jx the JXX', Jax2 the JAX,
+    Jaa is the JAA' coupling constant, Jxx the JXX', Jax the JAX,
     and JAX2 the JAX'.
-    va is the frequency for the center of the signal.
+    Vcentr is the frequency for the center of the signal.
     Wa is width of peak at half-height (not implemented yet)
     RightHz is the lower frequency limit for the window
     WdthHz is the width of the window in Hz
@@ -540,10 +540,10 @@ def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
     # Define the constants required to calculate frequencies and intensities
 
     # K, L, M, N are as defined in PSB
-    K = Ja + Jx  # Reich: K
-    M = Ja - Jx  # Reich: l
-    L = Jax1 - Jax2  # Reich: m
-    N = Jax1 + Jax2  # Reich: n
+    K = Jaa + Jxx  # Reich: K
+    M = Jaa - Jxx  # Reich: l
+    L = Jax - Jax_prime  # Reich: m
+    N = Jax + Jax_prime  # Reich: n
 
     # Retaining Reich names for next two constants
     # Suggested refactoring: don't divide by 2 here; can simplify later formulas
@@ -559,16 +559,16 @@ def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
     # Calculate the frequencies and intensities.
     # See PSB Table 6-18. Transitions 1-4 are condensed into V1 and V2.
 
-    V1 = va + N / 2
-    V2 = va - N / 2
-    V3 = va + K / 2 + p
-    V4 = va - K / 2 + p
-    V5 = va + K / 2 - p
-    V6 = va - K / 2 - p
-    V7 = va + M / 2 + r
-    V8 = va - M / 2 + r
-    V9 = va + M / 2 - r
-    V10 = va - M / 2 - r
+    V1 = Vcentr + N / 2
+    V2 = Vcentr - N / 2
+    V3 = Vcentr + K / 2 + p
+    V4 = Vcentr - K / 2 + p
+    V5 = Vcentr + K / 2 - p
+    V6 = Vcentr - K / 2 - p
+    V7 = Vcentr + M / 2 + r
+    V8 = Vcentr - M / 2 + r
+    V9 = Vcentr + M / 2 - r
+    V10 = Vcentr - M / 2 - r
 
     I1 = 2
     I2 = I1
@@ -586,7 +586,8 @@ def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
     return list(zip(VList, IList))
 
 
-def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, Wa, RightHz, WdthHz):
+def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr):
+    #Wa, RightHz, WdthHz not implemented yet
     """
     A wrapper for a second-order AA'BB' calculation, but using the
     values taken from the WINDNMR-style AA'BB' bar selected by the Multiplet
