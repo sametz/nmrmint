@@ -1,4 +1,13 @@
-# import matplotlib.pyplot as plt
+"""
+Provide functions for creating lineshapes suitable for plotting.
+
+For non-DNMR calculations, inputs are lists of (frequency, intensity) tuples,
+which then have Lorentzian distributions applied to them.
+
+For DNMR calculations, the lineshapes are directly computed. Currently,
+non-quantum mechanical formulas for two uncoupled spins and for two coupled
+spins are used.
+"""
 import numpy as np
 
 from ReichDNMR.model.nmrmath import dnmr_AB, d2s_func
@@ -77,11 +86,27 @@ def tkplot(spectrum, w=0.5):
 
 
 def dnmrplot_2spin(va, vb, ka, Wa, Wb, pa):
-    """
-    plots the function nmrmath.dnmr_2spin
-    Currently assumes va > vb
+    """Create a lineshape for the DNMR spectrum of two uncoupled nuclei
+    undergoing exchange.
+
+     :param va: The frequency of nucleus 'a' at the slow exchange limit
+    :param vb: The frequency of nucleus 'b' at the slow exchange limit
+    :param ka: The rate of nuclear exchange
+    :param Wa: The width at half heigh of the signal for nucleus a (at the slow
+    exchange limit).
+    :param Wb: The width at half heigh of the signal for nucleus b (at the slow
+    exchange limit).
+    :param pa: The fraction of the population in state a (vs. state b)
+
+    :return: a tuple of numpy arrays for frequencies (x coordinate) and
+    corresponding intensities (y coordinate). Hard-coded for 800 data points
+    and a frequency range from vb-50 to va+50.
     """
 
+    if vb > va:
+        va, vb = vb, va
+        Wa, Wb = Wb, Wa
+        pa = 1 - pa
     l_limit = vb - 50
     r_limit = va + 50
     x = np.linspace(l_limit, r_limit, 800)
@@ -100,10 +125,21 @@ def dnmrplot_2spin(va, vb, ka, Wa, Wb, pa):
 
 def dnmrplot_AB(v1, v2, J, k, W):
     """
-    plots the function nmrmath.dnmr_AB.
-    Currently assumes va > vb
-    """
+    Create a lineshape for the DNMR spectrum of two uncoupled nuclei
+    undergoing exchange.
 
+    :param v1: The frequency of nucleus 'a' at the slow exchange limit
+    :param v2: The frequency of nucleus 'b' at the slow exchange limit
+    :param J: The coupling constant between nuclei a and b
+    :param k: The rate of two-site exchange of nuclei a and b
+    :param W: The line width at the slow exchange limit
+
+    :return: a tuple of numpy arrays for frequencies (x coordinate) and
+    corresponding intensities (y coordinate). Hard-coded for 800 data points
+    and a frequency range from vb-50 to va+50.
+    """
+    if v2 > v1:
+        v1, v2 = v2, v1
     l_limit = v2 - 50
     r_limit = v1 + 50
     x = np.linspace(l_limit, r_limit, 800)
