@@ -109,20 +109,20 @@ class View(Frame):
 
         self.add_multiplet_buttons()
         self.add_abc_buttons()
-        # self.add_dnmr_buttons()
+        self.add_dnmr_buttons()
         self.add_custom_buttons()
 
         # framedic used by CalcTypeFrame to control individual frames
         self.framedic = {'multiplet': self.MultipletButtons,
                          'abc': self.ABC_Buttons,
-                         #'dnmr': self.DNMR_Buttons,
+                         'dnmr': self.DNMR_Buttons,
                          'custom': self.Custom}
 
         # active_bar_dict used to keep track of the active model in each
         # individual button menu.
         self.active_bar_dict = {'multiplet': self.ab,
                                 'abc': self.ab,
-                                # 'dnmr': self.TwoSpinBar,
+                                'dnmr': self.TwoSpinBar,
                                 'custom': self.ab}
         self.currentframe = 'multiplet'
         self.currentbar = self.ab
@@ -177,8 +177,10 @@ class View(Frame):
         self.DNMR_Buttons = RadioFrame(self.model_frame,
                                        buttons=dnmr_buttons,
                                        title='DNMR')
-        self.TwoSpinBar = DNMR_TwoSingletBar(TopFrame)
-        self.DNMR_AB_Bar = DNMR_AB_Bar(TopFrame)
+
+        bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+        self.TwoSpinBar = DNMR_TwoSingletBar(**bar_kwargs)
+        self.DNMR_AB_Bar = DNMR_AB_Bar(**bar_kwargs)
 
     def add_custom_buttons(self):
         # Custom: not implemented yet. Placeholder follows

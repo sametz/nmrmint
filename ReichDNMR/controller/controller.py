@@ -14,7 +14,7 @@ from ReichDNMR.GUI.view import View
 from ReichDNMR.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
                                      first_order)
 
-from ReichDNMR.model.nmrplot import tkplot
+from ReichDNMR.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
 
 
 class Controller:
@@ -49,7 +49,9 @@ class Controller:
                        'AABB': AABB,
                        'AAXX': AAXX,
                        'first_order': first_order,
-                       'nspin': self.update_with_dict}  # temporary hack
+                       'nspin': self.update_with_dict,  # temporary hack
+                       'DNMR_Two_Singlets': dnmrplot_2spin,
+                       'DNMR_AB': dnmrplot_AB}
 
         self.view = View(root, self)
         self.view.pack(expand=tk.YES, fill=tk.BOTH)
@@ -97,10 +99,13 @@ class Controller:
             self.view.clear()
             self.view.plot(*plotdata)
 
-    def new_update(self, model, **data):
-        print('model: ', model)
-        print('data: ', data)
-        plotdata = tkplot(self.models[model](**data))
+    def new_update(self, model, *args, **data):
+        if 'DNMR' not in model:
+            print('model: ', model)
+            print('data: ', data)
+            plotdata = tkplot(self.models[model](**data))
+        else:  # For now DNMR will use args not kwargs to match old interfaces
+            plotdata = self.models[model](*args)
         self.view.clear()
         self.view.plot(*plotdata)
 
