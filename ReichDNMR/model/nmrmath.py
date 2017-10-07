@@ -651,7 +651,75 @@ def dnmr_2spin(v, va, vb, ka, Wa, Wb, pa):
     return I
 
 
-def d2s_func(va, vb, ka, Wa, Wb, pa):
+def d2s_func(va, vb, ka, wa, wb, pa):
+    """
+    Create a function that requires only frequency as an argurment, and used to
+    calculate intensities across array of frequencies in the DNMR
+    spectrum for two uncoupled spin-half nuclei.
+
+    The idea is to calculate expressions
+    that are independant of frequency only once, and then use them in a new
+    function that depends only on v. This would avoid unneccessarily
+    repeating some of the same operations.
+
+    This function-within-a-function should be refactored to
+    function-within-class!
+
+    :param va: The frequency of nucleus 'a' at the slow exchange limit. va > vb
+    :param vb: The frequency of nucleus 'b' at the slow exchange limit. vb < va
+    :param ka: The rate constant for state a--> state b
+    :param wa: The width at half heigh of the signal for nucleus a (at the slow
+    exchange limit).
+    :param wb: The width at half heigh of the signal for nucleus b (at the slow
+    exchange limit).
+    :param pa: The fraction of the population in state a.
+    :param pa: fraction of population in state a
+    wa, wb: peak widths at half height (slow exchange), used to calculate T2s
+
+    returns: a function that takes v (x coord or numpy linspace) as an argument
+    and returns intensity (y).
+    """
+
+    # TODO: factor pis out; redo comments to explain excision of v-independent
+    # terms
+
+    pi = np.pi
+    pi_squared = pi ** 2
+    T2a = 1 / (pi * wa)
+    T2b = 1 / (pi * wb)
+    pb = 1 - pa
+    tau = pb / ka
+    dv = va - vb
+    Dv = (va + vb) / 2
+    P = tau * (1 / (T2a * T2b) + pi_squared * (dv ** 2)) + (pa / T2a + pb / T2b)
+    p = 1 + tau * ((pb / T2a) + (pa / T2b))
+    Q = tau * (- pi * dv * (pa - pb))
+    R = pi * dv * tau * ((1 / T2b) - (1 / T2a)) + pi * dv * (pa - pb)
+    r = 2 * pi * (1 + tau * ((1 / T2a) + (1 / T2b)))
+
+    def maker(v):
+        """
+        Scheduled for refactoring.
+        :param v: frequency
+        :return: function that calculates the intensity at v
+        """
+        # TODO: fix docstring, explain _P _Q etc correlate to P, Q etc in lit.
+        # FIXED: previous version of this function used
+        # nonlocal Dv, P, Q, R
+        # but apparently when function called repeatedly these values would
+        # become corrupted (turning into arrays?!)
+        # Solution: add underscores to create copies of any variables in
+        # outer scope whose values are changed in the inner scope.
+
+        _Dv = Dv - v
+        _P = P - tau * 4 * pi_squared * (_Dv ** 2)
+        _Q = Q + tau * 2 * pi * _Dv
+        _R = R + _Dv * r
+        return(_P * p + _Q * _R) / (_P ** 2 + _R ** 2)
+    return maker
+
+
+def d2s_func_old(va, vb, ka, Wa, Wb, pa):
     """
     A function factory that creates tailored
     dnmr_2spin-like functions for greater speed.
