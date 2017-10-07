@@ -274,7 +274,7 @@ def reduce_peaks(plist, tolerance=0):
     return res
 
 
-def first_order(signal, couplings, Wa=0.5, RightHz=0, WdthHz=300):
+def first_order(signal, couplings):  # Wa, RightHz, WdthHz not implemented yet
     """Uses the above functions to split a signal into a first-order
     multiplet.
     Input:
@@ -292,7 +292,7 @@ def first_order(signal, couplings, Wa=0.5, RightHz=0, WdthHz=300):
     return reduce_peaks(sorted(multiplet(signallist, couplings)))
 
 
-def AB(Jab, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
+def AB(Jab, Vab, Vcentr, **kwargs):  # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB quartet.
     Jab is the A-B coupling constant (Hz)
@@ -321,7 +321,7 @@ def AB(Jab, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     return list(zip(vList, IList))
 
 
-def AB2(J, dV, Vab):  # Wa, RightHz, WdthHz not implemented yet
+def AB2(Jab, Vab, Vcentr, **kwargs):  # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB2 spin system.
     J is the A-B coupling constant (Hz)
@@ -332,6 +332,12 @@ def AB2(J, dV, Vab):  # Wa, RightHz, WdthHz not implemented yet
     WdthHz is the width of the window in Hz (not implemented yet)
     return: peaklist of (frequency, intensity) tuples
     """
+    # Currently, there is a disconnect between the variable names in the GUI
+    # and the variable names in this function. The following code provides a
+    # temporary interface.
+
+    J, dV, Vab = Jab, Vab, Vcentr
+
     # for now, old Jupyter code using Pople equations kept hashed out for now
     # Reich vs. Pople variable names are confused, e.g. Vab
     # So, variables being placed by position in the def header--CAUTION
@@ -350,8 +356,10 @@ def AB2(J, dV, Vab):  # Wa, RightHz, WdthHz not implemented yet
     C_plus = sqrt(dV ** 2 + dV * J + (9 / 4) * (J ** 2)) / 2
     C_minus = sqrt(dV ** 2 - dV * J + (9 / 4) * (J ** 2)) / 2
 
+    # Next 2 lines not needed?
     sin2theta_plus = J / (sqrt(2) * C_plus)  # Reich: sin2x
     sin2theta_minus = J / (sqrt(2) * C_minus)  # Reich: sin2y
+
     cos2theta_plus = (dV / 2 + J / 4) / C_plus  # Reich: cos2x
     cos2theta_minus = (dV / 2 - J / 4) / C_minus  # Reich: cos2y
 
@@ -398,7 +406,8 @@ def AB2(J, dV, Vab):  # Wa, RightHz, WdthHz not implemented yet
     return list(zip(vList, IList))
 
 
-def ABX(Jab, Jbx, Jax, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
+def ABX(Jab, Jbx, Jax, Vab, Vcentr, **kwargs):
+    # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB2 spin system.
     Jab is the A-B coupling constant (Hz)
@@ -493,21 +502,23 @@ def ABX(Jab, Jbx, Jax, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     return list(zip(VList, IList))
 
 
-def AMX3(Jab, Jax, Jbx, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
-    """
-    Uses the AMX approximate solution described on Reich's website.
-    However, WINDNMR uses a true ABX3 solution. AMX3 included here
-    for future consideration.
-    """
-    # This was the function taken from the Jupyter ABX3 notebook, but
-    # I think this needs to be fixed to make use of Jbx.
-    abq = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
-    # return abq
-    res = reduce_peaks(sorted(multiplet(abq, [(Jax, 3)])))
-    return res
+# Not being used, so should remove from codebase
+# def AMX3(Jab, Jax, Jbx, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
+#     """
+#     Uses the AMX approximate solution described on Reich's website.
+#     However, WINDNMR uses a true ABX3 solution. AMX3 included here
+#     for future consideration.
+#     """
+#     # This was the function taken from the Jupyter ABX3 notebook, but
+#     # I think this needs to be fixed to make use of Jbx.
+#     abq = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
+#     # return abq
+#     res = reduce_peaks(sorted(multiplet(abq, [(Jax, 3)])))
+#     return res
 
 
-def ABX3(Jab, Jax, Jbx, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
+def ABX3(Jab, Jax, Jbx, Vab, Vcentr, **kwargs):
+    # Wa, RightHz, WdthHz not implemented yet
     """
     Refactoring of Reich's code for simulating the ABX3 system.
     """
@@ -519,14 +530,15 @@ def ABX3(Jab, Jax, Jbx, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
     for i in range(4):
         dv = b_quartet[i][0] - a_quartet[i][0]
         abcenter = (b_quartet[i][0] + a_quartet[i][0]) / 2
-        sub_abq = AB(Jab, dv, abcenter)  #, Wa, RightHz, WdthHz not implemented
+        sub_abq = AB(Jab, dv, abcenter)  # Wa, RightHz, WdthHz not implemented
         scale_factor = a_quartet[i][1]
         scaled_sub_abq = [(v, i * scale_factor) for v, i in sub_abq]
         res.extend(scaled_sub_abq)
     return res
 
 
-def AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
+def AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr, **kwargs):
+    # Wa, RightHz, WdthHz not implemented yet
     """
     Simulates an AA'XX' spin system. Frequencies and Js in Hz.
     Jaa is the JAA' coupling constant, Jxx the JXX', Jax the JAX,
@@ -586,7 +598,7 @@ def AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr):  # Wa, RightHz, WdthHz not implement
     return list(zip(VList, IList))
 
 
-def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr):
+def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, **kwargs):
     #Wa, RightHz, WdthHz not implemented yet
     """
     A wrapper for a second-order AA'BB' calculation, but using the

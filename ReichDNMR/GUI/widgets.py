@@ -1,6 +1,11 @@
 """Custom widgets composed from standard tkinter widgets"""
 from tkinter import *
 
+up_arrow = u"\u21e7"
+down_arrow = u"\u21e9"
+left_arrow = u"\u21e6"
+right_arrow = u"\u21e8"
+
 
 class EntryFrame(Frame):
     """
@@ -230,6 +235,319 @@ class ArraySpinBox(ArrayBox):
         # entry_is_changed check. See related StackOverflow question:
         # https://stackoverflow.com/questions/46504930/
         self.after(1, self.refresh)
+
+
+class VarBox(Frame):
+    """
+    Eventually will emulate what the Reich entry box does, more or less.
+    Idea is to fill the VarFrame with these modules.
+    Current version: checks that only numbers are entered; returns contents
+    in a popup.
+    Looking ahead: trick may be linking their contents with the calls to
+    nmrmath. Also, need to make sure floats, not ints, are returned. Can
+    change the is_number routine so that if integer entered, replaced with
+    float?
+    Inputs:
+    -text: appears above the entry box
+    -default: default value in entry
+    """
+    def __init__(self, parent=None, name='', default=0.00, **options):
+        Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
+        Label(self, text=name).pack(side=TOP)
+        self.widgetName = name  # will be key in dictionary
+
+        # Entries will be limited to numerical
+        ent = Entry(self, width=7,
+                    validate='key')  # check for number on keypress
+        ent.pack(side=TOP, fill=X)
+        self.value = StringVar()
+        ent.config(textvariable=self.value)
+        self.value.set(str(default))
+
+        # Default behavior: both return and tab will shift focus to next
+        # widget; only save data and ping model if a change is made
+        ent.bind('<Return>', lambda event: self.on_return(event))
+        ent.bind('<Tab>', lambda event: self.on_tab())
+
+        # check on each keypress if new result will be a number
+        ent['validatecommand'] = (self.register(self.is_number), '%P')
+        # sound 'bell' if bad keypress
+        ent['invalidcommand'] = 'bell'
+
+    @staticmethod
+    def is_number(entry):
+        """
+        tests to see if entry is acceptable (either empty, or able to be
+        converted to a float.)
+        """
+        if not entry:
+            return True  # Empty string: OK if entire entry deleted
+        try:
+            float(entry)
+            return True
+        except ValueError:
+            return False
+
+    def entry_is_changed(self):
+        return self.master.vars[self.widgetName] != float(self.value.get())
+
+    def on_return(self, event):
+        if self.entry_is_changed():
+            self.to_dict()
+            self.master.request_plot()
+        event.widget.tk_focusNext().focus()
+
+    def on_tab(self):
+        if self.entry_is_changed():
+            self.to_dict()
+            self.master.request_plot()
+
+    def to_dict(self):
+        """
+        Records widget's contents to the container's dictionary of
+        values, filling the entry with 0.00 if it was empty.
+        """
+        if not self.value.get():  # if entry left blank,
+            self.value.set(0.00)  # fill it with zero
+        # Add the widget's status to the container's dictionary
+        self.master.vars[self.widgetName] = float(self.value.get())
+
+
+# def warw(bar): pass
+    """
+    Many of the models include Wa (width), Right-Hz, and WdthHz boxes.
+    This function tacks these boxes onto a ToolBar.
+    Input:
+    -ToolBar that has been filled out
+    Output:
+    -frame with these three boxes and default values left-packed on end
+    ***actually, this could be a function in the ToolBar class definition!
+    """
+
+
+class IntBox(Frame):
+    """
+    A modification of VarBox code. Restricts inputs to integers.
+    Inputs:
+    -text: appears above the entry box
+    -default: default value in entry
+    """
+    # Future refactor options: either create a base class for an input box
+    # that varies in its input restriction (float, int, str etc), and/or
+    # look into tkinter built-in entry boxes as component.
+    def __init__(self, parent=None, name='', default=0.00, **options):
+        Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
+        Label(self, text=name).pack(side=TOP, expand=NO, fill=NONE)
+        self.widgetName = name  # will be key in dictionary
+
+        # Entries will be limited to numerical
+        ent = Entry(self, width=7, validate='key')  # check for int on keypress
+        ent.pack(side=TOP, expand=NO, fill=NONE)
+        self.value = StringVar()
+        ent.config(textvariable=self.value)
+        self.value.set(str(default))
+        ent.bind('<Return>', lambda event: self.on_event(event))
+        ent.bind('<FocusOut>', lambda event: self.on_event(event))
+
+        # check on each keypress if new result will be a number
+        ent['validatecommand'] = (self.register(self.is_int), '%P')
+        # sound 'bell' if bad keypress
+        ent['invalidcommand'] = 'bell'
+
+    @staticmethod
+    def is_int(entry):
+        """
+        tests to see if entry string can be converted to integer
+        """
+        if not entry:
+            return True  # Empty string: OK if entire entry deleted
+        try:
+            int(entry)
+            return True
+        except ValueError:
+            return False
+
+    def on_event(self, event):
+        """
+        On event: Records widget's status to the container's dictionary of
+        values, fills the entry with 0 if it was empty, tells the container
+        to send data to the model, and shifts focus to the next entry box (after
+        Return or Tab).
+        """
+        self.to_dict()
+        self.master.request_plot()
+        event.widget.tk_focusNext().focus()
+
+    def to_dict(self):
+        """
+        Converts entry to integer, and stores data in container's vars
+        dictionary.
+        """
+        if not self.value.get():  # if entry left blank,
+            self.value.set(0)  # fill it with zero
+        # Add the widget's status to the container's dictionary
+        self.master.vars[self.widgetName] = int(self.value.get())
+
+
+class VarButtonBox(Frame):
+        """
+        A deluxe VarBox that is closer to WINDNMR-style entry boxes.
+        ent = entry that holds the value used for calculations
+        increment = the amount added to or subtracted from ent by the buttons
+        minus and plus buttons subtract/add once;
+        up and down buttons repeat as long as button held down.
+        Arguments:
+        -text: appears above the entry box
+        -default: default value in entry
+        """
+
+        # To do: use inheritance to avoid repeating code for different widgets
+        def __init__(self, parent=None, name='', default=0.00, **options):
+            Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
+            Label(self, text=name).pack(side=TOP)
+
+            self.widgetName = name  # will be key in dictionary
+
+            # Entries will be limited to numerical
+            ent = Entry(self, width=7,
+                        validate='key')  # check for number on keypress
+            ent.pack(side=TOP, fill=X)
+            self.value = StringVar()
+            ent.config(textvariable=self.value)
+            self.value.set(str(default))
+
+            # Default behavior: both return and tab will shift focus to next
+            # widget; only save data and ping model if a change is made
+            # To-Do: consistent routines for VarBox, VarButtonBox, ArrayBox etc.
+            # e.g. rename on_tab for general purpose on focus-out
+            ent.bind('<Return>', lambda event: self.on_return(event))
+            ent.bind('<Tab>', lambda event: self.on_tab())
+
+            # check on each keypress if new result will be a number
+            ent['validatecommand'] = (self.register(self.is_number), '%P')
+            # sound 'bell' if bad keypress
+            ent['invalidcommand'] = 'bell'
+
+            # Create a grid for buttons and increment
+            minus_plus_up = Frame(self)
+            minus_plus_up.rowconfigure(0,
+                                       minsize=30)  # make 2 rows ~same height
+            minus_plus_up.columnconfigure(2,
+                                          weight=1)  # lets arrow buttons fill
+            minus_plus_up.pack(side=TOP, expand=Y, fill=X)
+
+            minus = Button(minus_plus_up, text='-',
+                           command=lambda: self.decrease())
+            plus = Button(minus_plus_up, text='+',
+                          command=lambda: self.increase())
+            up = Button(minus_plus_up, text=up_arrow, command=lambda: None)
+            up.bind('<Button-1>', lambda event: self.zoom_up())
+            up.bind('<ButtonRelease-1>', lambda event: self.stop_action())
+
+            self.mouse1 = False  # Flag used to check if left button held down
+
+            minus.grid(row=0, column=0, sticky=NSEW)
+            plus.grid(row=0, column=1, sticky=NSEW)
+            up.grid(row=0, column=2, sticky=NSEW)
+
+            # Increment is also limited to numerical entry
+            increment = Entry(minus_plus_up, width=4, validate='key')
+            increment.grid(row=1, column=0, columnspan=2, sticky=NSEW)
+            self.inc = StringVar()
+            increment.config(textvariable=self.inc)
+            self.inc.set(str(1))  # 1 replaced by argument later?
+            increment['validatecommand'] = (self.register(self.is_number), '%P')
+            increment['invalidcommand'] = 'bell'
+
+            down = Button(minus_plus_up, text=down_arrow, command=lambda: None)
+            down.grid(row=1, column=2, sticky=NSEW)
+            down.bind('<Button-1>', lambda event: self.zoom_down())
+            down.bind('<ButtonRelease-1>', lambda event: self.stop_action())
+
+        @staticmethod
+        def is_number(entry):
+            """
+            tests to see if entry is acceptable (either empty, or able to be
+            converted to a float.)
+            """
+            if not entry:
+                return True  # Empty string: OK if entire entry deleted
+            try:
+                float(entry)
+                return True
+            except ValueError:
+                return False
+
+        def entry_is_changed(self):
+            """True if current entry doesn't match stored entry"""
+            return self.master.vars[self.widgetName] != float(self.value.get())
+
+        def on_return(self, event):
+            """Records change to entry, calls model, and focuses on next widget"""
+            if self.entry_is_changed():
+                self.to_dict()
+                self.master.request_plot()
+            event.widget.tk_focusNext().focus()
+
+        def on_tab(self):
+            """Records change to entry, and calls model"""
+            if self.entry_is_changed():
+                self.to_dict()
+                self.master.request_plot()
+
+        def to_dict(self):
+            """
+            Records widget's contents to the container's dictionary of
+            values, filling the entry with 0.00 if it was empty.
+            """
+            if not self.value.get():  # if entry left blank,
+                self.value.set(0.00)  # fill it with zero
+            # Add the widget's status to the container's dictionary
+            self.master.vars[self.widgetName] = float(self.value.get())
+
+        def stop_action(self):
+            """ButtonRelease esets self.mouse1 flag to False"""
+            self.mouse1 = False
+
+        def increase(self):
+            """Increases ent by inc"""
+            current = float(self.value.get())
+            increment = float(self.inc.get())
+            self.value.set(str(current + increment))
+            self.on_tab()
+
+        def decrease(self):
+            """Decreases ent by inc"""
+            current = float(self.value.get())
+            decrement = float(self.inc.get())
+            self.value.set(str(current - decrement))
+            self.on_tab()
+
+        def zoom_up(self):
+            """Increases ent by int as long as button-1 held down"""
+            increment = float(self.inc.get())
+            self.mouse1 = True
+            self.change_value(increment)
+
+        def zoom_down(self):
+            """Decreases ent by int as long as button-1 held down"""
+            decrement = - float(self.inc.get())
+            self.mouse1 = True
+            self.change_value(decrement)
+
+        def change_value(self, increment):
+            """Adds increment to the value in ent"""
+            if self.mouse1:
+                self.value.set(str(float(self.value.get()) + increment))
+                self.on_tab()  # store value, call model
+
+                # Delay was originally set to 10, but after MVC refactor this
+                #  caused an infinite loop (apparently a race condition where
+                #  stop action never fired. Testing with the two singlet DNMR
+                #  model: still loops at 30 ms; 40 works but uneven; 50 works
+                #  fine.
+                # May want to refactor how up/down arrows work
+                self.after(50, lambda: self.change_value(increment))
 
 
 if __name__ == '__main__':

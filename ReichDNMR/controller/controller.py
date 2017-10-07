@@ -100,6 +100,7 @@ class Controller:
             self.view.plot(*plotdata)
 
     def new_update(self, model, *args, **data):
+        # refactor to update_view_plot and get rid of above two older routines
         if 'DNMR' not in model:
             print('model: ', model)
             print('data: ', data)
@@ -108,9 +109,6 @@ class Controller:
             plotdata = self.models[model](*args)
         self.view.clear()
         self.view.plot(*plotdata)
-
-
-
 
 
 if __name__ == '__main__':

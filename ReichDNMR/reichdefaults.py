@@ -39,17 +39,17 @@ ABX3dict = {'Jab': -12.0,
             'Vcentr': 150,
             'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
 
-AAXXdict = {"Jaa'": 15.0,
-            "Jxx'": -10.0,
+AAXXdict = {"Jaa": 15.0,
+            "Jxx": -10.0,
             "Jax": 40.0,
-            "Jax'": 6.0,
+            "Jax_prime": 6.0,
             'Vcentr': 150,
             'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
 
 AABBdict = {"Vab": 40,
-            "Jaa'": 15.0,
-            "Jbb'": -10.0,
+            "Jaa": 15.0,
+            "Jbb": -10.0,
             "Jab": 40.0,
-            "Jab'": 6.0,
+            "Jab_prime": 6.0,
             'Vcentr': 150,
             'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}

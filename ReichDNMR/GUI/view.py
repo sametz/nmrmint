@@ -128,7 +128,6 @@ class View(Frame):
         self.currentbar = self.ab
         self.currentbar.grid(sticky=W)
 
-
     def add_multiplet_buttons(self):
         """"'Multiplet' menu: 'canned' solutions for common spin systems"""
         multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
