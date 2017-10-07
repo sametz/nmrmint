@@ -518,16 +518,14 @@ class DNMR_AB_Bar(ToolBar):
             for child in self.winfo_children():
                 child.to_dict()
 
-        def call_model(self):
+        def request_plot(self):
             _Va = self.vars['Va']
             _Vb = self.vars['Vb']
             _J = self.vars['J']
             _kAB = self.vars['kAB']
             _W = self.vars['W']
 
-            x, y = dnmrplot_AB(_Va, _Vb, _J, _kAB, _W)
-            canvas.clear()
-            canvas.plot(x, y)
+            self.controller.new_update(self.model, _Va, _Vb, _J, _kAB, _W)
 
 
 # temporarily placing some widgets below, to expedite getting toolbars working
