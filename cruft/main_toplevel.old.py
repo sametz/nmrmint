@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 from ReichDNMR.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
 from ReichDNMR.nspin import get_reich_default
 from tkinter import *
-from ReichDNMR.GUI.guimixin import GuiMixin  # mix-in class that provides dev tools
+from precruft.guimixin import GuiMixin  # mix-in class that provides dev tools
 from ReichDNMR.model.nmrmath import AB, AB2, ABX, ABX3, AAXX, first_order, AABB
 from ReichDNMR.model.nmrmath import nspinspec
 from collections import deque
