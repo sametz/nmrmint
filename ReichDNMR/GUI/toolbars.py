@@ -33,7 +33,7 @@ class ToolBar(Frame):
         self.vars = {}
 
     def request_plot(self):
-        self.controller.new_update(self.model, **self.vars)
+        self.controller.update_view_plot(self.model, **self.vars)
 
 
 class AB_Bar(ToolBar):
@@ -242,7 +242,7 @@ class AABB_Bar(ToolBar):
 
     def request_plot(self):
         kwargs = self.make_kwargs()
-        self.controller.new_update(self.model, **kwargs)
+        self.controller.update_view_plot(self.model, **kwargs)
 
     def make_kwargs(self):
         _Vab = self.vars['VAB']
@@ -295,7 +295,7 @@ class FirstOrder_Bar(ToolBar):
 
     def request_plot(self):
         kwargs = self.make_kwargs()
-        self.controller.new_update(self.model, **kwargs)
+        self.controller.update_view_plot(self.model, **kwargs)
 
     def make_kwargs(self):
         _Jax = self.vars['JAX']
@@ -413,7 +413,7 @@ class SecondOrderBar(Frame):
                   'j': self.j,
                   'w': self.w_array[0, 0]}
 
-        self.controller.new_update('nspin', **kwargs)
+        self.controller.update_view_plot('nspin', **kwargs)
 
 
 class SecondOrderSpinBar(SecondOrderBar):
@@ -484,7 +484,7 @@ class DNMR_TwoSingletBar(ToolBar):
         _Wa = self.vars['Wa']
         _Wb = self.vars['Wb']
         _pa = self.vars['%a'] / 100
-        self.controller.new_update(self.model, _Va, _Vb, _ka, _Wa, _Wb, _pa)
+        self.controller.update_view_plot(self.model, _Va, _Vb, _ka, _Wa, _Wb, _pa)
 
 
 class DNMR_AB_Bar(ToolBar):
@@ -520,7 +520,7 @@ class DNMR_AB_Bar(ToolBar):
             _kAB = self.vars['kAB']
             _W = self.vars['W']
 
-            self.controller.new_update(self.model, _Va, _Vb, _J, _kAB, _W)
+            self.controller.update_view_plot(self.model, _Va, _Vb, _J, _kAB, _W)
 
 
 if __name__ == '__main__':

@@ -97,21 +97,31 @@ class Controller:
             # plotdata = tkplot(nspinspec(v, j), w)
             # self.view.clear()
             # self.view.plot(*plotdata)
-            return nspinspec(v, j)
+            return nspinspec(v, j), w
 
-    def new_update(self, model, *args, **data):
+    def update_view_plot(self, model, *args, **data):
         # refactor to update_view_plot and get rid of above two older routines
-        if 'DNMR' not in model:
+        multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
+                            'first_order']
+        if model in multiplet_models:
             print('model: ', model)
             print('data: ', data)
             spectrum = self.models[model](**data)
             print('spectrum: ', spectrum)
             #plotdata = tkplot(self.models[model](**data))
-            plotdata = tkplot(spectrum)
+            plotdata = tkplot(spectrum, *args)
             print('plot data begins with: ',
                   plotdata[0][:5], plotdata[1][:5])
-        else:  # For now DNMR will use args not kwargs to match old interfaces
+        elif model == 'nspin':
+            spectrum, w = self.models[model](**data)
+            plotdata = tkplot(spectrum, w)
+        elif 'DNMR' in model:  # For now DNMR will use args not kwargs to match
+            # old
+            # interfaces
             plotdata = self.models[model](*args)
+        else:
+            print('model not recognized')
+            return
         self.view.clear()
         self.view.plot(*plotdata)
 

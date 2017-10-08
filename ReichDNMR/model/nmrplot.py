@@ -19,6 +19,7 @@ def lorentz(v, v0, I, w):
     parameter.
     :param v: Array of values at which to evaluate distribution.
     :param v0: Center of the distribution.
+    :param I: relative intensity of the signal
     :param w: Peak width at half max intensity
 
     :returns: Distribution evaluated at points in x.
@@ -28,7 +29,7 @@ def lorentz(v, v0, I, w):
 
 def add_signals(linspace, peaklist, w):
     """
-    Given a numpy linspace a spectrum as a list of (frequency, intensity)
+    Given a numpy linspace, a spectrum as a list of (frequency, intensity)
     tuples, and a linewidth, returns an array of y coordinates for the
     lineshape.
 
@@ -77,6 +78,12 @@ def nmrplot(spectrum, y=1):
 
 
 def tkplot(spectrum, w=0.5):
+    """Generate linspaces of x and y coordinates suitable for plotting on a
+    matplotlib tkinter canvas.
+    :param spectrum: A list of (frequency, intensity) tuples
+    :param w: peak width at half height
+    :return: a tuple of x and y coordinate linspaces
+    """
     spectrum.sort()
     r_limit = spectrum[-1][0] + 50
     l_limit = spectrum[0][0] - 50
