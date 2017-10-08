@@ -3,11 +3,11 @@ The controller for the ReichDNMR app.
 
 Assumes a tkinter view.
 
-Contains:
-
+Provides:
 * Controller    Class that handles data and requests to/from the model and 
                 the view.
 """
+
 import tkinter as tk
 
 from ReichDNMR.GUI.view import View
@@ -18,7 +18,7 @@ from ReichDNMR.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
 
 
 class Controller:
-    """Instantiates ReichDNMR's view, and passes data and requests to/from 
+    """Instantiate ReichDNMR's view, and pass data and requests to/from
     the model and the view.
     
     The controller assumes the view offers the following methods:
@@ -32,12 +32,16 @@ class Controller:
     
     The controller provides the following methods:
     
-    * update_view_plot: accepts a tuple of simulation name (string) and 
-    variables; calls the appropriate model simulation with the variables; 
-    and tells the view to plot the data the model returns.
+    * update_view_plot: parse the data sent by the view; call the appropriate
+    model simulation; and tell the view to plot the model's simulated
+    spectral data.
+
+    * call_nspins_model: provide an interface that allows the model to be
+    called with the view's second-order data.
     """
+
     def __init__(self, root):
-        """Instantiates the view as a child of root, and then initializes it.
+        """Instantiate the view as a child of root, and then initializes it.
         
         Argument:
             root: a tkinter.Tk() object
@@ -49,7 +53,7 @@ class Controller:
                        'AABB': AABB,
                        'AAXX': AAXX,
                        'first_order': first_order,
-                       'nspin': self.call_nspins_model,  # temporary hack
+                       'nspin': self.call_nspins_model,
                        'DNMR_Two_Singlets': dnmrplot_2spin,
                        'DNMR_AB': dnmrplot_AB}
 
@@ -57,34 +61,55 @@ class Controller:
         self.view.pack(expand=tk.YES, fill=tk.BOTH)
         self.view.initialize()
 
-    # def update_view_plot(self, *data):
-    #     """Queries the model for a simulation using data, then tells the view
-    #     to plot the results.
-    #
-    #     Arguments:
-    #         simulation: 'AB' (non-quantum mechanical AB quartet calculation
-    #                     for 2 spins), or
-    #                     'QM' (quantum-mechanical treatment for >= 3 spins)
-    #         data: for now assumes the View sends data of the exact type and
-    #         format required by the model. This may not be proper MVC
-    #         separation of concerns, however.
-    #     """
-    #     v, j, w = data
-    #     plotdata = tkplot(nspinspec(v, j), w)
-    #     self.view.clear()
-    #     self.view.plot(*plotdata)
-    #
-    def call_nspins_model(self, v, j, w, **kwargs):
-        # **kwargs to catch unimplemented features
+    def update_view_plot(self, model, *args, **data):
+        """
+        Parse the view's request; call the appropriate model for simulated
+        spectral data; and tell the view to plot the data.
+
+        :param model: (str) The type of calculation to be performed.
+        :param args: DNMR model is called with positional arguments.
+        :param data: first-order and second-order simulations are called with
+        keyword arguments.
+
+        :return: None (including when model is not recognized)
+        """
+        multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
+                            'first_order']
+
+        if model in multiplet_models:
+            spectrum = self.models[model](**data)
+            plotdata = tkplot(spectrum)
+        elif model == 'nspin':
+            spectrum, w = self.models[model](**data)
+            plotdata = tkplot(spectrum, w)
+        elif 'DNMR' in model:
+            plotdata = self.models[model](*args)
+        else:
+            print('model not recognized')
+            return
+
+        self.view.clear()
+        self.view.plot(*plotdata)
+
+    @staticmethod
+    def call_nspins_model(v, j, w, **kwargs):
         """Provide an interface between the controller/view data model (use
         of **kwargs) and the functions for second-order calculations (which
         use *args).
 
-        arguments:
-            v: a 1-D numpy array of frequencies
-            j: a 2-D numpy array of coupling constants (J values)
-            w: line width at half height
+        :param v: a 1-D numpy array of frequencies
+        :param j: a 2-D numpy array of coupling constants (J values)
+        :param w: line width at half height
+
+        :return: a (spectrum, linewidth) tuple, where spectrum is a list of
+        (frequency, intensity) tuples
         """
+        # **kwargs to catch unimplemented features
+        # The difference between first- and second-order models right now
+        # from the controller's perspective is just the added linewidth
+        # argument. If more features are added to first- and second-order
+        # models, this distinction may be lost, and all requests will have to
+        #  be parsed for extra kwargs.
         if not (v.any() and j.any() and w.any()):
             print('invalid kwargs:')
             if not v.any():
@@ -94,36 +119,7 @@ class Controller:
             if not w.any():
                 print('w missing')
         else:
-            # plotdata = tkplot(nspinspec(v, j), w)
-            # self.view.clear()
-            # self.view.plot(*plotdata)
             return nspinspec(v, j), w
-
-    def update_view_plot(self, model, *args, **data):
-        # refactor to update_view_plot and get rid of above two older routines
-        multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
-                            'first_order']
-        if model in multiplet_models:
-            print('model: ', model)
-            print('data: ', data)
-            spectrum = self.models[model](**data)
-            print('spectrum: ', spectrum)
-            #plotdata = tkplot(self.models[model](**data))
-            plotdata = tkplot(spectrum, *args)
-            print('plot data begins with: ',
-                  plotdata[0][:5], plotdata[1][:5])
-        elif model == 'nspin':
-            spectrum, w = self.models[model](**data)
-            plotdata = tkplot(spectrum, w)
-        elif 'DNMR' in model:  # For now DNMR will use args not kwargs to match
-            # old
-            # interfaces
-            plotdata = self.models[model](*args)
-        else:
-            print('model not recognized')
-            return
-        self.view.clear()
-        self.view.plot(*plotdata)
 
 
 if __name__ == '__main__':
