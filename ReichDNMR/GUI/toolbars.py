@@ -413,7 +413,6 @@ class SecondOrderBar(Frame):
                   'j': self.j,
                   'w': self.w_array[0, 0]}
 
-        # self.controller.update_with_dict(**kwargs)
         self.controller.new_update('nspin', **kwargs)
 
 

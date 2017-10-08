@@ -121,7 +121,7 @@ class View(Frame):
         # active_bar_dict used to keep track of the active model in each
         # individual button menu.
         self.active_bar_dict = {'multiplet': self.ab,
-                                'abc': self.ab,
+                                'abc': self.spinbars[0],
                                 'dnmr': self.TwoSpinBar,
                                 'custom': self.ab}
         self.currentframe = 'multiplet'

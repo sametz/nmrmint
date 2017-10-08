@@ -49,7 +49,7 @@ class Controller:
                        'AABB': AABB,
                        'AAXX': AAXX,
                        'first_order': first_order,
-                       'nspin': self.update_with_dict,  # temporary hack
+                       'nspin': self.call_nspins_model,  # temporary hack
                        'DNMR_Two_Singlets': dnmrplot_2spin,
                        'DNMR_AB': dnmrplot_AB}
 
@@ -57,34 +57,33 @@ class Controller:
         self.view.pack(expand=tk.YES, fill=tk.BOTH)
         self.view.initialize()
 
-    def update_view_plot(self, *data):
-        """Queries the model for a simulation using data, then tells the view
-        to plot the results.
+    # def update_view_plot(self, *data):
+    #     """Queries the model for a simulation using data, then tells the view
+    #     to plot the results.
+    #
+    #     Arguments:
+    #         simulation: 'AB' (non-quantum mechanical AB quartet calculation
+    #                     for 2 spins), or
+    #                     'QM' (quantum-mechanical treatment for >= 3 spins)
+    #         data: for now assumes the View sends data of the exact type and
+    #         format required by the model. This may not be proper MVC
+    #         separation of concerns, however.
+    #     """
+    #     v, j, w = data
+    #     plotdata = tkplot(nspinspec(v, j), w)
+    #     self.view.clear()
+    #     self.view.plot(*plotdata)
+    #
+    def call_nspins_model(self, v, j, w, **kwargs):
+        # **kwargs to catch unimplemented features
+        """Provide an interface between the controller/view data model (use
+        of **kwargs) and the functions for second-order calculations (which
+        use *args).
 
-        Arguments:
-            simulation: 'AB' (non-quantum mechanical AB quartet calculation
-                        for 2 spins), or
-                        'QM' (quantum-mechanical treatment for >= 3 spins)
-            data: for now assumes the View sends data of the exact type and 
-            format required by the model. This may not be proper MVC 
-            separation of concerns, however.
-        """
-        v, j, w = data
-        plotdata = tkplot(nspinspec(v, j), w)
-        self.view.clear()
-        self.view.plot(*plotdata)
-
-    def update_with_dict(self, v, j, w, simulation='QM', **kwargs):
-        """Test version of update_view_plot using **kwargs, not *args.
-
-        Keyword arguments:
-            Simulation: currently only QM for second-order quantum-mechanical
-            calculation (second order). Future expansion may allow 'FO' for
-            first-order simulations as well.
+        arguments:
             v: a 1-D numpy array of frequencies
             j: a 2-D numpy array of coupling constants (J values)
             w: line width at half height
-
         """
         if not (v.any() and j.any() and w.any()):
             print('invalid kwargs:')
@@ -95,16 +94,22 @@ class Controller:
             if not w.any():
                 print('w missing')
         else:
-            plotdata = tkplot(nspinspec(v, j), w)
-            self.view.clear()
-            self.view.plot(*plotdata)
+            # plotdata = tkplot(nspinspec(v, j), w)
+            # self.view.clear()
+            # self.view.plot(*plotdata)
+            return nspinspec(v, j)
 
     def new_update(self, model, *args, **data):
         # refactor to update_view_plot and get rid of above two older routines
         if 'DNMR' not in model:
             print('model: ', model)
             print('data: ', data)
-            plotdata = tkplot(self.models[model](**data))
+            spectrum = self.models[model](**data)
+            print('spectrum: ', spectrum)
+            #plotdata = tkplot(self.models[model](**data))
+            plotdata = tkplot(spectrum)
+            print('plot data begins with: ',
+                  plotdata[0][:5], plotdata[1][:5])
         else:  # For now DNMR will use args not kwargs to match old interfaces
             plotdata = self.models[model](*args)
         self.view.clear()
