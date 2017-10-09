@@ -1,16 +1,27 @@
-"""Custom tkinter frames with added features."""
+"""Custom tkinter frames with added features.
+
+Provides the following class:
+* RadioFrame: extends tkinter Frame by adding a radiobutton list and title label
+"""
+
 from tkinter import *
 
 
 class RadioFrame(Frame):
-    """
-    A tkinter Frame containing a radio button menu and optional title.
+    """Extend a tkinter Frame by adding a radio button menu and optional
+    title label.
+
+    Assumes that the top button should be turned on by default.
     """
 
     def __init__(self, parent=None, buttons=(), title='', **options):
-        """arguments:
-        -buttons: a tuple of (text, function) tuples
-        -title: an optional title to put above the button list"""
+        """Keyword arguments:
+        :param parent: parent tkinter object
+        :param buttons: a tuple of ('text', callback) tuples (one for each
+        button)
+        :param title: optional text for a title label
+        :param options: standard Frame kwargs
+        """
         Frame.__init__(self, parent, **options)
         Label(self, text=title).pack(side=TOP)
         self.var = StringVar()

@@ -4,15 +4,17 @@ The main GUI for ReichDNMR.
 from tkinter import *
 
 import matplotlib
-import numpy as np
-
-from ReichDNMR.GUI.frames import RadioFrame
-from ReichDNMR.GUI.toolbars import *
 
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2TkAgg)
 from matplotlib.figure import Figure
+
+from ReichDNMR.GUI.frames import RadioFrame
+from ReichDNMR.GUI.toolbars import (AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar,
+                                    AAXX_Bar, AABB_Bar, FirstOrder_Bar,
+                                    SecondOrderSpinBar, DNMR_TwoSingletBar,
+                                    DNMR_AB_Bar)
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -79,9 +81,6 @@ class View(Frame):
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins,
                                             **kwargs)
                          for spins in self.spin_range]
-
-        # self.currentbar = self.spinbars[0]  # two spins default
-        # self.currentbar.grid(sticky=W)
 
     def add_calc_type_frame(self):
         print('add_calc_type_frame called')

@@ -96,12 +96,12 @@ def dnmrplot_2spin(va, vb, ka, Wa, Wb, pa):
     """Create a lineshape for the DNMR spectrum of two uncoupled nuclei
     undergoing exchange.
 
-     :param va: The frequency of nucleus 'a' at the slow exchange limit
+    :param va: The frequency of nucleus 'a' at the slow exchange limit
     :param vb: The frequency of nucleus 'b' at the slow exchange limit
     :param ka: The rate of nuclear exchange
     :param Wa: The width at half heigh of the signal for nucleus a (at the slow
     exchange limit).
-    :param Wb: The width at half heigh of the signal for nucleus b (at the slow
+    :param Wb: The width at half height of the signal for nucleus b (at the slow
     exchange limit).
     :param pa: The fraction of the population in state a (vs. state b)
 

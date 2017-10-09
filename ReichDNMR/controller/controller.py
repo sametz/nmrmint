@@ -3,7 +3,7 @@ The controller for the ReichDNMR app.
 
 Assumes a tkinter view.
 
-Provides:
+Provides the following class:
 * Controller    Class that handles data and requests to/from the model and 
                 the view.
 """
@@ -13,7 +13,6 @@ import tkinter as tk
 from ReichDNMR.GUI.view import View
 from ReichDNMR.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
                                      first_order)
-
 from ReichDNMR.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
 
 

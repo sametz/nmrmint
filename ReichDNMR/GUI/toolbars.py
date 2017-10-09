@@ -1,52 +1,84 @@
-"""Custom tkinter frames that hold multiple widgets"""
-import numpy as np
-from ReichDNMR.initialize import getWINDNMRdefault
+"""Custom tkinter frames that hold multiple widgets plus capabilities to
+store data and send it to a controller.
+
+Provides the following classes:
+* ToolBar: A base class for creating toolbars, intended to be subclassed and
+extended.
+
+* AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar, AAXX_Bar, AABB_Bar: hold numerical inputs
+required for simulating AB, AB2, ABX, ABX3, AA'XX', and AA'BB' spin systems.
+
+* FirstOrder_Bar: holds numerical inputs required for first-order simulation
+
+* SecondOrderBar: holds numerical inputs, plus a button with a pop-up 2D
+array for entering chemical shifts and J coupling constants, for second-order
+simulations of up to 8 coupled spins.
+
+* DNMR_TwoSingletBar: holds "custom SpinBox" numerical inputs for the
+simulation of a DNMR lineshape for two uncoupled spins.
+
+* DNMR_AB: holds "custom spinbox" numerical inputs for the simulation of a
+DNMR lineshape for two coupled spins (AB quartet at the slow exchange limit).
+"""
+
 from tkinter import *
+
+import numpy as np
+
 from ReichDNMR.GUI.widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox,
                                    VarButtonBox)
-
-# the following are only temporary, to get old functionality back
-from ReichDNMR.model.nmrmath import AB, AB2, ABX, ABX3, AAXX, first_order, AABB
-from ReichDNMR.model.nmrmath import nspinspec
-from ReichDNMR.model.nmrplot import tkplot
+from ReichDNMR.initialize import getWINDNMRdefault
 
 
 class ToolBar(Frame):
-    """
-    A frame object that contains entry widgets, a dictionary of
-    their current contents, and a function to call the appropriate model.
-    """
-    # f = Figure(figsize=(5, 4), dpi=100)
-    # a = f.add_subplot(111)
+    """Extend tkinter.Frame with a dictionary, a controller reference, a model
+    name, and a function to call the appropriate model.
 
-    # canvas = FigureCanvasTkAgg(f, master=root)
-    # canvas.show()
-    # canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-    # toolbar = NavigationToolbar2TkAgg(canvas, root)
-    # toolbar.update()
-    # canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+    Intended to be subclassed, and not instantiated itself.
+
+    methods:
+        request_plot: sends model type and data to the controller
+
+    Attributes:
+        controller: the Controller object of the Model-View-Controller
+        architecture. Assumes controller has an update_view_plot method.
+        model (str): the type of calculation requested (interpreted by the
+        controller).
+        vars (dict): holds the kwargs that the controller is called with.
+        Intent is that child widgets will store and update their data to this
+        dict.
+    """
 
     def __init__(self, parent=None, controller=None, **options):
+        """Initialize the ToolBar object with a reference to a controller.
+
+        Keyword arguments:
+        :param parent: the parent tkinter object
+        :param controller: the Controller object of the MVC application
+        :param options: standard optional kwargs for a tkinter Frame
+        """
         Frame.__init__(self, parent, **options)
         self.controller = controller
         self.model = 'model'  # must be overwritten by subclasses
         self.vars = {}
 
     def request_plot(self):
+        """Send request to controller to recalculate and refresh the view's
+        plot.
+        """
         self.controller.update_view_plot(self.model, **self.vars)
 
 
 class AB_Bar(ToolBar):
-    """
-    Creates a bar of AB quartet inputs. Currently assumes "canvas" is the
-    MPLGraph instance.
-    Dependencies: nmrplot.tkplot, nmrmath.AB
+    """A subclass of ToolBar designed for use with AB simulations.
+
+    Extends ToolBar with AB quartet inputs, and overwrites .model as 'AB'.
     """
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
         self.model = 'AB'
-        Jab    = VarBox(self, name='Jab',    default=12.00)
-        Vab    = VarBox(self, name='Vab',    default=15.00)
+        Jab = VarBox(self, name='Jab', default=12.00)
+        Vab = VarBox(self, name='Vab', default=15.00)
         Vcentr = VarBox(self, name='Vcentr', default=150)
         Jab.pack(side=LEFT)
         Vab.pack(side=LEFT)
@@ -55,22 +87,11 @@ class AB_Bar(ToolBar):
         for child in self.winfo_children():
             child.to_dict()
 
-    # def call_model(self):
-
-        # _Jab = self.vars['Jab']
-        # _Vab = self.vars['Vab']
-        # _Vcentr = self.vars['Vcentr']
-        # spectrum = AB(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
-        # x, y = tkplot(spectrum)
-        # canvas.clear()
-        # canvas.plot(x, y)
-
 
 class AB2_Bar(ToolBar):
-    """
-    Creates a bar of AB2 spin system inputs. Currently assumes "canvas" is the
-    MPLGraph instance.
-    Dependencies: nmrplot.tkplot, nmrmath.AB2
+    """A subclass of ToolBar designed for use with AB2 simulations.
+
+    Extends ToolBar with necessary AB2 inputs, and overwrites .model as 'AB2'.
     """
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
@@ -85,21 +106,11 @@ class AB2_Bar(ToolBar):
         for child in self.winfo_children():
             child.to_dict()
 
-    # def call_model(self):
-    #     _Jab = self.vars['Jab']
-    #     _Vab = self.vars['Vab']
-    #     _Vcentr = self.vars['Vcentr']
-    #     spectrum = AB2(_Jab, _Vab, _Vcentr, Wa=0.5, RightHz=0, WdthHz=300)
-    #     x, y = tkplot(spectrum)
-    #     canvas.clear()
-    #     canvas.plot(x, y)
-
 
 class ABX_Bar(ToolBar):
-    """
-    Creates a bar of ABX spin system inputs. Currently assumes "canvas" is the
-    MPLGraph instance.
-    Dependencies: nmrplot.tkplot, nmrmath.ABX
+    """A subclass of ToolBar designed for use with ABX simulations.
+
+    Extends ToolBar with necessary ABX inputs, and overwrites .model as 'ABX'.
     """
 
     def __init__(self, parent=None, **options):
@@ -133,11 +144,11 @@ class ABX_Bar(ToolBar):
 
 
 class ABX3_Bar(ToolBar):
-    """
-    Creates a bar of ABX3 spin system inputs. Currently assumes "canvas" is the
-    MPLGraph instance.
-    Dependencies: nmrplot.tkplot, nmrmath.ABX3
-    """
+    """A subclass of ToolBar designed for use with ABX3 simulations.
+
+   Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
+   'ABX'.
+   """
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
@@ -170,11 +181,11 @@ class ABX3_Bar(ToolBar):
 
 
 class AAXX_Bar(ToolBar):
-    """
-    Creates a bar of AA'XX' spin system inputs. Currently assumes "canvas" is
-    the MPLGraph instance.
-    Dependencies: nmrplot.tkplot, nmrmath.AAXX
-    """
+    """A subclass of ToolBar designed for use with AA'XX' simulations.
+
+   Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
+   'AAXX'.
+   """
 
     def __init__(self, parent=None, **options):
         # WINDNMR uses all caps JAA', JXX', etc. However, the model function
@@ -215,11 +226,11 @@ class AAXX_Bar(ToolBar):
 class AABB_Bar(ToolBar):
     # see comments to AAXX_bar for problem. Here, will try to customize
     # request_plot to work around the label conflict
-    """
-    Creates a bar of AA'BB' spin system inputs. Currently assumes "canvas" is
-    the MPLGraph instance.
-    Dependencies: nmrplot.tkplot, nmrmath.AABB
-    """
+    """A subclass of ToolBar designed for use with AA'XX' simulations.
+
+   Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
+   'AAXX'.
+   """
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
@@ -262,10 +273,11 @@ class AABB_Bar(ToolBar):
 
 
 class FirstOrder_Bar(ToolBar):
-    """
-    Creates a bar of first-order coupling inputs. Currently assumes "canvas"
-    is the MPLGraph instance.
-    Dependencies: nmrplot.tkplot, nmrmath.first_order
+    """A subclass of ToolBar designed for use with first-order (
+    single-signal) simulations.
+
+    Overrides request_plot and includes method make_kwargs, to convert
+    self.vars into **kwargs of the correct type for passing to the controller.
     """
 
     def __init__(self, parent=None, **options):
@@ -298,6 +310,17 @@ class FirstOrder_Bar(ToolBar):
         self.controller.update_view_plot(self.model, **kwargs)
 
     def make_kwargs(self):
+        """Convert the dictionary of widget entries (self.vars) to a dict
+        that is compliant with the controller interface.
+
+        The controller needs to pass a (signal, couplings) tuple to the model.
+        - signal is a (frequency, intensity) tuple representing the frequency
+        and intensity of the signal in the absence of coupling. Intensity is
+        1 by default.
+        - couplings is a list of (J, n) tuples, where J is the coupling
+        constant and n is the number of nuclei coupled to the nucleus of
+        interest with that same J value.
+        """
         _Jax = self.vars['JAX']
         _a   = self.vars['#A']
         _Jbx = self.vars['JBX']
@@ -317,27 +340,54 @@ class FirstOrder_Bar(ToolBar):
 
 class SecondOrderBar(Frame):
     """
-    A Frame that holds n frequency entry boxes, an entry box for peak width
-    (default 0.5 Hz), a 1-D array for frequencies, a 2-D array for coupling
-    constants, and a button to pop up a window for entering J values as well
-    as frequencies.
-    Arguments:
-        controller: controller object with a
-        n: number of spins
-    Dependencies:
-        numpy
-        ReichDNMR.initialize.getWINDNMRdefault for WINDNMR default values
-        ReichDNMR.GUI.widgets for custom ArrayBox and ArraySpinBox widgets
+    Extends Frame to hold n frequency entry boxes, an entry box for peak
+    width (default 0.5 Hz), a 2-D numpy array for frequencies (see below),
+    a 2-D numpy array for coupling constants, and a button to pop up a window
+    for entering J values as well as frequencies.
 
+    The ArrayBox and ArraySpinBox widgets currently handle 2-D arrays only,
+    so the frequencies only occupy the first row of a 1-row 2-dimensional
+    array (self.v), and the peak widths the first column of the first row of a
+    1-cell 2-D array (self.w). i.e. self.v[0, :] provides a 1-D numpy array
+    of the frequencies, and self.v[0, 0] provides the peak width.
+
+    Methods:
+        add_frequency_widgets, add_peakwidth_widget, add_J_button: add the
+        required widgets to the toolbar. Only intented to be called by
+        __init__. TODO: review all code and learn appropriate use of private
+        methods.
+        vj_popup: opens a window for the entry of J values as well as
+        frequencies.
+        request_plot: sends model type and data to the controller
+
+    Attributes:
+        controller: the Controller object of the Model-View-Controller
+        architecture. Assumes controller has an update_view_plot method.
+        model (str): the type of calculation requested (interpreted by the
+        controller).
+        v (numpy 2D array): the frequency list (located in v[0, :]
+        j (numpy 2D array): the symmetric matrix of J coupling constants
+        (j[m, n] = j[n, m] = coupling between nuclei m and n)
+        w (numpy 2D array): the width of the signal at half height (located
+        in w[0, 0]
     """
 
     def __init__(self, parent=None, controller=None, n=4, **options):
+        """Initialize the frame with necessary widgets and attributes.
+
+        Keyword arguments:
+        :param parent: the parent tkinter object
+        :param controller: the Controller object of the MVC application
+        :param n: the number of nuclei in the spin system
+        :param options: standard optional kwargs for a tkinter Frame
+        """
         Frame.__init__(self, parent, **options)
         self.controller = controller
 
         # Store a list of entry widgets for all frequencies
         # (used by vj_popup)
-        self.v_widgets = np.zeros(n, dtype=object)
+        # Since vj_popup doesn't need anymore, can delete?
+        # self.v_widgets = np.zeros(n, dtype=object)
         self.v, self.j = getWINDNMRdefault(n)
         self.w_array = np.array([[0.5]])
 
@@ -350,7 +400,7 @@ class SecondOrderBar(Frame):
             vbox = ArrayBox(self, array=self.v, coord=(0, freq),
                             name='V' + str(freq + 1),
                             model=self.request_plot)
-            self.v_widgets[freq] = vbox
+            # self.v_widgets[freq] = vbox
             vbox.pack(side=LEFT)
 
     def add_peakwidth_widget(self):
@@ -419,10 +469,23 @@ class SecondOrderBar(Frame):
 class SecondOrderSpinBar(SecondOrderBar):
     """A subclass of SecondOrderBar that uses ArraySpinBox widgets for the
     toolbar.
+
+    Overrides add_frequency_widgets and add_peakwidth_widget.
     """
     def __init__(self, parent=None,
-                 from_=-10000, to=10000.00, increment=1, realtime=False,
+                 from_=-10000.00, to=10000.00, increment=10, realtime=False,
                  **options):
+        """Initialize subclass of SecondOrderBar with extra arguments for the
+        SpinBox minimum and maximum values, standard increment, and realtime
+        behavior.
+
+        :param from_: (float) the minimum value for the spinboxes
+        :param to: (float) the maximum value for the spinboxes
+        :param increment: (float) the amount to increment/decrement the SpinBox
+        contents per arrow click.
+        :param realtime: (bool) True if model should be repeatedly called as a
+        SpinBox arrow is being held down.
+        """
         self.spinbox_kwargs = {'from_': from_,
                                'to': to,
                                'increment': increment,
@@ -435,7 +498,7 @@ class SecondOrderSpinBar(SecondOrderBar):
                                 name='V' + str(freq + 1),
                                 model=self.request_plot,
                                 **self.spinbox_kwargs)
-            self.v_widgets[freq] = vbox
+            # self.v_widgets[freq] = vbox
             vbox.pack(side=LEFT)
 
     def add_peakwidth_widget(self):
@@ -453,12 +516,20 @@ class SecondOrderSpinBar(SecondOrderBar):
 
 class DNMR_TwoSingletBar(ToolBar):
     """
-    DNMR simulation for 2 uncoupled exchanging nuclei.
-    -Va > Vb are the chemcial shifts (slow exchange limit)
-    -ka is the a-->b rate constant (note: WINDNMR uses ka + kb here)
-    -Wa, Wb are effectively T2a and T2b (check width at half height vs. T2s)
-    -pa is % of molecules in state a. Note for calculation need to /100 to
-    convert to mol fraction.
+    A toolbar designed for the DNMR simulation for 2 uncoupled exchanging
+    nuclei.
+
+    Method:
+        request_plot: sends model type and data to the controller
+
+    Attributes:
+        Va and Vb (float): the chemcial shifts for nuclei a and b at the slow
+        exchange limit.
+        ka (float): the a-->b rate constant (note: WINDNMR uses ka + kb here)
+        Wa and Wb (float): the width at half height of the signals for nuclei a
+        and b at the slow exchange limit.
+        pa (float): the % of molecules in state a. Note: must be converted to
+        mol fraction prior to calling the model.
     """
 
     def __init__(self, parent=None, **options):
@@ -484,16 +555,24 @@ class DNMR_TwoSingletBar(ToolBar):
         _Wa = self.vars['Wa']
         _Wb = self.vars['Wb']
         _pa = self.vars['%a'] / 100
-        self.controller.update_view_plot(self.model, _Va, _Vb, _ka, _Wa, _Wb, _pa)
+        self.controller.update_view_plot(self.model,
+                                         _Va, _Vb, _ka, _Wa, _Wb, _pa)
 
 
 class DNMR_AB_Bar(ToolBar):
         """
-        DNMR simulation for 2 coupled exchanging nuclei.
-        -Va > Vb are the chemcial shifts (slow exchange limit)
-        -J is the coupling constant
-        -kAB is the exchange rate constant
-        -W is peak width at half-height in absence of exchange
+        A toolbar designed for the DNMR simulation for 2 coupled exchanging
+        nuclei.
+
+        Method:
+            request_plot: sends model type and data to the controller
+
+        Attributes:
+            Va and Vb (float): the chemcial shifts for nuclei a and b at the
+            slow exchange limit.
+            J (float): the Jab coupling constant
+            kAB (float): the exchange rate constant
+            W (float): the peak width at half-height at the slow exchange limit
         """
 
         def __init__(self, parent=None, **options):
@@ -524,28 +603,25 @@ class DNMR_AB_Bar(ToolBar):
 
 
 if __name__ == '__main__':
-    dummy_array_1 = np.array([[1, 2, 3]])
-    dummy_array_2 = np.array([[11, 12, 13]])
+
+    toolbars = [AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar, AAXX_Bar, AABB_Bar,
+                FirstOrder_Bar, SecondOrderBar, SecondOrderSpinBar,
+                DNMR_TwoSingletBar, DNMR_AB_Bar]
 
 
     class DummyController:
         @staticmethod
-        def update_with_dict(**kwargs):
+        def update_view_plot(*args, **kwargs):
+            print(args)
             print(kwargs)
-
 
     dummy_controller = DummyController()
 
     root = Tk()
     root.title('test toolbars')
 
-    toolbar_1 = SecondOrderBar(root, controller=dummy_controller)
-    toolbar_1.pack(side=TOP)
-    toolbar_2 = SecondOrderSpinBar(root, controller=dummy_controller,
-                                   realtime=False,
-                                   from_=-10000, to=10000, increment=1
-                                   )
-    toolbar_2.pack(side=TOP)
+    for toolbar in toolbars:
+        toolbar(root, controller=dummy_controller).pack(side=TOP)
 
     # workaround fix for Tk problems and mac mouse/trackpad:
     while True:
