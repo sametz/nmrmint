@@ -355,7 +355,7 @@ class SecondOrderBar(Frame):
         add_frequency_widgets, add_peakwidth_widget, add_J_button: add the
         required widgets to the toolbar. Only intented to be called by
         __init__. TODO: review all code and learn appropriate use of private
-        methods.
+        methods to refactor.
         vj_popup: opens a window for the entry of J values as well as
         frequencies.
         request_plot: sends model type and data to the controller
