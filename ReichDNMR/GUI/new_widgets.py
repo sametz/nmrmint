@@ -204,193 +204,193 @@ class BaseEntryFrame(Frame):
             return False
 
 
-class EntryFrame(Frame):
-    """
-    A tkinter Frame that holds a labeled entry widget, takes a function as an
-    argument, and calls that function when a change is committed to the Entry's
-    value.
-
-    EntryFrame will call the function (provided as 'controller' in the arguments)
-    when a change in the entry's value is committed.
-
-    EntryFrame is intended as a new base class that will be inherited from.
-    For example, the initialize() method needs to be overwritten to change
-    the default initial entry of 0.00.
-
-    Methods:
-        initialize, add_label, add_entry, bind_entry, and validate_entry: are
-        called by __init__ to initialize EntryFrame. TODO: review all code
-        and learn appropriate use of private methods to refactor.
-
-        on_return: binding for <Return>
-
-        on_tab: binding for <Tab>
-
-        refresh: requests view plot update using the latest data
-
-        entry_is_changed: determines if the Entry value has been changed
-        since the variable was last saved.
-
-        find_next_entry: cycles throught the tkinter widget traversal until
-        another Entry-like object found, then returns that object.
-
-        validate_entry: checks that the current Entry value is acceptable
-        (either blank, or a number).
-
-        is_number: tests to see if a value is either a number or None.
-
-        save_entry: saves the Entry value to the relevant data structure.
-        Intended to be overwritten by subclasses of EntryFrame.
-
-    TODO:
-        * 'controller' is a misleading argument name when a MVC design is used.
-        Refactor, e.g. to 'callback'
-    """
-
-    def __init__(self, parent=None, name='', color='white',
-                 controller=None,
-                 **options):
-        """
-        __init__ is broken into multiple method references, to allow
-        subclasses to modify as needed.
-
-        Keyword arguments:
-        :param parent: The parent tkinter object
-        :param name: (str) Optional name. Used as Label text as well as
-        widget identification.
-        :param color: (str) Default color for widget and contents.
-        :param controller: function to be called when change in Entry contents
-        committed.
-        :param options: (dict) Standard kwargs for a tkinter Frame
-        """
-        Frame.__init__(self, parent, relief=RIDGE, borderwidth=0,
-                       background=color, **options)
-        self.name = name
-        self.color = color
-        self.model = controller
-
-        self.initialize()
-        self.add_label()
-        self.add_entry()
-        self.bind_entry()
-        self.validate_entry()
-
-    def initialize(self):
-        """
-        Create a StringVar object; initialize self.value with the initial
-        number, and initialize StringVar with that same value.
-
-        Subclasses of EntryFrame should overwrite this function to accomodate
-        however initial values are passed into them.
-        """
-        self.value_var = StringVar()
-        self.value = 0.0
-        self.value_var.set(self.value)
-
-    def add_label(self):
-        """Add self.name to a Label at the top of the frame."""
-        Label(self, text=self.name, bg=self.color, bd=0).pack(side=TOP)
-
-    def add_entry(self):
-        """Add an Entry widget to the EntryFrame.
-
-        Subclasses of EntryBox that use a different entry widget (e.g. SpinBox)
-        should overwrite this function.
-        """
-        self.entry = Entry(self, width=7,
-                           validate='key')  # check for number on keypress)
-        self.entry.pack(side=TOP, fill=X)
-        self.entry.config(textvariable=self.value_var)
-
-    def bind_entry(self):
-        """Define behavior when the Entry widget loses focus.
-
-        EntryFrame assumes action should only be taken when a change in the
-        Entry widget is "committed" by hitting Return, Tab, or clicking
-        outside the widget.
-        Subclasses may overwrite/extend bind_entry to tailor behavior.
-        """
-        self.entry.bind('<Return>', lambda event: self.on_return(event))
-        self.entry.bind('<Tab>', lambda event: self.on_tab(event))
-        self.entry.bind('<FocusOut>', lambda event: self.refresh())
-
-    def on_return(self, event):
-        """Refresh the view and shift focus when Return key is hit."""
-        self.refresh()
-        self.find_next_entry(self.entry).focus()
-
-    def refresh(self):
-        """Save the Entry value to the data structure then request a view
-        refresh."""
-        if self.entry_is_changed():
-            self.save_entry()
-            self.model()
-
-    def entry_is_changed(self):
-        """Check if the current Entry value differs from the last saved
-        value.
-
-        :return: True if changed, False if not.
-        """
-        return self.value != float(self.value_var.get())
-
-    def find_next_entry(self, current_widget):
-        """Return the next Entry-like widget in tkinter's widget traversal.
-
-        Used to ignore the other widgets in the GUI such as Buttons,
-        RadioButtons, and matplotlib widgets.
-        Subclasses can modify this behavior if other widget types are to be
-        acknowledged.
-        :param current_widget: the widget that needs to lose focus
-        :return: the next entry-like widget
-        """
-        next_entry = current_widget.tk_focusNext()
-        if next_entry.widgetName in ['entry', 'spinbox']:
-            return next_entry
-        else:
-            return self.find_next_entry(next_entry)
-
-    def validate_entry(self):
-        """Restrict Entry inputs to numerical (or blank)
-
-        The base EntryFrame class assumes the entry contents should be
-        numerical.  A subclass that wants non-numeric entries must override
-        this method.
-        """
-        # check on each keypress if new result will be a number
-        self.entry['validatecommand'] = (self.register(self.is_valid), '%P')
-        # sound 'bell' if bad keypress
-        self.entry['invalidcommand'] = 'bell'
-
-    @staticmethod
-    def is_valid(entry):
-        """
-        tests to see if entry is acceptable (either empty, or able to be
-        converted to a float.)
-        """
-        if not entry:
-            return True  # Empty string: OK if entire entry deleted
-        try:
-            float(entry)
-            return True
-        except ValueError:
-            return False
-
-    def on_tab(self, event):
-        """Refresh the view and shift focus when Tab key is hit."""
-        self.on_return(event)
-        return 'break'  # override default tkinter tab behavior
-
-    def save_entry(self):
-        """Saves widget's entry as self.stored_value , filling the entry with
-        0.00 if it was empty.
-        Subclasses should overwrite save_entry to suit needs of their data
-        type and call to controller
-        """
-        if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(0.00)  # fill it with zero
-        value = float(self.value_var.get())
-        self.value = value
+# class EntryFrame(Frame):
+#     """
+#     A tkinter Frame that holds a labeled entry widget, takes a function as an
+#     argument, and calls that function when a change is committed to the Entry's
+#     value.
+#
+#     EntryFrame will call the function (provided as 'controller' in the arguments)
+#     when a change in the entry's value is committed.
+#
+#     EntryFrame is intended as a new base class that will be inherited from.
+#     For example, the initialize() method needs to be overwritten to change
+#     the default initial entry of 0.00.
+#
+#     Methods:
+#         initialize, add_label, add_entry, bind_entry, and validate_entry: are
+#         called by __init__ to initialize EntryFrame. TODO: review all code
+#         and learn appropriate use of private methods to refactor.
+#
+#         on_return: binding for <Return>
+#
+#         on_tab: binding for <Tab>
+#
+#         refresh: requests view plot update using the latest data
+#
+#         entry_is_changed: determines if the Entry value has been changed
+#         since the variable was last saved.
+#
+#         find_next_entry: cycles throught the tkinter widget traversal until
+#         another Entry-like object found, then returns that object.
+#
+#         validate_entry: checks that the current Entry value is acceptable
+#         (either blank, or a number).
+#
+#         is_number: tests to see if a value is either a number or None.
+#
+#         save_entry: saves the Entry value to the relevant data structure.
+#         Intended to be overwritten by subclasses of EntryFrame.
+#
+#     TODO:
+#         * 'controller' is a misleading argument name when a MVC design is used.
+#         Refactor, e.g. to 'callback'
+#     """
+#
+#     def __init__(self, parent=None, name='', color='white',
+#                  controller=None,
+#                  **options):
+#         """
+#         __init__ is broken into multiple method references, to allow
+#         subclasses to modify as needed.
+#
+#         Keyword arguments:
+#         :param parent: The parent tkinter object
+#         :param name: (str) Optional name. Used as Label text as well as
+#         widget identification.
+#         :param color: (str) Default color for widget and contents.
+#         :param controller: function to be called when change in Entry contents
+#         committed.
+#         :param options: (dict) Standard kwargs for a tkinter Frame
+#         """
+#         Frame.__init__(self, parent, relief=RIDGE, borderwidth=0,
+#                        background=color, **options)
+#         self.name = name
+#         self.color = color
+#         self.model = controller
+#
+#         self.initialize()
+#         self.add_label()
+#         self.add_entry()
+#         self.bind_entry()
+#         self.validate_entry()
+#
+#     def initialize(self):
+#         """
+#         Create a StringVar object; initialize self.value with the initial
+#         number, and initialize StringVar with that same value.
+#
+#         Subclasses of EntryFrame should overwrite this function to accomodate
+#         however initial values are passed into them.
+#         """
+#         self.value_var = StringVar()
+#         self.value = 0.0
+#         self.value_var.set(self.value)
+#
+#     def add_label(self):
+#         """Add self.name to a Label at the top of the frame."""
+#         Label(self, text=self.name, bg=self.color, bd=0).pack(side=TOP)
+#
+#     def add_entry(self):
+#         """Add an Entry widget to the EntryFrame.
+#
+#         Subclasses of EntryBox that use a different entry widget (e.g. SpinBox)
+#         should overwrite this function.
+#         """
+#         self.entry = Entry(self, width=7,
+#                            validate='key')  # check for number on keypress)
+#         self.entry.pack(side=TOP, fill=X)
+#         self.entry.config(textvariable=self.value_var)
+#
+#     def bind_entry(self):
+#         """Define behavior when the Entry widget loses focus.
+#
+#         EntryFrame assumes action should only be taken when a change in the
+#         Entry widget is "committed" by hitting Return, Tab, or clicking
+#         outside the widget.
+#         Subclasses may overwrite/extend bind_entry to tailor behavior.
+#         """
+#         self.entry.bind('<Return>', lambda event: self.on_return(event))
+#         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
+#         self.entry.bind('<FocusOut>', lambda event: self.refresh())
+#
+#     def on_return(self, event):
+#         """Refresh the view and shift focus when Return key is hit."""
+#         self.refresh()
+#         self.find_next_entry(self.entry).focus()
+#
+#     def refresh(self):
+#         """Save the Entry value to the data structure then request a view
+#         refresh."""
+#         if self.entry_is_changed():
+#             self.save_entry()
+#             self.model()
+#
+#     def entry_is_changed(self):
+#         """Check if the current Entry value differs from the last saved
+#         value.
+#
+#         :return: True if changed, False if not.
+#         """
+#         return self.value != float(self.value_var.get())
+#
+#     def find_next_entry(self, current_widget):
+#         """Return the next Entry-like widget in tkinter's widget traversal.
+#
+#         Used to ignore the other widgets in the GUI such as Buttons,
+#         RadioButtons, and matplotlib widgets.
+#         Subclasses can modify this behavior if other widget types are to be
+#         acknowledged.
+#         :param current_widget: the widget that needs to lose focus
+#         :return: the next entry-like widget
+#         """
+#         next_entry = current_widget.tk_focusNext()
+#         if next_entry.widgetName in ['entry', 'spinbox']:
+#             return next_entry
+#         else:
+#             return self.find_next_entry(next_entry)
+#
+#     def validate_entry(self):
+#         """Restrict Entry inputs to numerical (or blank)
+#
+#         The base EntryFrame class assumes the entry contents should be
+#         numerical.  A subclass that wants non-numeric entries must override
+#         this method.
+#         """
+#         # check on each keypress if new result will be a number
+#         self.entry['validatecommand'] = (self.register(self.is_valid), '%P')
+#         # sound 'bell' if bad keypress
+#         self.entry['invalidcommand'] = 'bell'
+#
+#     @staticmethod
+#     def is_valid(entry):
+#         """
+#         tests to see if entry is acceptable (either empty, or able to be
+#         converted to a float.)
+#         """
+#         if not entry:
+#             return True  # Empty string: OK if entire entry deleted
+#         try:
+#             float(entry)
+#             return True
+#         except ValueError:
+#             return False
+#
+#     def on_tab(self, event):
+#         """Refresh the view and shift focus when Tab key is hit."""
+#         self.on_return(event)
+#         return 'break'  # override default tkinter tab behavior
+#
+#     def save_entry(self):
+#         """Saves widget's entry as self.stored_value , filling the entry with
+#         0.00 if it was empty.
+#         Subclasses should overwrite save_entry to suit needs of their data
+#         type and call to controller
+#         """
+#         if not self.value_var.get():  # if entry left blank,
+#             self.value_var.set(0.00)  # fill it with zero
+#         value = float(self.value_var.get())
+#         self.value = value
 
 
 class ArrayBox(BaseEntryFrame):
@@ -533,7 +533,7 @@ class ArraySpinBox(ArrayBox):
         self.after(1, self.refresh)
 
 
-class VarBox(Frame):
+class VarBox(BaseEntryFrame):
     """
     A tkinter Frame that holds a labeled Entry widget, restricts its input to
     type (float), updates its value to the master.vars dict, and calls
@@ -563,7 +563,7 @@ class VarBox(Frame):
         * review all code and learn appropriate use of private
         methods to refactor.
     """
-    def __init__(self, parent=None, name='', default=0.00, **options):
+    def __init__(self, name='', dict_={}, **options):
         """Associate a name with the VarBox widget, and read the default
         value for its Entry.
 
@@ -574,74 +574,76 @@ class VarBox(Frame):
             default: The default value to initiate the Entry widget with
             **options: the standard optional kwargs for a Frame object
         """
-        Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
+        self.dict = dict_
+        self.initial_value = self.dict[name]
+        BaseEntryFrame.__init__(self, name=name, **options)
         Label(self, text=name).pack(side=TOP)
-        self.widgetName = name  # will be key in dictionary
+        # self.widgetName = name  # will be key in dictionary
 
         # Entries will be limited to numerical
-        ent = Entry(self, width=7,
-                    validate='key')  # check for number on keypress
-        ent.pack(side=TOP, fill=X)
-        self.value = StringVar()
-        ent.config(textvariable=self.value)
-        self.value.set(str(default))
+        # ent = Entry(self, width=7,
+        #             validate='key')  # check for number on keypress
+        # ent.pack(side=TOP, fill=X)
+        # self.value = StringVar()
+        # ent.config(textvariable=self.value)
+        # self.value.set(str(default))
 
         # Default behavior: both return and tab will shift focus to next
         # widget; only save data and ping controller if a change is made
-        ent.bind('<Return>', lambda event: self.on_return(event))
-        ent.bind('<Tab>', lambda event: self.on_tab())
+        # ent.bind('<Return>', lambda event: self.on_return(event))
+        # ent.bind('<Tab>', lambda event: self.on_tab())
+        #
+        # # check on each keypress if new result will be a number
+        # ent['validatecommand'] = (self.register(self.is_number), '%P')
+        # # sound 'bell' if bad keypress
+        # ent['invalidcommand'] = 'bell'
 
-        # check on each keypress if new result will be a number
-        ent['validatecommand'] = (self.register(self.is_number), '%P')
-        # sound 'bell' if bad keypress
-        ent['invalidcommand'] = 'bell'
+    # @staticmethod
+    # def is_number(entry):
+    #     """
+    #     tests to see if entry is acceptable (either empty, or able to be
+    #     converted to a float.)
+    #     """
+    #     if not entry:
+    #         return True  # Empty string: OK if entire entry deleted
+    #     try:
+    #         float(entry)
+    #         return True
+    #     except ValueError:
+    #         return False
+    #
+    # def entry_is_changed(self):
+    #     """Check if the current Entry value differs from the last saved
+    #     value.
+    #
+    #     :return: True if changed, False if not.
+    #     """
+    #     return self.master.vars[self.widgetName] != float(self.value.get())
+    #
+    # def on_return(self, event):
+    #     """Refresh the view and shift focus when Return key is hit."""
+    #     if self.entry_is_changed():
+    #         self.to_dict()
+    #         self.master.request_plot()
+    #     event.widget.tk_focusNext().focus()
+    #
+    # def on_tab(self):
+    #     """Refresh the view and shift focus when Tab key is hit."""
+    #     if self.entry_is_changed():
+    #         self.to_dict()
+    #         self.master.request_plot()
 
-    @staticmethod
-    def is_number(entry):
-        """
-        tests to see if entry is acceptable (either empty, or able to be
-        converted to a float.)
-        """
-        if not entry:
-            return True  # Empty string: OK if entire entry deleted
-        try:
-            float(entry)
-            return True
-        except ValueError:
-            return False
-
-    def entry_is_changed(self):
-        """Check if the current Entry value differs from the last saved
-        value.
-
-        :return: True if changed, False if not.
-        """
-        return self.master.vars[self.widgetName] != float(self.value.get())
-
-    def on_return(self, event):
-        """Refresh the view and shift focus when Return key is hit."""
-        if self.entry_is_changed():
-            self.to_dict()
-            self.master.request_plot()
-        event.widget.tk_focusNext().focus()
-
-    def on_tab(self):
-        """Refresh the view and shift focus when Tab key is hit."""
-        if self.entry_is_changed():
-            self.to_dict()
-            self.master.request_plot()
-
-    def to_dict(self):
+    def save_entry(self):
         """Saves widget's entry in the parent's dict, filling the entry with
         0.00 if it was empty.
         """
-        if not self.value.get():  # if entry left blank,
-            self.value.set(0.00)  # fill it with zero
+        if not self.value_var.get():  # if entry left blank,
+            self.value_var.set(0.00)  # fill it with zero
         # Add the widget's status to the container's dictionary
-        self.master.vars[self.widgetName] = float(self.value.get())
+        self.dict[self.name] = float(self.value_var.get())
 
 
-class IntBox(Frame):
+class IntBox(VarBox):
     """Overrides VarBox so that the Entry is restricted to integers only.
 
     TODO: not only should this either subclass from VarBox, or create custom
@@ -652,29 +654,29 @@ class IntBox(Frame):
     # Future refactor options: either create a base class for an input box
     # that varies in its input restriction (float, int, str etc), and/or
     # look into tkinter built-in entry boxes as component.
-    def __init__(self, parent=None, name='', default=0, **options):
-        Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
-        Label(self, text=name).pack(side=TOP, expand=NO, fill=NONE)
-        self.widgetName = name  # will be key in dictionary
-
-        # Entries will be limited to numerical
-        ent = Entry(self, width=7, validate='key')  # check for int on keypress
-        ent.pack(side=TOP, expand=NO, fill=NONE)
-        self.value = StringVar()
-        ent.config(textvariable=self.value)
-        self.value.set(str(default))
-        ent.bind('<Return>', lambda event: self.on_event(event))
-        ent.bind('<FocusOut>', lambda event: self.on_event(event))
-
-        # check on each keypress if new result will be a number
-        ent['validatecommand'] = (self.register(self.is_int), '%P')
-        # sound 'bell' if bad keypress
-        ent['invalidcommand'] = 'bell'
+    def __init__(self, **options):
+        VarBox.__init__(self, **options)
+        # Label(self, text=name).pack(side=TOP, expand=NO, fill=NONE)
+        # self.widgetName = name  # will be key in dictionary
+        #
+        # # Entries will be limited to numerical
+        # ent = Entry(self, width=7, validate='key')  # check for int on keypress
+        # ent.pack(side=TOP, expand=NO, fill=NONE)
+        # self.value = StringVar()
+        # ent.config(textvariable=self.value)
+        # self.value.set(str(default))
+        # ent.bind('<Return>', lambda event: self.on_event(event))
+        # ent.bind('<FocusOut>', lambda event: self.on_event(event))
+        #
+        # # check on each keypress if new result will be a number
+        # ent['validatecommand'] = (self.register(self.is_int), '%P')
+        # # sound 'bell' if bad keypress
+        # ent['invalidcommand'] = 'bell'
 
     @staticmethod
-    def is_int(entry):
-        """
-        tests to see if entry string can be converted to integer
+    def is_valid(entry):
+        """Test to see if entry is acceptable (either empty, or able to be
+        converted to the desired type.)
         """
         if not entry:
             return True  # Empty string: OK if entire entry deleted
@@ -683,27 +685,6 @@ class IntBox(Frame):
             return True
         except ValueError:
             return False
-
-    def on_event(self, event):
-        """
-        On event: Records widget's status to the container's dictionary of
-        values, fills the entry with 0 if it was empty, tells the container
-        to send data to the controller, and shifts focus to the next entry box (after
-        Return or Tab).
-        """
-        self.to_dict()
-        self.master.request_plot()
-        event.widget.tk_focusNext().focus()
-
-    def to_dict(self):
-        """
-        Converts entry to integer, and stores data in container's vars
-        dictionary.
-        """
-        if not self.value.get():  # if entry left blank,
-            self.value.set(0)  # fill it with zero
-        # Add the widget's status to the container's dictionary
-        self.master.vars[self.widgetName] = int(self.value.get())
 
 
 class VarButtonBox(Frame):
@@ -891,6 +872,9 @@ if __name__ == '__main__':
         print('controller called')
 
     dummy_array = np.array([[1, 42, 99]])
+    dummy_dict = {'VarBox example': 11.00,
+                  'IntBox example': 12,
+                  'VarButtonBox': 42.0}
 
     root = Tk()
     root.title('test widgets')
@@ -900,11 +884,12 @@ if __name__ == '__main__':
     widgets = {'Array Box': ArrayBox,
                'ArraySpinBox': ArraySpinBox,
                'VarBox': VarBox,
-               'IntBox': IntBox,
-               'VarButtonBox': VarButtonBox}
+               'IntBox': IntBox}  #,
+               # 'VarButtonBox': VarButtonBox}
     widget_list = [val(parent=mainwindow, name=key, array=dummy_array,
                        controller=dummy_controller) if 'Array' in key
-                   else val(parent=mainwindow, name=key)
+                   else val(parent=mainwindow, name=key+' example',
+                            dict_=dummy_dict, controller=dummy_controller)
                    for key, val in widgets.items()]
     for widget in widget_list:
         widget.pack(side=LEFT)
