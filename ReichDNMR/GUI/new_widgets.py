@@ -687,9 +687,7 @@ class IntBox(VarBox):
             return False
 
 
-class VarButtonBox(Frame):
-    """TODO: harmonize behavior/API of VarButtonBox with ArraySpinBox to
-    avoid redundancy or idiosyncratic behavior."""
+class VarButtonBox(VarBox):
     """
     A deluxe VarBox that is closer to WINDNMR-style entry boxes.
     ent = entry that holds the value used for calculations
@@ -702,33 +700,39 @@ class VarButtonBox(Frame):
     """
 
     # To do: use inheritance to avoid repeating code for different widgets
-    def __init__(self, parent=None, name='', default=0.00, **options):
-        Frame.__init__(self, parent, relief=RIDGE, borderwidth=1, **options)
-        Label(self, text=name).pack(side=TOP)
-
-        self.widgetName = name  # will be key in dictionary
-
-        # Entries will be limited to numerical
-        ent = Entry(self, width=7,
-                    validate='key')  # check for number on keypress
-        ent.pack(side=TOP, fill=X)
-        self.value = StringVar()
-        ent.config(textvariable=self.value)
-        self.value.set(str(default))
-
-        # Default behavior: both return and tab will shift focus to next
-        # widget; only save data and ping controller if a change is made
-        # To-Do: consistent routines for VarBox, VarButtonBox, ArrayBox etc.
-        # e.g. rename on_tab for general purpose on focus-out
-        ent.bind('<Return>', lambda event: self.on_return(event))
-        ent.bind('<Tab>', lambda event: self.on_tab())
-
-        # check on each keypress if new result will be a number
-        ent['validatecommand'] = (self.register(self.is_number), '%P')
-        # sound 'bell' if bad keypress
-        ent['invalidcommand'] = 'bell'
+    def __init__(self, from_=0.00, to=100.00, increment=1, realtime=False,
+                 **options):
+        VarBox.__init__(self, **options)
+        # Label(self, text=name).pack(side=TOP)
+        #
+        # self.widgetName = name  # will be key in dictionary
+        #
+        # # Entries will be limited to numerical
+        # ent = Entry(self, width=7,
+        #             validate='key')  # check for number on keypress
+        # ent.pack(side=TOP, fill=X)
+        # self.value = StringVar()
+        # ent.config(textvariable=self.value)
+        # self.value.set(str(default))
+        #
+        # # Default behavior: both return and tab will shift focus to next
+        # # widget; only save data and ping controller if a change is made
+        # # To-Do: consistent routines for VarBox, VarButtonBox, ArrayBox etc.
+        # # e.g. rename on_tab for general purpose on focus-out
+        # ent.bind('<Return>', lambda event: self.on_return(event))
+        # ent.bind('<Tab>', lambda event: self.on_tab())
+        #
+        # # check on each keypress if new result will be a number
+        # ent['validatecommand'] = (self.register(self.is_number), '%P')
+        # # sound 'bell' if bad keypress
+        # ent['invalidcommand'] = 'bell'
 
         # Create a grid for buttons and increment
+        self.min = from_
+        self.max = to
+        self.increment = increment
+        self.realtime = realtime
+
         minus_plus_up = Frame(self)
         minus_plus_up.rowconfigure(0,
                                    minsize=30)  # make 2 rows ~same height
@@ -753,10 +757,10 @@ class VarButtonBox(Frame):
         # Increment is also limited to numerical entry
         increment = Entry(minus_plus_up, width=4, validate='key')
         increment.grid(row=1, column=0, columnspan=2, sticky=NSEW)
-        self.inc = StringVar()
-        increment.config(textvariable=self.inc)
-        self.inc.set(str(1))  # 1 replaced by argument later?
-        increment['validatecommand'] = (self.register(self.is_number), '%P')
+        self.increment_var = StringVar()
+        increment.config(textvariable=self.increment_var)
+        self.increment_var.set(str(1))  # 1 replaced by argument later?
+        increment['validatecommand'] = (self.register(self.is_valid), '%P')
         increment['invalidcommand'] = 'bell'
 
         down = Button(minus_plus_up, text=down_arrow, command=lambda: None)
@@ -764,83 +768,134 @@ class VarButtonBox(Frame):
         down.bind('<Button-1>', lambda event: self.zoom_down())
         down.bind('<ButtonRelease-1>', lambda event: self.stop_action())
 
-    @staticmethod
-    def is_number(entry):
+    # @staticmethod
+    # def is_number(entry):
+    #     """
+    #     tests to see if entry is acceptable (either empty, or able to be
+    #     converted to a float.)
+    #     """
+    #     if not entry:
+    #         return True  # Empty string: OK if entire entry deleted
+    #     try:
+    #         float(entry)
+    #         return True
+    #     except ValueError:
+    #         return False
+
+    # def entry_is_changed(self):
+    #     """True if current entry doesn't match stored entry"""
+    #     return self.master.vars[self.widgetName] != float(self.value.get())
+
+    # def on_return(self, event):
+    #     """Records change to entry, calls controller, and focuses on next widget
+    #     """
+    #     if self.entry_is_changed():
+    #         self.to_dict()
+    #         self.master.request_plot()
+    #     event.widget.tk_focusNext().focus()
+
+    # def on_tab(self):
+    #     """Records change to entry, and calls controller"""
+    #     if self.entry_is_changed():
+    #         self.to_dict()
+    #         self.master.request_plot()
+
+    # def to_dict(self):
+    #     """
+    #     Records widget's contents to the container's dictionary of
+    #     values, filling the entry with 0.00 if it was empty.
+    #     """
+    #     if not self.value.get():  # if entry left blank,
+    #         self.value.set(0.00)  # fill it with zero
+    #     # Add the widget's status to the container's dictionary
+    #     self.master.vars[self.widgetName] = float(self.value.get())
+
+    def bind_entry(self):
+        """Extend the ArrayFrame method to include bindings for mouse button
+        press/release.
         """
-        tests to see if entry is acceptable (either empty, or able to be
-        converted to a float.)
+        self.entry.bind('<Return>', lambda event: self.on_return(event))
+        self.entry.bind('<Tab>', lambda event: self.on_tab(event))
+        self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        self.entry.bind('<ButtonPress-1>', lambda event: self.on_press())
+        self.entry.bind('<ButtonRelease-1>', lambda event: self.on_release())
+
+    def on_press(self):
+        """Trigger the 'update view' loop if 'realtime' behavior was
+        specified."""
+        if self.realtime:
+            self.loop_refresh()
+
+    def loop_refresh(self):
+        """Refresh the view every 50 ms until cancelled by the on_release
+        method.
+        """
+        self.refresh()
+        self.button_held_job = self._root().after(50, self.loop_refresh)
+
+    def on_release(self):
+        """Cancel the loop_refresh loop if 'realtime' behavior was specified."""
+        if self.realtime:
+            self._root().after_cancel(self.button_held_job)
+
+        # A 1-ms delay allows the StringVar to be updated prior to the
+        # entry_is_changed check. See related StackOverflow question:
+        # https://stackoverflow.com/questions/46504930/
+        self.after(1, self.refresh)
+
+    @staticmethod
+    def is_valid(entry):
+        """Test to see if entry is acceptable.
+
+        Overrides Super: entry must either be a blank, or a float from
+        self.min to self.max.
         """
         if not entry:
             return True  # Empty string: OK if entire entry deleted
         try:
             float(entry)
-            return True
         except ValueError:
             return False
 
-    def entry_is_changed(self):
-        """True if current entry doesn't match stored entry"""
-        return self.master.vars[self.widgetName] != float(self.value.get())
-
-    def on_return(self, event):
-        """Records change to entry, calls controller, and focuses on next widget
-        """
-        if self.entry_is_changed():
-            self.to_dict()
-            self.master.request_plot()
-        event.widget.tk_focusNext().focus()
-
-    def on_tab(self):
-        """Records change to entry, and calls controller"""
-        if self.entry_is_changed():
-            self.to_dict()
-            self.master.request_plot()
-
-    def to_dict(self):
-        """
-        Records widget's contents to the container's dictionary of
-        values, filling the entry with 0.00 if it was empty.
-        """
-        if not self.value.get():  # if entry left blank,
-            self.value.set(0.00)  # fill it with zero
-        # Add the widget's status to the container's dictionary
-        self.master.vars[self.widgetName] = float(self.value.get())
-
     def stop_action(self):
-        """ButtonRelease esets self.mouse1 flag to False"""
+        """ButtonRelease resets self.mouse1 flag to False"""
         self.mouse1 = False
 
     def increase(self):
         """Increases ent by inc"""
-        current = float(self.value.get())
-        increment = float(self.inc.get())
-        self.value.set(str(current + increment))
-        self.on_tab()
+        current = float(self.value_var.get())
+        increment = float(self.increment_var.get())
+        self.value_var.set(str(current + increment))
+        self.on_tab(0)
 
     def decrease(self):
         """Decreases ent by inc"""
-        current = float(self.value.get())
-        decrement = float(self.inc.get())
-        self.value.set(str(current - decrement))
-        self.on_tab()
+        current = float(self.value_var.get())
+        decrement = float(self.increment_var.get())
+        self.value_var.set(str(current - decrement))
+        self.on_tab(0)
 
     def zoom_up(self):
         """Increases ent by int as long as button-1 held down"""
-        increment = float(self.inc.get())
         self.mouse1 = True
-        self.change_value(increment)
+        self.change_value(float(self.increment_var.get()))
 
     def zoom_down(self):
         """Decreases ent by int as long as button-1 held down"""
-        decrement = - float(self.inc.get())
+        decrement = - float(self.increment_var.get())
         self.mouse1 = True
         self.change_value(decrement)
 
     def change_value(self, increment):
-        """Adds increment to the value in ent"""
+        """Adds increment to the value in ent
+
+        :param increment: (float) the change to be made to the float value of
+        the current Entry contents."""
         if self.mouse1:
-            self.value.set(str(float(self.value.get()) + increment))
-            self.on_tab()  # store value, call controller
+            current_float = float(self.value_var.get())
+            new_float = current_float + increment
+            self.value_var.set(str(new_float))
+            self.on_tab(0)  # store value, call controller
 
             # Delay was originally set to 10, but after MVC refactor this
             #  caused an infinite loop (apparently a race condition where
@@ -874,7 +929,7 @@ if __name__ == '__main__':
     dummy_array = np.array([[1, 42, 99]])
     dummy_dict = {'VarBox example': 11.00,
                   'IntBox example': 12,
-                  'VarButtonBox': 42.0}
+                  'VarButtonBox example': 42.0}
 
     root = Tk()
     root.title('test widgets')
@@ -893,6 +948,12 @@ if __name__ == '__main__':
                    for key, val in widgets.items()]
     for widget in widget_list:
         widget.pack(side=LEFT)
+
+    demo_varbuttonbox = VarButtonBox(
+        parent=mainwindow, name='VarButtonBox example',
+        dict_=dummy_dict, controller=dummy_controller, realtime=True,
+        from_=0.00, to=100.00, increment=1)
+    demo_varbuttonbox.pack(side=LEFT)
 
     # TODO: add code to test behavior as well as instantiation
     #
