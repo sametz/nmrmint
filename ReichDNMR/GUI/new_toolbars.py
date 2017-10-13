@@ -19,25 +19,30 @@ simulation of a DNMR lineshape for two uncoupled spins.
 
 * DNMR_AB: holds "custom spinbox" numerical inputs for the simulation of a
 DNMR lineshape for two coupled spins (AB quartet at the slow exchange limit).
+
+TODO:
+* Many of these classes for 'Multiplet' non-QM calculations can be reduced to
+a single class, with the exact widget layouts specified by a dict argument.
+* DNMR bar code can be simplified
 """
 
 from tkinter import *
 
 import numpy as np
 
-from ReichDNMR.GUI.widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox,
-                                   VarButtonBox)
+from ReichDNMR.GUI.new_widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox,
+                                       VarButtonBox)
 from ReichDNMR.initialize import getWINDNMRdefault
 
 
 class ToolBar(Frame):
-    """Extend tkinter.Frame with a dictionary, a controller reference, a controller
-    name, and a function to call the appropriate controller.
+    """Extend tkinter.Frame with a dictionary, a controller reference, a model
+    name, and a function to call the controller.
 
     Intended to be subclassed, and not instantiated itself.
 
     methods:
-        request_plot: sends controller type and data to the controller
+        request_plot: sends model type and data to the controller
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
@@ -59,7 +64,7 @@ class ToolBar(Frame):
         """
         Frame.__init__(self, parent, **options)
         self.controller = controller
-        self.model = 'controller'  # must be overwritten by subclasses
+        self.model = 'model'  # must be overwritten by subclasses
         self.vars = {}
 
     def request_plot(self):
@@ -72,155 +77,108 @@ class ToolBar(Frame):
 class AB_Bar(ToolBar):
     """A subclass of ToolBar designed for use with AB simulations.
 
-    Extends ToolBar with AB quartet inputs, and overwrites .controller as 'AB'.
+    Extends ToolBar with AB quartet inputs, and overwrites .model as 'AB'.
     """
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
         self.model = 'AB'
-        Jab = VarBox(self, name='Jab', default=12.00)
-        Vab = VarBox(self, name='Vab', default=15.00)
-        Vcentr = VarBox(self, name='Vcentr', default=150)
-        Jab.pack(side=LEFT)
-        Vab.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
-        # initialize self.vars with toolbox defaults
-        for child in self.winfo_children():
-            child.to_dict()
+        self.vars = {'Jab': 12.00,
+                     'Vab': 15.00,
+                     'Vcentr': 150.00}
+        kwargs = {'dict_': self.vars,
+                  'controller': self.request_plot}
+        for key in ['Jab', 'Vab', 'Vcentr']:
+            widget = VarBox(self, name=key, **kwargs)
+            widget.pack(side=LEFT)
 
 
 class AB2_Bar(ToolBar):
     """A subclass of ToolBar designed for use with AB2 simulations.
 
-    Extends ToolBar with necessary AB2 inputs, and overwrites .controller as 'AB2'.
+    Extends ToolBar with necessary AB2 inputs, and overwrites .model as 'AB2'.
     """
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
         self.model = 'AB2'
-        Jab = VarBox(self, name='Jab',    default=12.00)
-        Vab = VarBox(self, name='Vab',    default=15.00)
-        Vcentr = VarBox(self, name='Vcentr', default=150)
-        Jab.pack(side=LEFT)
-        Vab.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
-        # initialize self.vars with toolbox defaults
-        for child in self.winfo_children():
-            child.to_dict()
+        self.vars = {'Jab': 12.00,
+                     'Vab': 15.00,
+                     'Vcentr': 150.00}
+        kwargs = {'dict_': self.vars,
+                  'controller': self.request_plot}
+        for key in ['Jab', 'Vab', 'Vcentr']:
+            widget = VarBox(self, name=key, **kwargs)
+            widget.pack(side=LEFT)
 
 
 class ABX_Bar(ToolBar):
     """A subclass of ToolBar designed for use with ABX simulations.
 
-    Extends ToolBar with necessary ABX inputs, and overwrites .controller as 'ABX'.
+    Extends ToolBar with necessary ABX inputs, and overwrites .model as 'ABX'.
     """
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
         self.model = 'ABX'
-        Jab = VarBox(self, name='Jab', default=12.00)
-        Jax = VarBox(self, name='Jax', default=2.00)
-        Jbx = VarBox(self, name='Jbx', default=8.00)
-        Vab = VarBox(self, name='Vab', default=15.00)
-        Vcentr = VarBox(self, name='Vcentr', default=118)
-        Jab.pack(side=LEFT)
-        Jax.pack(side=LEFT)
-        Jbx.pack(side=LEFT)
-        Vab.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
-        # initialize self.vars with toolbox defaults
-        for child in self.winfo_children():
-            child.to_dict()
-
-    # def call_model(self):
-    #     _Jab = self.vars['Jab']
-    #     _Jax = self.vars['Jax']
-    #     _Jbx = self.vars['Jbx']
-    #     _Vab = self.vars['Vab']
-    #     _Vcentr = self.vars['Vcentr']
-    #     spectrum = ABX(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
-    #                    WdthHz=300)
-    #     x, y = tkplot(spectrum)
-    #     canvas.clear()
-    #     canvas.plot(x, y)
+        self.vars = {'Jab': 12.00,
+                     'Jax': 2.00,
+                     'Jbx': 8.00,
+                     'Vab': 15.00,
+                     'Vcentr': 118.00}
+        kwargs = {'dict_': self.vars,
+                  'controller': self.request_plot}
+        for key in ['Jab', 'Jax', 'Jbx', 'Vab', 'Vcentr']:
+            widget = VarBox(self, name=key, **kwargs)
+            widget.pack(side=LEFT)
 
 
 class ABX3_Bar(ToolBar):
     """A subclass of ToolBar designed for use with ABX3 simulations.
 
-   Extends ToolBar with necessary ABX3 inputs, and overwrites .controller as
-   'ABX'.
+   Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
+   'ABX3'.
    """
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
         self.model = 'ABX3'
-        Jab = VarBox(self, name='Jab', default=-12.00)
-        Jax = VarBox(self, name='Jax', default=7.00)
-        Jbx = VarBox(self, name='Jbx', default=7.00)
-        Vab = VarBox(self, name='Vab', default=14.00)
-        Vcentr = VarBox(self, name='Vcentr', default=150)
-        Jab.pack(side=LEFT)
-        Jax.pack(side=LEFT)
-        Jbx.pack(side=LEFT)
-        Vab.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
-        # initialize self.vars with toolbox defaults
-        for child in self.winfo_children():
-            child.to_dict()
-
-    # def call_model(self):
-    #     _Jab = self.vars['Jab']
-    #     _Jax = self.vars['Jax']
-    #     _Jbx = self.vars['Jbx']
-    #     _Vab = self.vars['Vab']
-    #     _Vcentr = self.vars['Vcentr']
-    #     spectrum = ABX3(_Jab, _Jax, _Jbx, _Vab, _Vcentr, Wa=0.5, RightHz=0,
-    #                     WdthHz=300)
-    #     x, y = tkplot(spectrum)
-    #     canvas.clear()
-    #     canvas.plot(x, y)
+        self.vars={'Jab': -12.00,
+                   'Jax': 7.00,
+                   'Jbx': 7.00,
+                   'Vab': 14.00,
+                   'Vcentr': 150}
+        kwargs = {'dict_': self.vars,
+                  'controller': self.request_plot}
+        for key in ['Jab', 'Jax', 'Jbx', 'Vab', 'Vcentr']:
+            widget = VarBox(self, name=key, **kwargs)
+            widget.pack(side=LEFT)
 
 
 class AAXX_Bar(ToolBar):
     """A subclass of ToolBar designed for use with AA'XX' simulations.
 
-   Extends ToolBar with necessary ABX3 inputs, and overwrites .controller as
+   Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
    'AAXX'.
    """
 
     def __init__(self, parent=None, **options):
-        # WINDNMR uses all caps JAA', JXX', etc. However, the controller function
-        # uses Jab, Jax etc. Also, with conversion to using kwargs instead of
-        #  args, can't have dict keys with apostrophes. So, VarBox names
-        # coverted to args in nmrmath.AAXX for now. Future: probably want to
-        # refactor so that toolbar widgets can have separate labels and dict
-        # keys.
+        # WINDNMR uses all caps JAA', JXX', etc. However, the controller
+        # function uses Jab, Jax etc. Also, with conversion to using kwargs
+        # instead of args, can't have dict keys with apostrophes. So, VarBox
+        # names coverted to args in nmrmath.AAXX for now. Future: probably
+        # want to refactor so that toolbar widgets can have separate labels
+        # and dict keys.
         ToolBar.__init__(self, parent, **options)
         self.model = 'AAXX'
-        Jaa = VarBox(self, name="Jaa", default=15.00)
-        Jxx = VarBox(self, name="Jxx", default=-10.00)
-        Jax = VarBox(self, name="Jax", default=40.00)
-        Jax_prime = VarBox(self, name="Jax_prime", default=6.00)
-        Vcentr = VarBox(self, name="Vcentr", default=150)
-        Jaa.pack(side=LEFT)
-        Jxx.pack(side=LEFT)
-        Jax.pack(side=LEFT)
-        Jax_prime.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
-        # initialize self.vars with toolbox defaults
-        for child in self.winfo_children():
-            child.to_dict()
-
-    # def call_model(self):
-    #     _Jaa = self.vars["JAA'"]
-    #     _Jxx = self.vars["JXX'"]
-    #     _Jax = self.vars["JAX"]
-    #     _Jax_prime = self.vars["JAX'"]
-    #     _Vcentr = self.vars["Vcentr"]
-    #     spectrum = AAXX(_Jaa, _Jxx, _Jax, _Jax_prime, _Vcentr,
-    #                     Wa=0.5, RightHz=0, WdthHz=300)
-    #     x, y = tkplot(spectrum)
-    #     canvas.clear()
-    #     canvas.plot(x, y)
+        self.vars={'Jaa': 15.00,
+                   'Jxx': -10.00,
+                   'Jax': 40.00,
+                   'Jax_prime': 6.00,
+                   'Vcentr': 150}
+        kwargs = {'dict_': self.vars,
+                  'controller': self.request_plot}
+        for key in ['Jaa', 'Jxx', 'Jax', 'Jax_prime', 'Vcentr']:
+            widget = VarBox(self, name=key, **kwargs)
+            widget.pack(side=LEFT)
 
 
 class AABB_Bar(ToolBar):
@@ -228,28 +186,31 @@ class AABB_Bar(ToolBar):
     # request_plot to work around the label conflict
     """A subclass of ToolBar designed for use with AA'XX' simulations.
 
-   Extends ToolBar with necessary ABX3 inputs, and overwrites .controller as
-   'AAXX'.
-   """
+    Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
+    'AAXX'.
+
+    Method overridden:
+        request_plot
+
+    Method added:
+        make_kwargs: used by request_plot to provide interface between the
+        toolbar and the controller.
+    """
 
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
         self.model = 'AABB'
-        Vab = VarBox(self, name='VAB', default=40.00)
-        Jaa = VarBox(self, name="JAA'", default=15.00)
-        Jbb = VarBox(self, name="JBB'", default=-10.00)
-        Jab = VarBox(self, name="JAB", default=40.00)
-        Jab_prime = VarBox(self, name="JAB'", default=6.00)
-        Vcentr = VarBox(self, name="Vcentr", default=150)
-        Vab.pack(side=LEFT)
-        Jaa.pack(side=LEFT)
-        Jbb.pack(side=LEFT)
-        Jab.pack(side=LEFT)
-        Jab_prime.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
-        # initialize self.vars with toolbox defaults
-        for child in self.winfo_children():
-            child.to_dict()
+        self.vars = {'VAB': 40.00,
+                     "JAA'": 15.00,
+                     "JBB'": -10.00,
+                     'JAB': 40.00,
+                     "JAB'": 6.00,
+                     'Vcentr': 150}
+        kwargs = {'dict_': self.vars,
+                  'controller': self.request_plot}
+        for key in ['VAB', "JAA'", "JBB'", 'JAB', "JAB'", 'Vcentr']:
+            widget = VarBox(self, name=key, **kwargs)
+            widget.pack(side=LEFT)
 
     def request_plot(self):
         kwargs = self.make_kwargs()
@@ -283,27 +244,24 @@ class FirstOrder_Bar(ToolBar):
     def __init__(self, parent=None, **options):
         ToolBar.__init__(self, parent, **options)
         self.model = 'first_order'
-        Jax = VarBox(self, name='JAX', default=7.00)
-        a = IntBox(self, name='#A', default=2)
-        Jbx = VarBox(self, name='JBX', default=3.00)
-        b = IntBox(self, name='#B', default=1)
-        Jcx = VarBox(self, name='JCX', default=2.00)
-        c = IntBox(self, name='#C', default=0)
-        Jdx = VarBox(self, name='JDX', default=7.00)
-        d = IntBox(self, name='#D', default=0)
-        Vcentr = VarBox(self, name='Vcentr', default=150)
-        Jax.pack(side=LEFT)
-        a.pack(side=LEFT)
-        Jbx.pack(side=LEFT)
-        b.pack(side=LEFT)
-        Jcx.pack(side=LEFT)
-        c.pack(side=LEFT)
-        Jdx.pack(side=LEFT)
-        d.pack(side=LEFT)
-        Vcentr.pack(side=LEFT)
-        # initialize self.vars with toolbox defaults
-        for child in self.winfo_children():
-            child.to_dict()
+        self.vars = {'JAX': 7.00,
+                     '#A': 2,
+                     'JBX': 3.00,
+                     '#B': 1,
+                     'JCX': 2.00,
+                     '#C': 0,
+                     'JDX': 7,
+                     '#D': 0,
+                     'Vcentr': 150}
+        kwargs = {'dict_': self.vars,
+                  'controller': self.request_plot}
+        for key in ['JAX', '#A', 'JBX', '#B', 'JCX', '#C',
+                         'JDX', '#D']:
+            if '#' not in key:
+                widget = VarBox(self, name=key, **kwargs)
+            else:
+                widget = IntBox(self, name=key, **kwargs)
+            widget.pack(side=LEFT)
 
     def request_plot(self):
         kwargs = self.make_kwargs()
@@ -313,7 +271,7 @@ class FirstOrder_Bar(ToolBar):
         """Convert the dictionary of widget entries (self.vars) to a dict
         that is compliant with the controller interface.
 
-        The controller needs to pass a (signal, couplings) tuple to the controller.
+        The controller needs to pass a (signal, couplings) tuple to the model.
         - signal is a (frequency, intensity) tuple representing the frequency
         and intensity of the signal in the absence of coupling. Intensity is
         1 by default.
@@ -358,7 +316,7 @@ class SecondOrderBar(Frame):
         methods to refactor.
         vj_popup: opens a window for the entry of J values as well as
         frequencies.
-        request_plot: sends controller type and data to the controller
+        request_plot: sends model type and data to the controller
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
@@ -399,13 +357,13 @@ class SecondOrderBar(Frame):
         for freq in range(n):
             vbox = ArrayBox(self, array=self.v, coord=(0, freq),
                             name='V' + str(freq + 1),
-                            model=self.request_plot)
+                            controller=self.request_plot)
             # self.v_widgets[freq] = vbox
             vbox.pack(side=LEFT)
 
     def add_peakwidth_widget(self):
         wbox = ArrayBox(self, array=self.w_array, coord=(0, 0), name="W",
-                        model=self.request_plot)
+                        controller=self.request_plot)
         wbox.pack(side=LEFT)
 
     def add_J_button(self, n):
@@ -440,7 +398,7 @@ class SecondOrderBar(Frame):
             v = ArrayBox(datagrid, array=self.v,
                          coord=(0, row - 1),  # V1 stored in v[0, 0], etc.
                          name=vtext, color='gray90',
-                         model=self.request_plot)
+                         controller=self.request_plot)
             v.grid(row=row, column=0, sticky=NSEW, padx=1, pady=1)
             for col in range(1, n + 1):
                 if col < row:
@@ -448,7 +406,7 @@ class SecondOrderBar(Frame):
                                  # J12 stored in j[0, 1] (and j[1, 0]) etc
                                  coord=(col - 1, row - 1),
                                  name="J%d%d" % (col, row),
-                                 model=self.request_plot)
+                                 controller=self.request_plot)
                     j.grid(row=row, column=col, sticky=NSEW, padx=1, pady=1)
                 else:
                     Label(datagrid, bg='grey').grid(
@@ -496,7 +454,7 @@ class SecondOrderSpinBar(SecondOrderBar):
         for freq in range(n):
             vbox = ArraySpinBox(self, array=self.v, coord=(0, freq),
                                 name='V' + str(freq + 1),
-                                model=self.request_plot,
+                                controller=self.request_plot,
                                 **self.spinbox_kwargs)
             # self.v_widgets[freq] = vbox
             vbox.pack(side=LEFT)
@@ -508,7 +466,7 @@ class SecondOrderSpinBar(SecondOrderBar):
         """
         wbox = ArraySpinBox(self, array=self.w_array, coord=(0, 0),
                             name="W",
-                            model=self.request_plot,
+                            controller=self.request_plot,
                             from_=0.01, to=100, increment=0.1,
                             realtime=self.spinbox_kwargs['realtime'])
         wbox.pack(side=LEFT)
@@ -520,7 +478,7 @@ class DNMR_TwoSingletBar(ToolBar):
     nuclei.
 
     Method:
-        request_plot: sends controller type and data to the controller
+        request_plot: sends model type and data to the controller
 
     Attributes:
         Va and Vb (float): the chemcial shifts for nuclei a and b at the slow
@@ -533,20 +491,27 @@ class DNMR_TwoSingletBar(ToolBar):
     """
 
     def __init__(self, parent=None, **options):
+        """Bloated code just to get toolbar reimplemented after refactor"""
         ToolBar.__init__(self, parent, **options)
+
         self.model = 'DNMR_Two_Singlets'
-        Va = VarButtonBox(self, name='Va', default=165.00)
-        Vb = VarButtonBox(self, name='Vb', default=135.00)
-        ka = VarButtonBox(self, name='ka', default=1.50)
-        Wa = VarButtonBox(self, name='Wa', default=0.5)
-        Wb = VarButtonBox(self, name='Wb', default=0.5)
-        pa = VarButtonBox(self, name='%a', default=50)
+        self.vars = {'Va': 165.00,
+                     'Vb': 135.00,
+                     'ka': 1.50,
+                     'Wa': 0.5,
+                     'Wb': 0.5,
+                     '%a': 50}
+        kwargs = {'dict_': self.vars,
+                  'controller': self.request_plot,
+                  'realtime': True}
+        Va = VarButtonBox(parent=self, name='Va', **kwargs)
+        Vb = VarButtonBox(parent=self, name='Vb', **kwargs)
+        ka = VarButtonBox(parent=self, name='ka', **kwargs)
+        Wa = VarButtonBox(parent=self, name='Wa', **kwargs)
+        Wb = VarButtonBox(parent=self, name='Wb', **kwargs)
+        pa = VarButtonBox(parent=self, name='%a', **kwargs)
         for widget in [Va, Vb, ka, Wa, Wb, pa]:
             widget.pack(side=LEFT)
-
-        # initialize self.vars with toolbox defaults
-        for child in self.winfo_children():
-            child.to_dict()
 
     def request_plot(self):
         _Va = self.vars['Va']
@@ -565,7 +530,7 @@ class DNMR_AB_Bar(ToolBar):
         nuclei.
 
         Method:
-            request_plot: sends controller type and data to the controller
+            request_plot: sends model type and data to the controller
 
         Attributes:
             Va and Vb (float): the chemcial shifts for nuclei a and b at the
@@ -578,19 +543,22 @@ class DNMR_AB_Bar(ToolBar):
         def __init__(self, parent=None, **options):
             ToolBar.__init__(self, parent, **options)
             self.model = 'DNMR_AB'
-            Va = VarButtonBox(self, name='Va', default=165.00)
-            Vb = VarButtonBox(self, name='Vb', default=135.00)
-            J = VarButtonBox(self, name='J', default=12.00)
-            kAB = VarButtonBox(self, name='kAB', default=1.50)
-            W_ = VarButtonBox(self, name='W',
-                              default=0.5)  # W is a tkinter string,
-            # so used W_
+            self.vars = {'Va': 165.00,
+                         'Vb': 135.00,
+                         'J': 12.00,
+                         'kAB': 1.50,
+                         'W': 0.5}
+            kwargs = {'dict_': self.vars,
+                      'realtime': True,
+                      'controller': self.request_plot}
+            Va = VarButtonBox(parent=self, name='Va', **kwargs)
+            Vb = VarButtonBox(parent=self, name='Vb', **kwargs)
+            J = VarButtonBox(parent=self, name='J', **kwargs)
+            kAB = VarButtonBox(parent=self, name='kAB', **kwargs)
+            # W is a tkinter string, so use W_
+            W_ = VarButtonBox(parent=self, name='W', **kwargs)
             for widget in [Va, Vb, J, kAB, W_]:
                 widget.pack(side=LEFT)
-
-            # initialize self.vars with toolbox defaults
-            for child in self.winfo_children():
-                child.to_dict()
 
         def request_plot(self):
             _Va = self.vars['Va']

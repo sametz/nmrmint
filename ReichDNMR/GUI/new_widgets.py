@@ -375,7 +375,7 @@ class VarBox(BaseEntryFrame):
         * review all code and learn appropriate use of private
         methods to refactor.
     """
-    def __init__(self, name='', dict_={}, **options):
+    def __init__(self, parent=None, name='', dict_=None, **options):
         """Associate a name with the VarBox widget, and read the default
         value for its Entry.
 
@@ -388,7 +388,7 @@ class VarBox(BaseEntryFrame):
         """
         self.dict = dict_
         self.initial_value = self.dict[name]
-        BaseEntryFrame.__init__(self, name=name, **options)
+        BaseEntryFrame.__init__(self, parent, name, **options)
 
     def save_entry(self):
         """Saves widget's entry in the parent's dict, filling the entry with
@@ -409,8 +409,8 @@ class IntBox(VarBox):
     # Future refactor options: either create a base class for an input box
     # that varies in its input restriction (float, int, str etc), and/or
     # look into tkinter built-in entry boxes as component.
-    def __init__(self, **options):
-        VarBox.__init__(self, **options)
+    def __init__(self, parent=None, **options):
+        VarBox.__init__(self, parent, **options)
 
     @staticmethod
     def is_valid(entry):
