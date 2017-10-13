@@ -1,9 +1,9 @@
 # TODO: Write more tests!
 # import numpy as np
 
-from .plottools import popplot
+from tests.model.plottools import popplot
 from ReichDNMR.model.nmrmath import *
-from .testdata import TWOSPIN_SLOW, AB_WINDNMR  # , TWOSPIN_COALESCE, TWOSPIN_FAST
+from tests.model.testdata import TWOSPIN_SLOW, AB_WINDNMR  # , TWOSPIN_COALESCE, TWOSPIN_FAST
 
 
 def get_intensity(spectrum, x):

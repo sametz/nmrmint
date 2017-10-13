@@ -2,9 +2,9 @@
 
 import numpy as np
 
-from . import testdata
-from .plottools import popplot
-from ReichDNMR.model.dnmrplot import dnmrplot_2spin, dnmrplot_AB
+from precruft.dnmrplot import dnmrplot_2spin, dnmrplot_AB
+from tests.model import testdata
+from tests.model.plottools import popplot
 
 
 def test_dnmrplot_2spin_slowexchange():

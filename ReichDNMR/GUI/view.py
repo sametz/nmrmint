@@ -67,7 +67,8 @@ class MPLgraph(FigureCanvasTkAgg):
     def plot(self, x, y):
         """Plot x, y data to the Canvas.
 
-        :param x, y: (tuple of np linspaces)
+        :param x: (numpy linspace)
+        :param y: (numpy linspace)
         """
         self.add.plot(x, y)
         # apparently .draw_idle() gives faster refresh than .draw()

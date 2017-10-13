@@ -1,10 +1,11 @@
 """
 A stripped-down GUI used to test dialog for entering 2nd-order simulation data.
 """
-import numpy as np
 from tkinter import *
-from guimixin import GuiMixin
-from ReichDNMR.nspin import get_reich_default
+
+import numpy as np
+
+from cruft.nspin import get_reich_default
 
 
 class VarFrame(Frame):

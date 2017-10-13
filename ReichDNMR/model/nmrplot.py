@@ -43,6 +43,7 @@ def add_signals(linspace, peaklist, w):
         result += lorentz(linspace, v, i, w)
     return result
 
+
 # add_signals should supercede the adder function below--
 # schedule for deletion
 def adder(x, plist, Q=2):
@@ -64,6 +65,8 @@ def nmrplot(spectrum, y=1):
     :param spectrum: A list of (frequency, intensity) tuples
     :param y: max intensity
     """
+    import matplotlib.pyplot as plt
+
     spectrum.sort()  # Could become costly with larger spectra
     l_limit = spectrum[0][0] - 50
     r_limit = spectrum[-1][0] + 50
@@ -71,7 +74,7 @@ def nmrplot(spectrum, y=1):
     plt.ylim(-0.1, y)
     plt.gca().invert_xaxis()  # reverses the x axis
     # noinspection PyTypeChecker
-    plt.plot(x, adder(x, spectrum, Q=4))
+    plt.plot(x, add_signals(x, spectrum, w=1))
 
     plt.show()
     return
@@ -155,6 +158,7 @@ def dnmrplot_AB(v1, v2, J, k, W):
 
 
 if __name__ == '__main__':
+
     reichdefault = (165.00, 135.00, 1.50, 0.50, 0.50, 50.00)
     x, y = dnmrplot_2spin(*reichdefault)
 
@@ -171,6 +175,3 @@ if __name__ == '__main__':
 
     testplot((x, y))
     plt.show()
-    # doublet = [(100, 1), (120, 1)]
-    # nmrplot(doublet)
-    # plt.show()
