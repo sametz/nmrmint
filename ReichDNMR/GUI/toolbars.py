@@ -30,30 +30,29 @@ from tkinter import *
 
 import numpy as np
 
-from ReichDNMR.reichdefaults import (ABdict, AB2dict, ABXdict, ABX3dict,
-                                     AAXXdict, AABBdict)
 from ReichDNMR.GUI.widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox,
                                    VarButtonBox)
 from ReichDNMR.initialize import getWINDNMRdefault
 
 
 class ToolBar(Frame):
-    """Extend tkinter.Frame with a dictionary, a controller reference, a model
+    """Extend tkinter.Frame with a controller reference, a model
     name, and a function to call the controller.
 
     Intended to be subclassed, and not instantiated itself.
 
     methods:
-        request_plot: sends model type and data to the controller
+        request_plot: sends model type and data to the controller. Assumes
+        controller has an update_view_plot function.
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
-        architecture. Assumes controller has an update_view_plot method.
+        architecture.
         model (str): the type of calculation requested (interpreted by the
-        controller).
+        controller). To be overwritten by subclass.
         vars (dict): holds the kwargs that the controller is called with.
         Intent is that child widgets will store and update their data to this
-        dict.
+        dict. Intended to be overwritten by subclass.
     """
 
     def __init__(self, parent=None, controller=None, **options):
@@ -81,12 +80,24 @@ class MultipletBar(ToolBar):
     values, and widget list, and populates the ToolBar with the required
     widgets.
 
-    TODO:
-    * ToolBar and Multiplet bar are largely redundant--refactor into one base
-    class?
+    vars is used to both initialize the toolbar, and store the widget values.
     """
     def __init__(self, parent=None, model=None, vars=None, widgets=None,
                  **options):
+        """
+        Override ToolBar's model and vars, and add a list of widget names.
+
+        Keyword arguments:
+        :param parent: parent tkinter object
+        :param model: (str) the type of calculation requested (interpreted by
+        the controller).
+        :param vars: (dict) {'widget': float} Used to both initialize the
+        toolbar on instantiation, and hold a record of current widget values.
+        Passed to controller as kwargs.
+        :param widgets: [(string)...] A list of widgets (keys in self.vars)
+        in the order that the widgets should appear in the toolbar.
+        :param options: standard ToolBar kwargs
+        """
         ToolBar.__init__(self, parent, **options)
         self.model = model
         self.vars = vars
@@ -96,164 +107,6 @@ class MultipletBar(ToolBar):
         for key in widgets:
             widget = VarBox(self, name=key, **kwargs)
             widget.pack(side=LEFT)
-
-# class AB_Bar(ToolBar):
-#     """A subclass of ToolBar designed for use with AB simulations.
-#
-#     Extends ToolBar with AB quartet inputs, and overwrites .model as 'AB'.
-#     """
-#     def __init__(self, parent=None, **options):
-#         ToolBar.__init__(self, parent, **options)
-#         self.model = 'AB'
-#         self.vars = {'Jab': 12.00,
-#                      'Vab': 15.00,
-#                      'Vcentr': 150.00}
-#         kwargs = {'dict_': self.vars,
-#                   'controller': self.request_plot}
-#         for key in ['Jab', 'Vab', 'Vcentr']:
-#             widget = VarBox(self, name=key, **kwargs)
-#             widget.pack(side=LEFT)
-
-
-class AB2_Bar(ToolBar):
-    """A subclass of ToolBar designed for use with AB2 simulations.
-
-    Extends ToolBar with necessary AB2 inputs, and overwrites .model as 'AB2'.
-    """
-    def __init__(self, parent=None, **options):
-        ToolBar.__init__(self, parent, **options)
-        self.model = 'AB2'
-        self.vars = {'Jab': 12.00,
-                     'Vab': 15.00,
-                     'Vcentr': 150.00}
-        kwargs = {'dict_': self.vars,
-                  'controller': self.request_plot}
-        for key in ['Jab', 'Vab', 'Vcentr']:
-            widget = VarBox(self, name=key, **kwargs)
-            widget.pack(side=LEFT)
-
-
-class ABX_Bar(ToolBar):
-    """A subclass of ToolBar designed for use with ABX simulations.
-
-    Extends ToolBar with necessary ABX inputs, and overwrites .model as 'ABX'.
-    """
-
-    def __init__(self, parent=None, **options):
-        ToolBar.__init__(self, parent, **options)
-        self.model = 'ABX'
-        self.vars = {'Jab': 12.00,
-                     'Jax': 2.00,
-                     'Jbx': 8.00,
-                     'Vab': 15.00,
-                     'Vcentr': 118.00}
-        kwargs = {'dict_': self.vars,
-                  'controller': self.request_plot}
-        for key in ['Jab', 'Jax', 'Jbx', 'Vab', 'Vcentr']:
-            widget = VarBox(self, name=key, **kwargs)
-            widget.pack(side=LEFT)
-
-
-class ABX3_Bar(ToolBar):
-    """A subclass of ToolBar designed for use with ABX3 simulations.
-
-   Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
-   'ABX3'.
-   """
-
-    def __init__(self, parent=None, **options):
-        ToolBar.__init__(self, parent, **options)
-        self.model = 'ABX3'
-        self.vars = {'Jab': -12.00,
-                     'Jax': 7.00,
-                     'Jbx': 7.00,
-                     'Vab': 14.00,
-                     'Vcentr': 150}
-        kwargs = {'dict_': self.vars,
-                  'controller': self.request_plot}
-        for key in ['Jab', 'Jax', 'Jbx', 'Vab', 'Vcentr']:
-            widget = VarBox(self, name=key, **kwargs)
-            widget.pack(side=LEFT)
-
-
-class AAXX_Bar(ToolBar):
-    """A subclass of ToolBar designed for use with AA'XX' simulations.
-
-   Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
-   'AAXX'.
-   """
-
-    def __init__(self, parent=None, **options):
-        # WINDNMR uses all caps JAA', JXX', etc. However, the controller
-        # function uses Jab, Jax etc. Also, with conversion to using kwargs
-        # instead of args, can't have dict keys with apostrophes. So, VarBox
-        # names coverted to args in nmrmath.AAXX for now. Future: probably
-        # want to refactor so that toolbar widgets can have separate labels
-        # and dict keys.
-        ToolBar.__init__(self, parent, **options)
-        self.model = 'AAXX'
-        self.vars = {'Jaa': 15.00,
-                     'Jxx': -10.00,
-                     'Jax': 40.00,
-                     'Jax_prime': 6.00,
-                     'Vcentr': 150}
-        kwargs = {'dict_': self.vars,
-                  'controller': self.request_plot}
-        for key in ['Jaa', 'Jxx', 'Jax', 'Jax_prime', 'Vcentr']:
-            widget = VarBox(self, name=key, **kwargs)
-            widget.pack(side=LEFT)
-
-
-class AABB_Bar(ToolBar):
-    # see comments to AAXX_bar for problem. Here, will try to customize
-    # request_plot to work around the label conflict
-    """A subclass of ToolBar designed for use with AA'XX' simulations.
-
-    Extends ToolBar with necessary ABX3 inputs, and overwrites .model as
-    'AAXX'.
-
-    Method overridden:
-        request_plot
-
-    Method added:
-        make_kwargs: used by request_plot to provide interface between the
-        toolbar and the controller.
-    """
-
-    def __init__(self, parent=None, **options):
-        ToolBar.__init__(self, parent, **options)
-        self.model = 'AABB'
-        self.vars = {'VAB': 40.00,
-                     "JAA'": 15.00,
-                     "JBB'": -10.00,
-                     'JAB': 40.00,
-                     "JAB'": 6.00,
-                     'Vcentr': 150}
-        kwargs = {'dict_': self.vars,
-                  'controller': self.request_plot}
-        for key in ['VAB', "JAA'", "JBB'", 'JAB', "JAB'", 'Vcentr']:
-            widget = VarBox(self, name=key, **kwargs)
-            widget.pack(side=LEFT)
-
-    def request_plot(self):
-        kwargs = self.make_kwargs()
-        self.controller.update_view_plot(self.model, **kwargs)
-
-    def make_kwargs(self):
-        _Vab = self.vars['VAB']
-        _Jaa = self.vars["JAA'"]
-        _Jbb = self.vars["JBB'"]
-        _Jab = self.vars["JAB"]
-        _Jab_prime = self.vars["JAB'"]
-        _Vcentr = self.vars["Vcentr"]
-
-        data = {'Vab': _Vab,
-                'Jaa': _Jaa,
-                'Jbb': _Jbb,
-                'Jab': _Jab,
-                'Jab_prime': _Jab_prime,
-                'Vcentr': _Vcentr}
-        return data
 
 
 class FirstOrder_Bar(ToolBar):
@@ -364,11 +217,6 @@ class SecondOrderBar(Frame):
         """
         Frame.__init__(self, parent, **options)
         self.controller = controller
-
-        # Store a list of entry widgets for all frequencies
-        # (used by vj_popup)
-        # Since vj_popup doesn't need anymore, can delete?
-        # self.v_widgets = np.zeros(n, dtype=object)
         self.v, self.j = getWINDNMRdefault(n)
         self.w_array = np.array([[0.5]])
 
@@ -381,7 +229,6 @@ class SecondOrderBar(Frame):
             vbox = ArrayBox(self, array=self.v, coord=(0, freq),
                             name='V' + str(freq + 1),
                             controller=self.request_plot)
-            # self.v_widgets[freq] = vbox
             vbox.pack(side=LEFT)
 
     def add_peakwidth_widget(self):
@@ -403,7 +250,6 @@ class SecondOrderBar(Frame):
         """
         tl = Toplevel()
         Label(tl, text='Second-Order Simulation').pack(side=TOP)
-        # datagrid = ArrayFrame(tl, self.request_plot, self.v_widgets)
         datagrid = Frame(tl)
 
         # For gridlines, background set to the line color (e.g. 'black')
@@ -438,11 +284,10 @@ class SecondOrderBar(Frame):
         datagrid.pack()
 
     def request_plot(self):
-        # self.controller.update_view_plot(self.v[0, :], self.j,
-        #                                  self.w_array[0, 0])
-        kwargs = {'v': self.v[0, :],
+        """Adapt 2D array data to kwargs of correct type for the controller."""
+        kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
                   'j': self.j,
-                  'w': self.w_array[0, 0]}
+                  'w': self.w_array[0, 0]}  # controller takes float for w
 
         self.controller.update_view_plot('nspin', **kwargs)
 
@@ -479,7 +324,6 @@ class SecondOrderSpinBar(SecondOrderBar):
                                 name='V' + str(freq + 1),
                                 controller=self.request_plot,
                                 **self.spinbox_kwargs)
-            # self.v_widgets[freq] = vbox
             vbox.pack(side=LEFT)
 
     def add_peakwidth_widget(self):
@@ -595,9 +439,7 @@ class DNMR_AB_Bar(ToolBar):
 
 if __name__ == '__main__':
 
-    toolbars = [AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar, AAXX_Bar, AABB_Bar,
-                FirstOrder_Bar, SecondOrderBar, SecondOrderSpinBar,
-                DNMR_TwoSingletBar, DNMR_AB_Bar]
+    from ReichDNMR.reichdefaults import multiplet_bar_defaults
 
 
     class DummyController:
@@ -611,6 +453,13 @@ if __name__ == '__main__':
     root = Tk()
     root.title('test toolbars')
 
+    test_multibar = MultipletBar(parent=root,
+                                 controller=DummyController,
+                                 **multiplet_bar_defaults['AAXX'])
+    test_multibar.pack(side=TOP)
+
+    toolbars = [FirstOrder_Bar, SecondOrderBar, SecondOrderSpinBar,
+                DNMR_TwoSingletBar, DNMR_AB_Bar]
     for toolbar in toolbars:
         toolbar(root, controller=dummy_controller).pack(side=TOP)
 

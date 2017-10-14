@@ -18,14 +18,10 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
 from matplotlib.figure import Figure
 
 from ReichDNMR.GUI.frames import RadioFrame
-from ReichDNMR.GUI.toolbars import (
-                                    # AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar,
-                                    # AAXX_Bar, AABB_Bar,
-                                    MultipletBar,
-                                    FirstOrder_Bar,
+from ReichDNMR.reichdefaults import multiplet_bar_defaults
+from ReichDNMR.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
                                     SecondOrderSpinBar, DNMR_TwoSingletBar,
                                     DNMR_AB_Bar)
-from ReichDNMR.reichdefaults import multiplet_bar_defaults
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -87,8 +83,14 @@ class MPLgraph(FigureCanvasTkAgg):
 class View(Frame):
     """Provides the GUI for ReichDNMR by extending a tkinter Frame.
 
+    The view assumes the controller offers the following method:
+        * update_view_plot
+    The toolbars (in toolbars.py) must ensure that the data they send via
+    request_plot is of the type required by the controller's update_view_plot.
+
     Methods:
-        initialize_spinbars, add_calc_type_frame, add_model_frames,
+        initialize_multiplet_bars, initialize_spinbars,
+        initialize_dnmr_bars, add_calc_type_frame, add_model_frames,
         add_multiplet_buttons, add_abc_buttons, add_dnmr_buttons,
         add_custom_buttons, add_plot: used by __init__ to instantiate the GUI.
 
@@ -105,6 +107,10 @@ class View(Frame):
     """
 
     def __init__(self, parent, controller, **options):
+        """Create the framework for the GUI then fill it in.
+
+        :param parent: the parent tkinter object
+        :param controller: the Controller to this View."""
         Frame.__init__(self, parent, **options)
         self.controller = controller
 
@@ -113,26 +119,21 @@ class View(Frame):
 
         self.TopFrame = Frame(self, relief=RIDGE, borderwidth=1)
         self.TopFrame.pack(side=TOP, expand=NO, fill=X)
-        # self.TopFrame.grid_rowconfigure(0, weight=1)
-        # self.TopFrame.grid_columnconfigure(0, weight=1)
 
         self.initialize_multiplet_bars(multiplet_bar_defaults)
-        # spinbar_kwargs = {'controller': self.controller,
-        #                   'realtime': True}
         self.initialize_spinbars()
         self.initialize_dnmr_bars()
         self.add_calc_type_frame()
-        # print('returned from add_calc_type frame; ')
         self.add_model_frames()
-        # print('adding abc buttons')
-        # self.add_abc_buttons()
-        # print('returned from adding abc buttons')
-        # print('adding plot')
         self.add_plot()
-        # print('plot added')
-        # print('View initialization complete')
 
     def initialize_multiplet_bars(self, bar_dict):
+        """Instantiate all of the toolbars used for 'Multiplet' subset of
+        calculations.
+
+        :param bar_dict: {'model name': {kwargs} dict-of-dicts that stores
+        the presets for widget names and values.
+        """
         bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
         ab_kwargs = bar_dict['AB']
         ab2_kwargs = bar_dict['AB2']
@@ -150,8 +151,8 @@ class View(Frame):
         self.firstorder = FirstOrder_Bar(**bar_kwargs)
 
     def initialize_spinbars(self):
-        """Instantiate all of the SecondOrderSpinBar objects, and store
-        references to them.
+        """Instantiate all of the toolbars used for the 'ABC...' subset of
+        calculations, and store references to them.
 
         Attributes created:
             spin_range: the number of spins the program will accomodate.
@@ -164,11 +165,13 @@ class View(Frame):
         kwargs = {'controller': self.controller,
                   'realtime': True}
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
-        self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins,
-                                            **kwargs)
+        self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
                          for spins in self.spin_range]
 
     def initialize_dnmr_bars(self):
+        """Instantiate all of the toolbars used for the 'DNMR' subset of
+        calculations.
+        """
         kwargs = {'parent': self.TopFrame, 'controller': self.controller}
         self.TwoSpinBar = DNMR_TwoSingletBar(**kwargs)
         self.DNMR_AB_Bar = DNMR_AB_Bar(**kwargs)
@@ -180,20 +183,16 @@ class View(Frame):
         Attribute created:
             CalcTypeFrame: the RadioFrame being packed into the GUI.
         """
-        # print('add_calc_type_frame called')
         title = 'Calc Type'
-        # print('assigned title')
         buttons = (('Multiplet', lambda: self.select_calc_type('multiplet')),
                    ('ABC...', lambda: self.select_calc_type('abc')),
                    ('DNMR', lambda: self.select_calc_type('dnmr')),
                    ('Custom', lambda: self.select_calc_type('custom')))
-        # print('defined buttons')
+
         self.CalcTypeFrame = RadioFrame(self.SideFrame,
                                         buttons=buttons, title=title,
                                         relief=SUNKEN, borderwidth=1)
-        # print('instantiated CalcTypeFrame')
         self.CalcTypeFrame.pack(side=TOP, expand=NO, fill=X)
-        # print('packed CalcTypeFrame')
 
     def add_model_frames(self):
         """Add a submenu for selecting the exact calculation model,
@@ -219,12 +218,8 @@ class View(Frame):
         toolbar.
 
         """
-        # Quick hack to see if we can circumvent bug due to grid/pack mixing
         self.model_frame = Frame(self.SideFrame)
         self.model_frame.pack(side=TOP, anchor=N, expand=YES, fill=X)
-        # default grid configures are zero, so next 2 lines unneccessary?
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
 
         self.add_multiplet_buttons()
         self.add_abc_buttons()
@@ -252,9 +247,6 @@ class View(Frame):
 
         Attributes created:
             MultipletButtons: (RadioFrame) Menu for selecting model
-
-            ab, ab2, abx, abx3, aaxx, firstorder, aabb: (Toolbar objects)
-            Toolbar frames associated with each type of 'Multiplet' calculation.
         """
         multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
                              ('AB2', lambda: self.select_toolbar(self.ab2)),
@@ -268,22 +260,6 @@ class View(Frame):
                                            buttons=multiplet_buttons,
                                            title='Multiplet')
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
-
-        # bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
-        # ab_kwargs = multiplet_bar_defaults['AB']
-        # ab2_kwargs = multiplet_bar_defaults['AB2']
-        # abx_kwargs = multiplet_bar_defaults['ABX']
-        # abx3_kwargs = multiplet_bar_defaults['ABX3']
-        # aaxx_kwargs = multiplet_bar_defaults['AAXX']
-        # aabb_kwargs = multiplet_bar_defaults['AABB']
-        #
-        # self.ab = MultipletBar(**ab_kwargs, **bar_kwargs)
-        # self.ab2 = MultipletBar(**ab2_kwargs, **bar_kwargs)
-        # self.abx = MultipletBar(**abx_kwargs, **bar_kwargs)
-        # self.abx3 = MultipletBar(**abx3_kwargs, **bar_kwargs)
-        # self.aaxx = MultipletBar(**aaxx_kwargs, **bar_kwargs)
-        # self.aabb = MultipletBar(**aabb_kwargs, **bar_kwargs)
-        # self.firstorder = FirstOrder_Bar(**bar_kwargs)
 
     def add_abc_buttons(self):
         """Add a menu for selecting the number of nuclei to perform a
@@ -302,7 +278,6 @@ class View(Frame):
                                       # self.SideFrame,
                                       buttons=abc_buttons,
                                       title='Number of Spins')
-        # self.ABC_Buttons.grid(row=0, column=0, sticky=N)
 
     def add_dnmr_buttons(self):
         """Add a 'DNMR' menu: models for DNMR line shape analysis.
@@ -310,12 +285,6 @@ class View(Frame):
         Attributes created:
             DNMR_Buttons: (RadioFrame) Menu for selecting the type of DNMR
             calculation.
-
-            TwoSpinBar: (TwoSingletBar) Toolbar associated with the '2-spin'
-            DNMR model.
-
-            DNMR_AB_Bar: (DNMR_AB_Bar) Toolbar associated with the 'AB
-            Coupled' DNMR model.
         """
         dnmr_buttons = (('2-spin',
                          lambda: self.select_toolbar(self.TwoSpinBar)),
@@ -324,10 +293,6 @@ class View(Frame):
         self.DNMR_Buttons = RadioFrame(self.model_frame,
                                        buttons=dnmr_buttons,
                                        title='DNMR')
-
-        # bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
-        # self.TwoSpinBar = DNMR_TwoSingletBar(**bar_kwargs)
-        # self.DNMR_AB_Bar = DNMR_AB_Bar(**bar_kwargs)
 
     def add_custom_buttons(self):
         """Add a label notification that custom models are not implemented
@@ -338,17 +303,13 @@ class View(Frame):
 
     def add_plot(self):
         """Create a Matplotlib figure, instantiate a MPLgraph canvas with it,
-        pack the canvas, and add a "Clear" button at the bottom of the GUI."""
-        # print('creating figure')
+        pack the canvas, and add a "Clear" button at the bottom of the GUI.
+        """
         self.figure = Figure(figsize=(5, 4), dpi=100)
-        # print('creating canvas')
         self.canvas = MPLgraph(self.figure, self)
-        # print('packing canvas')
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
-        # print('adding clear button')
         Button(self, text="clear", command=lambda: self.canvas.clear()).pack(
             side=BOTTOM)
-        # print('finished add_plot')
 
     def select_calc_type(self, calc_type):
         """Checks if a new calculation tupe submenu has been selected,
