@@ -1,5 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 /.idea/
 ReichDNMR/.cache/
-/.cache/
+.cache
 /coverage/
+__pycache__/
