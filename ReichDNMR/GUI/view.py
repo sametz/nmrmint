@@ -113,12 +113,14 @@ class View(Frame):
 
         self.TopFrame = Frame(self, relief=RIDGE, borderwidth=1)
         self.TopFrame.pack(side=TOP, expand=NO, fill=X)
-        self.TopFrame.grid_rowconfigure(0, weight=1)
-        self.TopFrame.grid_columnconfigure(0, weight=1)
+        # self.TopFrame.grid_rowconfigure(0, weight=1)
+        # self.TopFrame.grid_columnconfigure(0, weight=1)
 
-        spinbar_kwargs = {'controller': self.controller,
-                          'realtime': True}
-        self.initialize_spinbars(**spinbar_kwargs)
+        self.initialize_multiplet_bars(multiplet_bar_defaults)
+        # spinbar_kwargs = {'controller': self.controller,
+        #                   'realtime': True}
+        self.initialize_spinbars()
+        self.initialize_dnmr_bars()
         self.add_calc_type_frame()
         # print('returned from add_calc_type frame; ')
         self.add_model_frames()
@@ -130,7 +132,24 @@ class View(Frame):
         # print('plot added')
         # print('View initialization complete')
 
-    def initialize_spinbars(self, **kwargs):
+    def initialize_multiplet_bars(self, bar_dict):
+        bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+        ab_kwargs = bar_dict['AB']
+        ab2_kwargs = bar_dict['AB2']
+        abx_kwargs = bar_dict['ABX']
+        abx3_kwargs = bar_dict['ABX3']
+        aaxx_kwargs = bar_dict['AAXX']
+        aabb_kwargs = bar_dict['AABB']
+
+        self.ab = MultipletBar(**ab_kwargs, **bar_kwargs)
+        self.ab2 = MultipletBar(**ab2_kwargs, **bar_kwargs)
+        self.abx = MultipletBar(**abx_kwargs, **bar_kwargs)
+        self.abx3 = MultipletBar(**abx3_kwargs, **bar_kwargs)
+        self.aaxx = MultipletBar(**aaxx_kwargs, **bar_kwargs)
+        self.aabb = MultipletBar(**aabb_kwargs, **bar_kwargs)
+        self.firstorder = FirstOrder_Bar(**bar_kwargs)
+
+    def initialize_spinbars(self):
         """Instantiate all of the SecondOrderSpinBar objects, and store
         references to them.
 
@@ -142,10 +161,17 @@ class View(Frame):
         Keyword arguments:
             **kwargs: standard SecondOrderSpinBar kwargs
         """
+        kwargs = {'controller': self.controller,
+                  'realtime': True}
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins,
                                             **kwargs)
                          for spins in self.spin_range]
+
+    def initialize_dnmr_bars(self):
+        kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+        self.TwoSpinBar = DNMR_TwoSingletBar(**kwargs)
+        self.DNMR_AB_Bar = DNMR_AB_Bar(**kwargs)
 
     def add_calc_type_frame(self):
         """Add a menu for selecting the type of calculation to the upper left
@@ -243,23 +269,21 @@ class View(Frame):
                                            title='Multiplet')
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
 
-        bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
-        # ab_kwargs = {'model': 'AB', 'vars': ABdict,
-        #              'widgets': ['Jab', 'Vab', 'Vcentr']}
-        ab_kwargs = multiplet_bar_defaults['AB']
-        ab2_kwargs = multiplet_bar_defaults['AB2']
-        abx_kwargs = multiplet_bar_defaults['ABX']
-        abx3_kwargs = multiplet_bar_defaults['ABX3']
-        aaxx_kwargs = multiplet_bar_defaults['AAXX']
-        aabb_kwargs = multiplet_bar_defaults['AABB']
-
-        self.ab = MultipletBar(**ab_kwargs, **bar_kwargs)
-        self.ab2 = MultipletBar(**ab2_kwargs, **bar_kwargs)
-        self.abx = MultipletBar(**abx_kwargs, **bar_kwargs)
-        self.abx3 = MultipletBar(**abx3_kwargs, **bar_kwargs)
-        self.aaxx = MultipletBar(**aaxx_kwargs, **bar_kwargs)
-        self.aabb = MultipletBar(**aabb_kwargs, **bar_kwargs)
-        self.firstorder = FirstOrder_Bar(**bar_kwargs)
+        # bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+        # ab_kwargs = multiplet_bar_defaults['AB']
+        # ab2_kwargs = multiplet_bar_defaults['AB2']
+        # abx_kwargs = multiplet_bar_defaults['ABX']
+        # abx3_kwargs = multiplet_bar_defaults['ABX3']
+        # aaxx_kwargs = multiplet_bar_defaults['AAXX']
+        # aabb_kwargs = multiplet_bar_defaults['AABB']
+        #
+        # self.ab = MultipletBar(**ab_kwargs, **bar_kwargs)
+        # self.ab2 = MultipletBar(**ab2_kwargs, **bar_kwargs)
+        # self.abx = MultipletBar(**abx_kwargs, **bar_kwargs)
+        # self.abx3 = MultipletBar(**abx3_kwargs, **bar_kwargs)
+        # self.aaxx = MultipletBar(**aaxx_kwargs, **bar_kwargs)
+        # self.aabb = MultipletBar(**aabb_kwargs, **bar_kwargs)
+        # self.firstorder = FirstOrder_Bar(**bar_kwargs)
 
     def add_abc_buttons(self):
         """Add a menu for selecting the number of nuclei to perform a
@@ -301,9 +325,9 @@ class View(Frame):
                                        buttons=dnmr_buttons,
                                        title='DNMR')
 
-        bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
-        self.TwoSpinBar = DNMR_TwoSingletBar(**bar_kwargs)
-        self.DNMR_AB_Bar = DNMR_AB_Bar(**bar_kwargs)
+        # bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+        # self.TwoSpinBar = DNMR_TwoSingletBar(**bar_kwargs)
+        # self.DNMR_AB_Bar = DNMR_AB_Bar(**bar_kwargs)
 
     def add_custom_buttons(self):
         """Add a label notification that custom models are not implemented
