@@ -1,5 +1,5 @@
 """
-Provides the View for the ReichDNMR Model-View-Controller.
+Provides the View for the UW-DNMR Model-View-Controller.
 
 Provides the following classes:
 * MPLgraph: Extension of FigureCanvasTkAgg that includes a matplotlib Figure
@@ -17,9 +17,9 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2TkAgg)
 from matplotlib.figure import Figure
 
-from ReichDNMR.GUI.frames import RadioFrame
-from ReichDNMR.reichdefaults import multiplet_bar_defaults
-from ReichDNMR.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
+from uw_dnmr.GUI.frames import RadioFrame
+from uw_dnmr.windnmr_defaults import multiplet_bar_defaults
+from uw_dnmr.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
                                     SecondOrderSpinBar, DNMR_TwoSingletBar,
                                     DNMR_AB_Bar)
 
@@ -81,7 +81,7 @@ class MPLgraph(FigureCanvasTkAgg):
 
 
 class View(Frame):
-    """Provides the GUI for ReichDNMR by extending a tkinter Frame.
+    """Provides the GUI for uw_dnmr by extending a tkinter Frame.
 
     The view assumes the controller offers the following method:
         * update_view_plot
@@ -365,10 +365,10 @@ class View(Frame):
 
 if __name__ == '__main__':
     # Create the main application window:
-    from ReichDNMR.controller import controller
+    from uw_dnmr.controller import controller
 
     root = Tk()
-    root.title('ReichDNMR')  # working title only!
+    root.title('uw_dnmr')  # working title only!
     Controller = controller.Controller(root)
 
     # workaround fix for Tk problems and mac mouse/trackpad:

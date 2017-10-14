@@ -158,7 +158,7 @@ def spin8():
 def getWINDNMRdefault(n):
     """
     Return the WINDNMR defaults for an n-spin system in the format used by
-    the ReichDNMR app.
+    the uw_dnmr app.
 
     Currently returns a frequencies, J tuple where frequencies is a (0,
     n) 2D array (to easily work with main's ArrayBox), and J is a 2D array

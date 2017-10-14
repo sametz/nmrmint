@@ -1,4 +1,4 @@
-from ReichDNMR.model.nmrmath import *
+from uw_dnmr.model.nmrmath import *
 import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.linalg import eigh
@@ -253,7 +253,7 @@ def test_first_order():
 
 
 def test_AB():
-    from ReichDNMR.reichdefaults import ABdict
+    from uw_dnmr.windnmr_defaults import ABdict
     refspec = [(134.39531364385073, 0.3753049524455757),
                (146.39531364385073, 1.6246950475544244),
                (153.60468635614927, 1.6246950475544244),
@@ -264,7 +264,7 @@ def test_AB():
 
 
 def test_AB2():
-    from ReichDNMR.reichdefaults import dcp
+    from uw_dnmr.windnmr_defaults import dcp
     refspec = [(-8.892448165479056, 0.5434685012269458),
                (-2.300397938882746, 0.7780710767178313),
                (0.0, 1),
@@ -280,7 +280,7 @@ def test_AB2():
 
 
 def test_ABX():
-    from ReichDNMR.reichdefaults import ABXdict
+    from uw_dnmr.windnmr_defaults import ABXdict
     refspec = sorted([(-9.48528137423857, 0.2928932188134524),
                       (-6.816653826391969, 0.44529980377477096),
                       (2.5147186257614305, 1.7071067811865475),
@@ -302,7 +302,7 @@ def test_ABX():
 
 # AMX3 should be removed from codebase in future refactor
 # def test_AMX3():
-#     from ReichDNMR.reichdefaults import AMX3dict
+#     from uw_dnmr.windnmr_defaults import AMX3dict
 #     refspec = sorted(
 #         [(136.2804555427071, 0.20634892168199606),
 #          (143.2804555427071, 0.6190467650459882),
@@ -336,7 +336,7 @@ def test_ABX():
 
 
 def test_ABX3():
-    from ReichDNMR.reichdefaults import ABX3dict
+    from uw_dnmr.windnmr_defaults import ABX3dict
     refspec = (
         [(124.2804555427071, 0.04365107831800394),
          (131.2804555427071, 0.13095323495401182),
@@ -361,7 +361,7 @@ def test_ABX3():
 
 
 def test_AAXX():
-    from ReichDNMR.reichdefaults import AAXXdict
+    from uw_dnmr.windnmr_defaults import AAXXdict
     refspec = sorted(
         [(173.0, 2), (127.0, 2), (169.6828402774396, 0.4272530047525843),
          (164.6828402774396, 0.5727469952474157),
@@ -378,7 +378,7 @@ def test_AAXX():
 
 
 def test_AABB():
-    from ReichDNMR.reichdefaults import AABBdict
+    from uw_dnmr.windnmr_defaults import AABBdict
     refspec = (
         [(92.22140228380421, 0.10166662880050205),
          (96.52049869174374, 0.49078895567299158),

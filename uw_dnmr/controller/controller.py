@@ -1,5 +1,5 @@
 """
-The controller for the ReichDNMR app. 
+The controller for the UW-DNMR app.
 
 Assumes a tkinter view.
 
@@ -10,14 +10,14 @@ Provides the following class:
 
 import tkinter as tk
 
-from ReichDNMR.GUI.view import View
-from ReichDNMR.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
+from uw_dnmr.GUI.view import View
+from uw_dnmr.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
                                      first_order)
-from ReichDNMR.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
+from uw_dnmr.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
 
 
 class Controller:
-    """Instantiate ReichDNMR's view, and pass data and requests to/from
+    """Instantiate uw_dnmr's view, and pass data and requests to/from
     the model and the view.
     
     The controller assumes the view offers the following methods:
@@ -123,7 +123,7 @@ class Controller:
 
 if __name__ == '__main__':
     root = tk.Tk()
-    root.title('ReichDNMR')  # working title only!
+    root.title('uw_dnmr')  # working title only!
     app = Controller(root)
 
     # workaround fix for Tk problems and mac mouse/trackpad:
