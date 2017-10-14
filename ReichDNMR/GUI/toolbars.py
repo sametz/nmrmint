@@ -93,7 +93,7 @@ class MultipletBar(ToolBar):
         self.widgets = widgets
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
-        for key in ['Jab', 'Vab', 'Vcentr']:
+        for key in widgets:
             widget = VarBox(self, name=key, **kwargs)
             widget.pack(side=LEFT)
 

@@ -18,10 +18,14 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
 from matplotlib.figure import Figure
 
 from ReichDNMR.GUI.frames import RadioFrame
-from ReichDNMR.GUI.toolbars import (AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar,
-                                    AAXX_Bar, AABB_Bar, FirstOrder_Bar,
+from ReichDNMR.GUI.toolbars import (
+                                    # AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar,
+                                    # AAXX_Bar, AABB_Bar,
+                                    MultipletBar,
+                                    FirstOrder_Bar,
                                     SecondOrderSpinBar, DNMR_TwoSingletBar,
                                     DNMR_AB_Bar)
+from ReichDNMR.reichdefaults import multiplet_bar_defaults
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -240,15 +244,22 @@ class View(Frame):
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
 
         bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
-        ab_kwargs = {'model': 'AB', 'vars': ABdict,
-                     'widgets': ['Jab', 'Vab', 'Vcentr']}
+        # ab_kwargs = {'model': 'AB', 'vars': ABdict,
+        #              'widgets': ['Jab', 'Vab', 'Vcentr']}
+        ab_kwargs = multiplet_bar_defaults['AB']
+        ab2_kwargs = multiplet_bar_defaults['AB2']
+        abx_kwargs = multiplet_bar_defaults['ABX']
+        abx3_kwargs = multiplet_bar_defaults['ABX3']
+        aaxx_kwargs = multiplet_bar_defaults['AAXX']
+        aabb_kwargs = multiplet_bar_defaults['AABB']
+
         self.ab = MultipletBar(**ab_kwargs, **bar_kwargs)
-        self.ab2 = AB2_Bar(**bar_kwargs)
-        self.abx = ABX_Bar(**bar_kwargs)
-        self.abx3 = ABX3_Bar(**bar_kwargs)
-        self.aaxx = AAXX_Bar(**bar_kwargs)
+        self.ab2 = MultipletBar(**ab2_kwargs, **bar_kwargs)
+        self.abx = MultipletBar(**abx_kwargs, **bar_kwargs)
+        self.abx3 = MultipletBar(**abx3_kwargs, **bar_kwargs)
+        self.aaxx = MultipletBar(**aaxx_kwargs, **bar_kwargs)
+        self.aabb = MultipletBar(**aabb_kwargs, **bar_kwargs)
         self.firstorder = FirstOrder_Bar(**bar_kwargs)
-        self.aabb = AABB_Bar(**bar_kwargs)
 
     def add_abc_buttons(self):
         """Add a menu for selecting the number of nuclei to perform a
