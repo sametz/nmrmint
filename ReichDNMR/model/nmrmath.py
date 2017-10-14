@@ -28,7 +28,6 @@ def popcount(n=0):
     return bin(n).count('1')
 
 
-# noinspection PyShadowingNames
 def is_allowed(m=0, n=0):
     """
     determines if a transition between two spin states is allowed or forbidden.
@@ -67,7 +66,6 @@ def transition_matrix(n):
     return T
 
 
-# noinspection PyShadowingNames
 def hamiltonian(freqlist, couplings):
     """
     Computes the spin Hamiltonian for spin-1/2 nuclei.
@@ -119,7 +117,7 @@ def hamiltonian(freqlist, couplings):
 
     # Testing with MATLAB discovered J must be /2.
     # Believe it is related to the fact that in the SpinDynamics.org simulation
-    # freqs are *2pi, but Js by pi only. Video is supposed to explain why.
+    # freqs are *2pi, but Js by pi only.
     scalars = 0.5 * couplings
     scalars = np.multiply(scalars, Lproduct)
     for n in range(nspins):
@@ -129,7 +127,6 @@ def hamiltonian(freqlist, couplings):
     return H
 
 
-# noinspection PyPep8Naming,PyShadowingNames
 def simsignals(H, nspins):
     """
     Solves the spin Hamiltonian H and returns a list of (frequency, intensity)
@@ -173,7 +170,6 @@ def simsignals(H, nspins):
     return spectrum
 
 
-# noinspection PyUnreachableCode,PyPep8Naming,PyShadowingNames
 def nspinspec(freqs, couplings):
     """
     Function that calculates a spectrum for n spin-half nuclei.
@@ -278,7 +274,7 @@ def reduce_peaks(plist, tolerance=0):
     return res
 
 
-def first_order(signal, couplings, Wa=0.5, RightHz=0, WdthHz=300):
+def first_order(signal, couplings):  # Wa, RightHz, WdthHz not implemented yet
     """Uses the above functions to split a signal into a first-order
     multiplet.
     Input:
@@ -296,7 +292,7 @@ def first_order(signal, couplings, Wa=0.5, RightHz=0, WdthHz=300):
     return reduce_peaks(sorted(multiplet(signallist, couplings)))
 
 
-def AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz):
+def AB(Jab, Vab, Vcentr, **kwargs):  # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB quartet.
     Jab is the A-B coupling constant (Hz)
@@ -325,10 +321,10 @@ def AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz):
     return list(zip(vList, IList))
 
 
-def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
+def AB2(Jab, Vab, Vcentr, **kwargs):  # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB2 spin system.
-    Jab is the A-B coupling constant (Hz)
+    J is the A-B coupling constant (Hz)
     dV is the difference in nuclei frequencies in the absence of coupling (Hz)
     Vab is the frequency for the center of the AB2 signal
     Wa is width of peak at half-height (not implemented yet)
@@ -336,6 +332,12 @@ def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
     WdthHz is the width of the window in Hz (not implemented yet)
     return: peaklist of (frequency, intensity) tuples
     """
+    # Currently, there is a disconnect between the variable names in the GUI
+    # and the variable names in this function. The following code provides a
+    # temporary interface.
+
+    J, dV, Vab = Jab, Vab, Vcentr
+
     # for now, old Jupyter code using Pople equations kept hashed out for now
     # Reich vs. Pople variable names are confused, e.g. Vab
     # So, variables being placed by position in the def header--CAUTION
@@ -354,8 +356,10 @@ def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
     C_plus = sqrt(dV ** 2 + dV * J + (9 / 4) * (J ** 2)) / 2
     C_minus = sqrt(dV ** 2 - dV * J + (9 / 4) * (J ** 2)) / 2
 
+    # Next 2 lines not needed?
     sin2theta_plus = J / (sqrt(2) * C_plus)  # Reich: sin2x
     sin2theta_minus = J / (sqrt(2) * C_minus)  # Reich: sin2y
+
     cos2theta_plus = (dV / 2 + J / 4) / C_plus  # Reich: cos2x
     cos2theta_minus = (dV / 2 - J / 4) / C_minus  # Reich: cos2y
 
@@ -402,7 +406,8 @@ def AB2(J, dV, Vab, Wa, RightHz, WdthHz):
     return list(zip(vList, IList))
 
 
-def ABX(Jab, Jbx, Jax, dVab, Vab, Wa, RightHz, WdthHz):
+def ABX(Jab, Jbx, Jax, Vab, Vcentr, **kwargs):
+    # Wa, RightHz, WdthHz not implemented yet
     """
     Reich-style inputs for AB2 spin system.
     Jab is the A-B coupling constant (Hz)
@@ -418,6 +423,12 @@ def ABX(Jab, Jbx, Jax, dVab, Vab, Wa, RightHz, WdthHz):
     # So, variables being placed by position in the def header--CAUTION
     # From main passed in order of: Jab, Jax, Jbx, Vab,  Vcentr, ...
     # Here read in as:              Jab, Jbx, Jax, dVab, Vab,    ...
+
+    # CHANGE: with switch to kwargs used in function calls, the following
+    # code matches this Reich code to the current view dictionary
+    Jbx, Jax = Jax, Jbx
+    dVab = Vab
+    Vab = Vcentr
 
     # dVab = va - vb  # Reich: Vab
     # Vab = (va + vb) / 2  # Reich: ABOff
@@ -491,21 +502,23 @@ def ABX(Jab, Jbx, Jax, dVab, Vab, Wa, RightHz, WdthHz):
     return list(zip(VList, IList))
 
 
-def AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
-    """
-    Uses the AMX approximate solution described on Reich's website.
-    However, WINDNMR uses a true ABX3 solution. AMX3 included here
-    for future consideration.
-    """
-    # This was the function taken from the Jupyter ABX3 notebook, but
-    # I think this needs to be fixed to make use of Jbx.
-    abq = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
-    # return abq
-    res = reduce_peaks(sorted(multiplet(abq, [(Jax, 3)])))
-    return res
+# Not being used, so should remove from codebase
+# def AMX3(Jab, Jax, Jbx, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
+#     """
+#     Uses the AMX approximate solution described on Reich's website.
+#     However, WINDNMR uses a true ABX3 solution. AMX3 included here
+#     for future consideration.
+#     """
+#     # This was the function taken from the Jupyter ABX3 notebook, but
+#     # I think this needs to be fixed to make use of Jbx.
+#     abq = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
+#     # return abq
+#     res = reduce_peaks(sorted(multiplet(abq, [(Jax, 3)])))
+#     return res
 
 
-def ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
+def ABX3(Jab, Jax, Jbx, Vab, Vcentr, **kwargs):
+    # Wa, RightHz, WdthHz not implemented yet
     """
     Refactoring of Reich's code for simulating the ABX3 system.
     """
@@ -517,19 +530,20 @@ def ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz):
     for i in range(4):
         dv = b_quartet[i][0] - a_quartet[i][0]
         abcenter = (b_quartet[i][0] + a_quartet[i][0]) / 2
-        sub_abq = AB(Jab, dv, abcenter, Wa, RightHz, WdthHz)
+        sub_abq = AB(Jab, dv, abcenter)  # Wa, RightHz, WdthHz not implemented
         scale_factor = a_quartet[i][1]
         scaled_sub_abq = [(v, i * scale_factor) for v, i in sub_abq]
         res.extend(scaled_sub_abq)
     return res
 
 
-def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
+def AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr, **kwargs):
+    # Wa, RightHz, WdthHz not implemented yet
     """
     Simulates an AA'XX' spin system. Frequencies and Js in Hz.
-    Ja is the JAA' coupling constant, Jx the JXX', Jax2 the JAX,
+    Jaa is the JAA' coupling constant, Jxx the JXX', Jax the JAX,
     and JAX2 the JAX'.
-    va is the frequency for the center of the signal.
+    Vcentr is the frequency for the center of the signal.
     Wa is width of peak at half-height (not implemented yet)
     RightHz is the lower frequency limit for the window
     WdthHz is the width of the window in Hz
@@ -538,10 +552,10 @@ def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
     # Define the constants required to calculate frequencies and intensities
 
     # K, L, M, N are as defined in PSB
-    K = Ja + Jx  # Reich: K
-    M = Ja - Jx  # Reich: l
-    L = Jax1 - Jax2  # Reich: m
-    N = Jax1 + Jax2  # Reich: n
+    K = Jaa + Jxx  # Reich: K
+    M = Jaa - Jxx  # Reich: l
+    L = Jax - Jax_prime  # Reich: m
+    N = Jax + Jax_prime  # Reich: n
 
     # Retaining Reich names for next two constants
     # Suggested refactoring: don't divide by 2 here; can simplify later formulas
@@ -557,16 +571,16 @@ def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
     # Calculate the frequencies and intensities.
     # See PSB Table 6-18. Transitions 1-4 are condensed into V1 and V2.
 
-    V1 = va + N / 2
-    V2 = va - N / 2
-    V3 = va + K / 2 + p
-    V4 = va - K / 2 + p
-    V5 = va + K / 2 - p
-    V6 = va - K / 2 - p
-    V7 = va + M / 2 + r
-    V8 = va - M / 2 + r
-    V9 = va + M / 2 - r
-    V10 = va - M / 2 - r
+    V1 = Vcentr + N / 2
+    V2 = Vcentr - N / 2
+    V3 = Vcentr + K / 2 + p
+    V4 = Vcentr - K / 2 + p
+    V5 = Vcentr + K / 2 - p
+    V6 = Vcentr - K / 2 - p
+    V7 = Vcentr + M / 2 + r
+    V8 = Vcentr - M / 2 + r
+    V9 = Vcentr + M / 2 - r
+    V10 = Vcentr - M / 2 - r
 
     I1 = 2
     I2 = I1
@@ -584,7 +598,8 @@ def AAXX(Ja, Jx, Jax1, Jax2, va, Wa, RightHz, WdthHz):
     return list(zip(VList, IList))
 
 
-def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, Wa, RightHz, WdthHz):
+def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, **kwargs):
+    #Wa, RightHz, WdthHz not implemented yet
     """
     A wrapper for a second-order AA'BB' calculation, but using the
     values taken from the WINDNMR-style AA'BB' bar selected by the Multiplet
@@ -636,7 +651,75 @@ def dnmr_2spin(v, va, vb, ka, Wa, Wb, pa):
     return I
 
 
-def d2s_func(va, vb, ka, Wa, Wb, pa):
+def d2s_func(va, vb, ka, wa, wb, pa):
+    """
+    Create a function that requires only frequency as an argurment, and used to
+    calculate intensities across array of frequencies in the DNMR
+    spectrum for two uncoupled spin-half nuclei.
+
+    The idea is to calculate expressions
+    that are independant of frequency only once, and then use them in a new
+    function that depends only on v. This would avoid unneccessarily
+    repeating some of the same operations.
+
+    This function-within-a-function should be refactored to
+    function-within-class!
+
+    :param va: The frequency of nucleus 'a' at the slow exchange limit. va > vb
+    :param vb: The frequency of nucleus 'b' at the slow exchange limit. vb < va
+    :param ka: The rate constant for state a--> state b
+    :param wa: The width at half heigh of the signal for nucleus a (at the slow
+    exchange limit).
+    :param wb: The width at half heigh of the signal for nucleus b (at the slow
+    exchange limit).
+    :param pa: The fraction of the population in state a.
+    :param pa: fraction of population in state a
+    wa, wb: peak widths at half height (slow exchange), used to calculate T2s
+
+    returns: a function that takes v (x coord or numpy linspace) as an argument
+    and returns intensity (y).
+    """
+
+    # TODO: factor pis out; redo comments to explain excision of v-independent
+    # terms
+
+    pi = np.pi
+    pi_squared = pi ** 2
+    T2a = 1 / (pi * wa)
+    T2b = 1 / (pi * wb)
+    pb = 1 - pa
+    tau = pb / ka
+    dv = va - vb
+    Dv = (va + vb) / 2
+    P = tau * (1 / (T2a * T2b) + pi_squared * (dv ** 2)) + (pa / T2a + pb / T2b)
+    p = 1 + tau * ((pb / T2a) + (pa / T2b))
+    Q = tau * (- pi * dv * (pa - pb))
+    R = pi * dv * tau * ((1 / T2b) - (1 / T2a)) + pi * dv * (pa - pb)
+    r = 2 * pi * (1 + tau * ((1 / T2a) + (1 / T2b)))
+
+    def maker(v):
+        """
+        Scheduled for refactoring.
+        :param v: frequency
+        :return: function that calculates the intensity at v
+        """
+        # TODO: fix docstring, explain _P _Q etc correlate to P, Q etc in lit.
+        # FIXED: previous version of this function used
+        # nonlocal Dv, P, Q, R
+        # but apparently when function called repeatedly these values would
+        # become corrupted (turning into arrays?!)
+        # Solution: add underscores to create copies of any variables in
+        # outer scope whose values are changed in the inner scope.
+
+        _Dv = Dv - v
+        _P = P - tau * 4 * pi_squared * (_Dv ** 2)
+        _Q = Q + tau * 2 * pi * _Dv
+        _R = R + _Dv * r
+        return(_P * p + _Q * _R) / (_P ** 2 + _R ** 2)
+    return maker
+
+
+def d2s_func_old(va, vb, ka, Wa, Wb, pa):
     """
     A function factory that creates tailored
     dnmr_2spin-like functions for greater speed.
