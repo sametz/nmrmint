@@ -1,7 +1,9 @@
-from nmrmath import *
+from uw_dnmr.model.nmrmath import *
 import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.linalg import eigh
+from .testdata import TWOSPIN_SLOW, AB_WINDNMR
+# , TWOSPIN_COALESCE, TWOSPIN_FAST omitted for now
 
 # The attempt to put pytest code in a class failed. For whatever reason,
 # pytest could not detect the tests within the class. Reserved for potential
@@ -83,18 +85,23 @@ from scipy.linalg import eigh
 #         testspec = sorted(simsignals(hamiltonian(freqlist, J), 3))
 #         np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
+#############################################################################
+# Second-Order (QM) Calculations
+#############################################################################
+
 
 def test_popcount():
     assert popcount(0) == 0
     for n in range(1, 10):
         assert popcount(2 ** n) == 1
+        assert popcount(2 ** n + 1) == 2
 
 
 def test_is_allowed():
-    assert is_allowed(0, 0) == False
-    assert is_allowed(0, 3) == False
-    assert is_allowed(0, 1) == True
-    assert is_allowed(255, 254) == True
+    assert is_allowed(0, 0) is False
+    assert is_allowed(0, 3) is False
+    assert is_allowed(0, 1) is True
+    assert is_allowed(255, 254) is True
 
 
 def test_transition_matrix():
@@ -112,6 +119,7 @@ def test_transition_matrix():
 
 
 def test_hamiltonian():
+    # Not a very clear test. TODO: refactor into multiple, clear tests
     freqlist = [430, 265, 300]
     freqarray = np.array(freqlist)
     J = np.zeros((3, 3))
@@ -132,6 +140,8 @@ def test_hamiltonian():
 
 
 def test_simsignals():
+    # this is more of an integration test than a unit test
+    # TODO: split into smaller unit tests, and create a test for nspinspic
     refspec = [(260.66152857482973, 0.92044386594717353),
                (262.18930344673686, 0.99503587544800565),
                (267.62991550888137, 0.99421657034922251),
@@ -154,6 +164,11 @@ def test_simsignals():
     H = hamiltonian(freqarray, J)
     testspec = sorted(simsignals(H, 3))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
+
+
+#############################################################################
+# First-Order Calculations
+#############################################################################
 
 
 def test_doublet():
@@ -232,24 +247,24 @@ def test_first_order():
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
+#############################################################################
+# Non-QM Second-Order Calculations
+#############################################################################
+
+
 def test_AB():
-    from reichdefaults import ABdict
+    from uw_dnmr.windnmr_defaults import ABdict
     refspec = [(134.39531364385073, 0.3753049524455757),
                (146.39531364385073, 1.6246950475544244),
                (153.60468635614927, 1.6246950475544244),
                (165.60468635614927, 0.3753049524455757)]
-    Jab = ABdict['Jab']
-    Vab = ABdict['Vab']
-    Vcentr = ABdict['Vcentr']
-    Wa = ABdict['Wa']
-    RightHz = ABdict['Right-Hz']
-    WdthHz = ABdict['WdthHz']
-    testspec = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
+
+    testspec = AB(**ABdict)
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
 def test_AB2():
-    from reichdefaults import dcp
+    from uw_dnmr.windnmr_defaults import dcp
     refspec = [(-8.892448165479056, 0.5434685012269458),
                (-2.300397938882746, 0.7780710767178313),
                (0.0, 1),
@@ -260,18 +275,12 @@ def test_AB2():
                (31.75794977340369, 1.3201931947004837),
                (55.300397938882746, 0.001346383244293953)]
 
-    Jab = dcp['Jab']
-    Vab = dcp['Vab']
-    Vcentr = dcp['Vcentr']
-    Wa = dcp['Wa']
-    RightHz = dcp['Right-Hz']
-    WdthHz = dcp['WdthHz']
-    testspec = AB2(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
+    testspec = AB2(**dcp)
     np.testing.assert_array_almost_equal(sorted(testspec), refspec, decimal=2)
 
 
 def test_ABX():
-    from reichdefaults import ABXdict
+    from uw_dnmr.windnmr_defaults import ABXdict
     refspec = sorted([(-9.48528137423857, 0.2928932188134524),
                       (-6.816653826391969, 0.44529980377477096),
                       (2.5147186257614305, 1.7071067811865475),
@@ -286,54 +295,48 @@ def test_ABX():
                       (105.0, 1),
                       (80.69806479936946, 0.009709662154539944),
                       (119.30193520063054, 0.009709662154539944)])
-    Jab = ABXdict['Jab']
-    Jax = ABXdict['Jax']
-    Jbx = ABXdict['Jbx']
-    Vab = ABXdict['Vab']
-    Vcentr = ABXdict['Vcentr']
-    Wa = ABXdict['Wa']
-    RightHz = ABXdict['Right-Hz']
-    WdthHz = ABXdict['WdthHz']
-    testspec = sorted(ABX(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz))
+
+    testspec = sorted(ABX(**ABXdict))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
-def test_AMX3():
-    from reichdefaults import AMX3dict
-    refspec = sorted(
-        [(136.2804555427071, 0.20634892168199606),
-         (143.2804555427071, 0.6190467650459882),
-         (150.2804555427071, 0.6190467650459882),
-         (157.2804555427071, 0.20634892168199606),
-         (124.2804555427071, 0.04365107831800394),
-         (131.2804555427071, 0.13095323495401182),
-         (138.2804555427071, 0.13095323495401182),
-         (145.2804555427071, 0.04365107831800394),
-         (154.7195444572929, 0.04365107831800394),
-         (161.7195444572929, 0.13095323495401182),
-         (168.7195444572929, 0.13095323495401182),
-         (175.7195444572929, 0.04365107831800394),
-         (142.7195444572929, 0.20634892168199606),
-         (149.7195444572929, 0.6190467650459882),
-         (156.7195444572929, 0.6190467650459882),
-         (163.7195444572929, 0.20634892168199606)]
-
-    )
-    Jab = AMX3dict['Jab']
-    Jax = AMX3dict['Jax']
-    Jbx = AMX3dict['Jbx']
-    Vab = AMX3dict['Vab']
-    Vcentr = AMX3dict['Vcentr']
-    Wa = AMX3dict['Wa']
-    RightHz = AMX3dict['Right-Hz']
-    WdthHz = AMX3dict['WdthHz']
-
-    testspec = sorted(AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz))
-    np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
+# AMX3 should be removed from codebase in future refactor
+# def test_AMX3():
+#     from uw_dnmr.windnmr_defaults import AMX3dict
+#     refspec = sorted(
+#         [(136.2804555427071, 0.20634892168199606),
+#          (143.2804555427071, 0.6190467650459882),
+#          (150.2804555427071, 0.6190467650459882),
+#          (157.2804555427071, 0.20634892168199606),
+#          (124.2804555427071, 0.04365107831800394),
+#          (131.2804555427071, 0.13095323495401182),
+#          (138.2804555427071, 0.13095323495401182),
+#          (145.2804555427071, 0.04365107831800394),
+#          (154.7195444572929, 0.04365107831800394),
+#          (161.7195444572929, 0.13095323495401182),
+#          (168.7195444572929, 0.13095323495401182),
+#          (175.7195444572929, 0.04365107831800394),
+#          (142.7195444572929, 0.20634892168199606),
+#          (149.7195444572929, 0.6190467650459882),
+#          (156.7195444572929, 0.6190467650459882),
+#          (163.7195444572929, 0.20634892168199606)]
+#
+#     )
+#     Jab = AMX3dict['Jab']
+#     Jax = AMX3dict['Jax']
+#     Jbx = AMX3dict['Jbx']
+#     Vab = AMX3dict['Vab']
+#     Vcentr = AMX3dict['Vcentr']
+#     Wa = AMX3dict['Wa']
+#     RightHz = AMX3dict['Right-Hz']
+#     WdthHz = AMX3dict['WdthHz']
+#
+#     testspec = sorted(AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz))
+#     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
 def test_ABX3():
-    from reichdefaults import ABX3dict
+    from uw_dnmr.windnmr_defaults import ABX3dict
     refspec = (
         [(124.2804555427071, 0.04365107831800394),
          (131.2804555427071, 0.13095323495401182),
@@ -352,21 +355,13 @@ def test_ABX3():
          (168.7195444572929, 0.13095323495401182),
          (175.7195444572929, 0.04365107831800394)]
     )
-    Jab = ABX3dict['Jab']
-    Jax = ABX3dict['Jax']
-    Jbx = ABX3dict['Jbx']
-    Vab = ABX3dict['Vab']
-    Vcentr = ABX3dict['Vcentr']
-    Wa = ABX3dict['Wa']
-    RightHz = ABX3dict['Right-Hz']
-    WdthHz = ABX3dict['WdthHz']
 
-    testspec = sorted(ABX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz))
+    testspec = sorted(ABX3(**ABX3dict))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
 def test_AAXX():
-    from reichdefaults import AAXXdict
+    from uw_dnmr.windnmr_defaults import AAXXdict
     refspec = sorted(
         [(173.0, 2), (127.0, 2), (169.6828402774396, 0.4272530047525843),
          (164.6828402774396, 0.5727469952474157),
@@ -377,22 +372,13 @@ def test_AAXX():
          (141.3990521539908, 0.7961952252387591),
          (116.39905215399081, 0.20380477476124093)]
     )
-    Jaa = AAXXdict["Jaa'"]
-    Jxx = AAXXdict["Jxx'"]
-    Jax = AAXXdict["Jax"]
-    Jax_prime = AAXXdict["Jax'"]
-    Vcentr = AAXXdict['Vcentr']
-    Wa = AAXXdict['Wa']
-    RightHz = AAXXdict['Right-Hz']
-    WdthHz = AAXXdict['WdthHz']
 
-    testspec = sorted(AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr,
-                           Wa, RightHz, WdthHz))
+    testspec = sorted(AAXX(**AAXXdict))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
 def test_AABB():
-    from reichdefaults import AABBdict
+    from uw_dnmr.windnmr_defaults import AABBdict
     refspec = (
         [(92.22140228380421, 0.10166662880050205),
          (96.52049869174374, 0.49078895567299158),
@@ -419,19 +405,87 @@ def test_AABB():
          (203.47950130825626, 0.49078895567299208),
          (207.77859771619566, 0.10166662880050205)]
     )
-    Vab = AABBdict["Vab"]
-    Jaa = AABBdict["Jaa'"]
-    Jbb = AABBdict["Jbb'"]
-    Jab = AABBdict["Jab"]
-    Jab_prime = AABBdict["Jab'"]
-    Vcentr = AABBdict["Vcentr"]
-    Wa = AABBdict['Wa']
-    RightHz = AABBdict['Right-Hz']
-    WdthHz = AABBdict['WdthHz']
-    testspec = sorted(AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr,
-                           Wa, RightHz, WdthHz))
+
+    testspec = sorted(AABB(**AABBdict))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
+#############################################################################
+# DNMR Calculations
+#############################################################################
 
-# def test_derp():
-#     assert 1 + 1 == 3
+
+def get_intensity(spectrum, x):
+    """
+    A quick and dirty method to get intensity of data point closest to
+    frequency x. Better: interpolate between two data points if match isn't
+    exact (TODO?)
+    :param spectrum: tuple of (x, y) arrays for frequency, intensity data
+    :param x: frequency lookup
+    :return: the intensity at that frequency
+    """
+    nearest_x_index = np.abs(spectrum[0] - x).argmin()
+    return spectrum[1][nearest_x_index]
+
+
+def get_maxima(spectrum):
+    """
+    Crude function that returns maxima in the spectrum.
+    :param spectrum: tuple of frequency, intensity arrays
+    :return: a list of (frequency, intensity) tuples for individual maxima.
+    """
+    res = []
+    for n, val in enumerate(spectrum[1][1:-2]):
+        index = n+1  # start at spectrum[1][1]
+        lastvalue = spectrum[1][index-1]
+        nextvalue = spectrum[1][index+1]
+
+        if lastvalue < val and nextvalue < val:
+            print('MAXIMUM FOUND AT: ')
+            print((spectrum[0][index], val))
+            res.append((spectrum[0][index], val))
+    return res
+
+
+def test_d2s_func_slow_exchange():
+    spectrum = TWOSPIN_SLOW
+    peaks = get_maxima(spectrum)
+    print("Maxima: ", peaks)
+
+    intensity_calculator = d2s_func(165, 135, 1.5, 0.5, 0.5, 0.5)
+
+    x = np.linspace(85, 215, 800)
+    y = intensity_calculator(x)
+    # popplot(x, y)  # replace with non-PyQtGraph popup graph if desired
+
+    print('Testing intensity calculator on 135: ', intensity_calculator(135))
+    print('Testing intensity calculator on 165: ', intensity_calculator(165))
+
+    for peak in peaks:
+        print('Testing vs. accepted peak at: ', peak)
+        calculated_intensity = intensity_calculator(peak[0])
+
+        print('i.e. input of frequency ', peak[0], ' should give output of '
+              'intensity ', peak[1])
+        print('Calculated intensity is actually: ', calculated_intensity)
+
+        np.testing.assert_almost_equal(calculated_intensity,
+                                       peak[1])
+
+
+def test_ab_WINDNMR_defaults():
+    spectrum = AB_WINDNMR
+    peaks = get_maxima(spectrum)
+    print("Maxima: ", peaks)
+
+    ab_args = (165, 135, 12, 12, 0.5)
+
+    for peak in peaks:
+        print('Testing vs. accepted peak at: ', peak)
+        calculated_intensity = dnmr_AB(peak[0], *ab_args)
+
+        print('i.e. input of frequency ', peak[0], ' should give output of '
+                                                   'intensity ', peak[1])
+        print('Calculated intensity is actually: ', calculated_intensity)
+
+        np.testing.assert_almost_equal(calculated_intensity,
+                                       peak[1])

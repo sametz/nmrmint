@@ -1,18 +1,33 @@
 """
-This module uses the default WINDNMR spinsystem data for 4-spin through
-8-spin and creates a list of (frequency, J couplings) tuples.
+This module provides the default WINDNMR spinsystem variables for 3-spin through
+8-spin second-order calculations, plus the default AB quartet variables for 
+2-spin calculations.
 
-The frequencies v are in numpy arrays.
-The J couplings are in sparse matrices. J[i,j] corresponds to the coupling
+The WINDNMR defaults were chosen because they allow secondorder's output to be
+visually checked against WINDNMR's output.
+
+The 'spin-n' functions return a tuple of:
+    -frequency list (a numpy array) and
+    -J couplings (a sparse matrix). J[i,j] corresponds to the coupling
 between nuclei i and j, using the same ordering of nuclei as the frequencies
 in v.
-The list of spinsystems begins with empty tuples. This allows intuitive
-access to a particular spin system. So, spinsystem[4] is the data for the
-4-spin system.
+
+The module provides the following method:
+* getWINDNMRdefault
+
+which provides an interface between the ReichDNMR app and this data.
 """
 
 import numpy as np
 from scipy.sparse import lil_matrix
+
+
+def spin2():
+    v = np.array([150-7.5, 150+7.5])
+    J = lil_matrix((2, 2))
+    J[0, 1] = 12
+    J = J + J.T
+    return v, J
 
 
 def spin3():
@@ -140,31 +155,29 @@ def spin8():
     return v, J
 
 
-def reich_list():
+def getWINDNMRdefault(n):
     """
-    Creates a package of spin systems that are defaults in WINDNMR.
-    Currently this returns a list of all the 4-spin to 8-spin systems in the
-    second-order option ("ABC...") of WINDNMR.
-    Returns: a list of (frequency array, J array) tuples.
-    """
-    spinsystem = [(), (), (), (), spin4(), spin5(), spin6(), spin7(), spin8()]
-    return spinsystem
+    Return the WINDNMR defaults for an n-spin system in the format used by
+    the uw_dnmr app.
 
-
-def get_reich_default(n):
-    """
-    Fetches the default (frequencies, J) tuple for the n-spin second-order
-    simulation.
     Currently returns a frequencies, J tuple where frequencies is a (0,
     n) 2D array (to easily work with main's ArrayBox), and J is a 2D array
-    and not a sparse matrix (since sparse matrices are no longer used). Was
-    easier to convert the above data this way than to rewrite it all.
+    and not a sparse matrix (since sparse matrices are no longer used). This
+    function converts the data returned by the 'spin-n' functions above to
+    meet the application's currentrequirements.
+
+    :param n: the number of spins (should be 2 <= n <= 8)
+    :return: a  (v, j) tuple of frequencies (as a 1-row, 2D numpy array) and
+    J values (as a 2D numpy array).
     """
-    spinsystem = [(), (), (), spin3(), spin4(), spin5(), spin6(), spin7(),
+    # The list of spinsystems begins with empty tuples. This allows intuitive
+    # access to a particular spin system. So, spinsystem[4] is the data for the
+    # 4-spin system."""
+    spinsystem = [(), (), spin2(), spin3(), spin4(), spin5(), spin6(), spin7(),
                   spin8()]
 
-    # Changes to modules require frequency to be a (0,n) 2D array, and J to
-    # be an array and not a sparse matrix.
+    # Changes to the tkinter GUI require frequency to be a (0,n) 2D array,
+    # and J to be an array and not a sparse matrix.
     freq, J = spinsystem[n]
     freq2D = np.array([freq])  # converts to 2D array
     J = J.todense()
@@ -173,12 +186,11 @@ def get_reich_default(n):
 
 
 if __name__ == '__main__':
-    from nmrmath import nspinspec
-    from nmrplot import nmrplot as nmrplt
+    from ReichDNMR.model.nmrmath import nspinspec
+    from ReichDNMR.model.nmrplot import nmrplot as nmrplt
 
-    # spinsystem_list = reich_list()
-    # test_freqs, test_couplings = reich_list()[6]
-    test_freqs, test_couplings = get_reich_default(8)
-    test_couplings = test_couplings.todense()
-    test_spectrum = nspinspec(test_freqs, test_couplings)
+    test_freqs, test_couplings = getWINDNMRdefault(8)
+    print(test_freqs)
+    print(test_couplings)
+    test_spectrum = nspinspec(test_freqs[0], test_couplings)
     nmrplt(test_spectrum, y=25)
