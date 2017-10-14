@@ -17,11 +17,12 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
 from matplotlib.figure import Figure
 
 from ReichDNMR.GUI.frames import RadioFrame
-from ReichDNMR.GUI.toolbars import (AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar,
-                                    AAXX_Bar, AABB_Bar, FirstOrder_Bar,
-                                    SecondOrderSpinBar,
-                                    DNMR_TwoSingletBar,
-                                    DNMR_AB_Bar)
+from ReichDNMR.GUI.toolbars import (
+    MultipletBar,
+    # AB_Bar,
+    AB2_Bar, ABX_Bar, ABX3_Bar, AAXX_Bar, AABB_Bar, FirstOrder_Bar,
+    SecondOrderSpinBar, DNMR_TwoSingletBar, DNMR_AB_Bar)
+from ReichDNMR.reichdefaults import ABdict
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -240,7 +241,9 @@ class View(Frame):
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
 
         bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
-        self.ab = AB_Bar(**bar_kwargs)
+        ab_kwargs = {'model': 'AB', 'vars': ABdict,
+                     'widgets': ['Jab', 'Vab', 'Vcentr']}
+        self.ab = MultipletBar(**ab_kwargs, **bar_kwargs)
         self.ab2 = AB2_Bar(**bar_kwargs)
         self.abx = ABX_Bar(**bar_kwargs)
         self.abx3 = ABX3_Bar(**bar_kwargs)

@@ -30,8 +30,10 @@ from tkinter import *
 
 import numpy as np
 
+from ReichDNMR.reichdefaults import (ABdict, AB2dict, ABXdict, ABX3dict,
+                                     AAXXdict, AABBdict)
 from ReichDNMR.GUI.widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox,
-                                       VarButtonBox)
+                                   VarButtonBox)
 from ReichDNMR.initialize import getWINDNMRdefault
 
 
@@ -74,22 +76,43 @@ class ToolBar(Frame):
         self.controller.update_view_plot(self.model, **self.vars)
 
 
-class AB_Bar(ToolBar):
-    """A subclass of ToolBar designed for use with AB simulations.
+class MultipletBar(ToolBar):
+    """Extends/overwrites ToolBar to accept a model name, a dict of initial
+    values, and widget list, and populates the ToolBar with the required
+    widgets.
 
-    Extends ToolBar with AB quartet inputs, and overwrites .model as 'AB'.
+    TODO:
+    * ToolBar and Multiplet bar are largely redundant--refactor into one base
+    class?
     """
-    def __init__(self, parent=None, **options):
+    def __init__(self, parent=None, model=None, vars=None, widgets=None,
+                 **options):
         ToolBar.__init__(self, parent, **options)
-        self.model = 'AB'
-        self.vars = {'Jab': 12.00,
-                     'Vab': 15.00,
-                     'Vcentr': 150.00}
+        self.model = model
+        self.vars = vars
+        self.widgets = widgets
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
         for key in ['Jab', 'Vab', 'Vcentr']:
             widget = VarBox(self, name=key, **kwargs)
             widget.pack(side=LEFT)
+
+# class AB_Bar(ToolBar):
+#     """A subclass of ToolBar designed for use with AB simulations.
+#
+#     Extends ToolBar with AB quartet inputs, and overwrites .model as 'AB'.
+#     """
+#     def __init__(self, parent=None, **options):
+#         ToolBar.__init__(self, parent, **options)
+#         self.model = 'AB'
+#         self.vars = {'Jab': 12.00,
+#                      'Vab': 15.00,
+#                      'Vcentr': 150.00}
+#         kwargs = {'dict_': self.vars,
+#                   'controller': self.request_plot}
+#         for key in ['Jab', 'Vab', 'Vcentr']:
+#             widget = VarBox(self, name=key, **kwargs)
+#             widget.pack(side=LEFT)
 
 
 class AB2_Bar(ToolBar):
