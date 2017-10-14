@@ -7,6 +7,7 @@ reference and methods for plotting data.
 
 * View: an extension of tkinter Frame that provides the main GUI.
 """
+from collections import OrderedDict
 from tkinter import *
 
 import matplotlib
@@ -17,12 +18,10 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
 from matplotlib.figure import Figure
 
 from ReichDNMR.GUI.frames import RadioFrame
-from ReichDNMR.GUI.toolbars import (
-    MultipletBar,
-    # AB_Bar,
-    AB2_Bar, ABX_Bar, ABX3_Bar, AAXX_Bar, AABB_Bar, FirstOrder_Bar,
-    SecondOrderSpinBar, DNMR_TwoSingletBar, DNMR_AB_Bar)
-from ReichDNMR.reichdefaults import ABdict
+from ReichDNMR.GUI.toolbars import (AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar,
+                                    AAXX_Bar, AABB_Bar, FirstOrder_Bar,
+                                    SecondOrderSpinBar, DNMR_TwoSingletBar,
+                                    DNMR_AB_Bar)
 
 
 class MPLgraph(FigureCanvasTkAgg):

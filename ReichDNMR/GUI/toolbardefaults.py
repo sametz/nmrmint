@@ -1,5 +1,8 @@
 """
-Default values used by toolbars.py to instantiate toolbars.
+Passing defaults as ordereddict might allow for a concise refactoring of
+toolbars, because widgets could be added in the same order as in the
+ordereddict. However, Wa, Right-Hz and WdthHz are not implemented yet. This
+file is being retained for now, just in case.
 """
 from collections import OrderedDict
 
@@ -8,10 +11,10 @@ ABdict = OrderedDict([('Jab', 12.0),
                       ('Vcentr', 150.0),
                       ('Wa', 0.5), ('Right-Hz', 0), ('WdthHz', 300)])
 
-AB2dict = ([('Jab', 12.0),
-            ('Vab', 15.0),
-            ('Vcentr', 150.0),
-            ('Wa', 0.5), ('Right-Hz', 0), ('WdthHz', 300)])
+AB2dict = OrderedDict([('Jab', 12.0),
+                       ('Vab', 15.0),
+                       ('Vcentr', 150.0),
+                       ('Wa', 0.5), ('Right-Hz', 0), ('WdthHz', 300)])
 
 # for expediency, including the 2,6-dichlorophenol AB2 for test_nmrmath
 dcp = OrderedDict[('Jab', 7.9),
@@ -66,3 +69,11 @@ AABBdict = OrderedDict[("Vab", 40),
                        ('Wa', 0.5),
                        ('Right-Hz', 0),
                        ('WdthHz', 300)]
+
+# Potential refactor idea: toolbars.MultipletBar takes kwargs of:
+# model: (str) The calculation type
+# vars: (OrderedDict): key, val = name (str), number (int or float)
+ab_kwargs = {'model': 'AB', 'vars': ABdict}
+
+if __name__ == '__main__':
+    print(ab_kwargs)

@@ -53,3 +53,35 @@ AABBdict = {"Vab": 40,
             "Jab_prime": 6.0,
             'Vcentr': 150,
             'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
+
+ab_kwargs = {'model': 'AB', 'vars': ABdict,
+             'widgets': ['Jab', 'Vab', 'Vcentr']}
+
+ab2_kwargs = {'model': 'AB2', 'vars': AB2dict,
+              'widgets': ['Jab', 'Vab', 'Vcentr']}
+
+abx_kwargs = {'model': 'ABX', 'vars': ABXdict,
+              'widgets': ['Jab', 'Jax', 'Jbx', 'Vab', 'Vcentr']}
+
+abx3_kwargs = {'model': 'ABX3', 'vars': ABX3dict,
+               'widgets': ['Jab', 'Jax', 'Jbx', 'Vab', 'Vcentr']}
+
+aaxx_kwargs = {'model': 'AAXX', 'vars': AAXXdict,
+               'widgets': ['Jaa', 'Jxx', 'Jax', 'Jax_prime', 'Vcentr']}
+
+aabb_kwargs = {'model': 'AABB', 'vars': AABBdict,
+               'widgets': ['Jaa', 'Jbb', 'Jab', 'Jab_prime', 'Vcentr']}
+
+multiplet_bar_defaults = {'AB': ab_kwargs,
+                          'AB2': ab2_kwargs,
+                          'ABX': abx_kwargs,
+                          'ABX3': abx3_kwargs,
+                          'AAXX': aaxx_kwargs,
+                          'AABB': aabb_kwargs}
+
+
+if __name__ == '__main__':
+    for bar in ['AB', 'AB2', 'ABX', 'ABX3', 'AAXX', 'AABB']:
+        print(multiplet_bar_defaults[bar]['model'])
+        print(multiplet_bar_defaults[bar]['vars'])
+        print(multiplet_bar_defaults[bar]['widgets'])
