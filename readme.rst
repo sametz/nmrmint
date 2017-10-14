@@ -38,8 +38,8 @@ Some of the VB6 variable names and gross function structure are
 inherited by UW-DNMR, particular in the first-order calculations, but the
 math routines were written from scratch by G.S., and any flaws in UW-NMR
 calculations are solely attributable to G.S.
-**UW-DNMR** also initializes its simulations with the same variables as
-WINDNMR, to compare and verify that the simulations are performing correctly.
+UW-DNMR also initializes its simulations with the same variables as
+WinDNMR, to compare and verify that the simulations are performing correctly.
 
 The second-order calculations are entirely different from WinDNMR's, and draw
 primarily from two sources:
