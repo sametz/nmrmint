@@ -257,9 +257,9 @@ class ArrayBox(BaseEntryFrame):
             self.value_var.set(0.00)
         self.value = float(self.value_var.get())
         self.array[self.row, self.col] = self.value
-        if self.array.shape[0] > 1:  # if more than one row, assume J matrix
-            self.array[self.col, self.row] = self.value  # fill cross-diagonal
-                                                         # element
+        # if more than one row, assume J matrix and fill cross-diagonal element
+        if self.array.shape[0] > 1:
+            self.array[self.col, self.row] = self.value
 
 
 class ArraySpinBox(ArrayBox):

@@ -6,6 +6,7 @@ from . import testdata
 from .accepted_data import ADD_SIGNALS_DATASET
 from .plottools import popplot
 
+
 def test_lorentz_width():
     """Tests that w corresponds to width at half height"""
     v0 = 100

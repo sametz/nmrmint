@@ -2,7 +2,8 @@ from ReichDNMR.model.nmrmath import *
 import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.linalg import eigh
-from .testdata import TWOSPIN_SLOW, AB_WINDNMR  # , TWOSPIN_COALESCE, TWOSPIN_FAST
+from .testdata import TWOSPIN_SLOW, AB_WINDNMR
+# , TWOSPIN_COALESCE, TWOSPIN_FAST omitted for now
 
 # The attempt to put pytest code in a class failed. For whatever reason,
 # pytest could not detect the tests within the class. Reserved for potential
