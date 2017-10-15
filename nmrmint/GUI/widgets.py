@@ -137,7 +137,7 @@ class BaseEntryFrame(Frame):
         """
         self.entry.bind('<Return>', lambda event: self.on_return(event))
         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
-        self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        # self.entry.bind('<FocusOut>', lambda event: self.refresh())
 
     def on_return(self, event):
         """Refresh the view and shift focus when Return key is hit."""

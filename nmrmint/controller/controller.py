@@ -15,6 +15,7 @@ from nmrmint.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
                                    first_order, add_spectra)
 from nmrmint.model.nmrplot import tkplot
 
+import sys
 
 class Controller:
     """Instantiate nmrmint's view, and pass data and requests to/from
@@ -45,6 +46,7 @@ class Controller:
         Argument:
             root: a tkinter.Tk() object
         """
+        self.counter = 0  # for debugging
         self.models = {'AB': AB,
                        'AB2': AB2,
                        'ABX': ABX,
@@ -59,6 +61,7 @@ class Controller:
         self.view = View(root, self)
         self.view.pack(expand=tk.YES, fill=tk.BOTH)
         self.view.initialize()
+        # sys.settrace(self.update_view_plot)
 
     def update_view_plot(self, model, total_spectrum, **data):
         """
@@ -72,25 +75,36 @@ class Controller:
 
         :return: None (including when model is not recognized)
         """
+        self.counter += 1
         multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
                             'first_order']
+        print('Controller call #%d' % self.counter)
+        print('controller received total spectrum:')
+        print(total_spectrum)
 
         if model in multiplet_models:
             spectrum = self.models[model](**data)
+            add_spectra(total_spectrum, spectrum)
             plotdata = tkplot(spectrum)
+            total_plotdata = tkplot(total_spectrum)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
             plotdata = tkplot(spectrum, w)
+            total_plotdata = tkplot(total_spectrum, w)
         # elif 'DNMR' in model:
         #     plotdata = self.models[model](*args)
         else:
             print('model not recognized')
             return
-        if total_spectrum:
-            print('controller received total spectrum: ', total_spectrum)
-            add_spectra(total_spectrum, spectrum)
+
+        print('controller created new total spectrum:')
+        print(total_spectrum)
+        # if total_spectrum:
+        # add_spectra(total_spectrum, spectrum)
+        # total_plotdata = tkplot()
         self.view.clear()
-        self.view.plot(*plotdata)
+        self.view.plot_current(*plotdata)
+        self.view.plot_total(*total_plotdata)
 
     @staticmethod
     def call_nspins_model(v, j, w, **kwargs):

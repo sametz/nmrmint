@@ -12,6 +12,7 @@ from tkinter import *
 
 import matplotlib
 import numpy as np
+import sys
 
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
@@ -22,6 +23,30 @@ from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
                                   SecondOrderSpinBar)
+
+
+def trace_calls(frame, event, arg):
+    if event != 'call':
+        return
+    co = frame.f_code
+    func_name = co.co_name
+    if func_name == 'write':
+        # Ignore write() calls from print statements
+        return
+    func_line_no = frame.f_lineno
+    func_filename = co.co_filename
+
+    if "/Users/geoffreysametz/Google Drive/Programming/NMR code/nmrmint" not \
+            in func_filename:
+        return
+
+    caller = frame.f_back
+    caller_line_no = caller.f_lineno
+    caller_filename = caller.f_code.co_filename
+    print('Call to %s on line %s of %s from line %s of %s' % \
+        (func_name, func_line_no, func_filename,
+         caller_line_no, caller_filename))
+    return
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -99,16 +124,20 @@ class MPLgraph2(FigureCanvasTkAgg):
         self.toolbar = NavigationToolbar2TkAgg(self, master)
         self.toolbar.update()
 
-    def plot(self, x, y):
+    def plot_current(self, x, y):
         """Plot x, y data to the Canvas.
 
         :param x: (numpy linspace)
         :param y: (numpy linspace)
         """
         self.current_plot.plot(x, y)
-        self.total_plot.plot(x, y)
+        # self.total_plot.plot(x, y)
         # apparently .draw_idle() gives faster refresh than .draw()
         self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
+
+    def plot_total(self, x, y):
+        self.total_plot.plot(x, y)
+        self.f.canvas.draw_idle()
 
     def clear(self):
         """Clear the Canvas."""
@@ -150,7 +179,7 @@ class View(Frame):
         :param controller: the Controller to this View."""
         Frame.__init__(self, parent, **options)
         self.controller = controller
-
+        # sys.settrace(trace_calls)
         self.SideFrame = Frame(self, relief=RIDGE, borderwidth=3)
         self.SideFrame.pack(side=LEFT, expand=NO, fill=Y)
 
@@ -432,13 +461,16 @@ class View(Frame):
         """ Erase the matplotlib current_canvas."""
         self.canvas.clear()
 
-    def plot(self, x, y):
+    def plot_current(self, x, y):
         """Plot the model's results to the matplotlib current_canvas.
 
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
-        self.canvas.plot(x, y)
+        self.canvas.plot_current(x, y)
+
+    def plot_total(self, x, y):
+        self.canvas.plot_total(x, y)
 
 
 if __name__ == '__main__':
