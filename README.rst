@@ -13,4 +13,4 @@ sufficient quality for printing on exams. Or, you may have a system that
 would be easily solved at higher field strength, but you can only find
 spectra taken in lower fields where second-order effects make analysis more
 difficult. In such cases, nmrmint will provide you that spectrum you need for
- that quiz tomorrow.
+that quiz tomorrow.
