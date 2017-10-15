@@ -30,9 +30,9 @@ from tkinter import *
 
 import numpy as np
 
-from uw_dnmr.GUI.widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox,
-                                   VarButtonBox)
-from uw_dnmr.initialize import getWINDNMRdefault
+from nmrmint.GUI.widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox,
+                                 VarButtonBox)
+from nmrmint.initialize import getWINDNMRdefault
 
 
 class ToolBar(Frame):
@@ -439,7 +439,7 @@ class DNMR_AB_Bar(ToolBar):
 
 if __name__ == '__main__':
 
-    from uw_dnmr.reichdefaults import multiplet_bar_defaults
+    from nmrmint.reichdefaults import multiplet_bar_defaults
 
 
     class DummyController:
