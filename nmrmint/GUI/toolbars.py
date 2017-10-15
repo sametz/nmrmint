@@ -142,7 +142,7 @@ class FirstOrder_Bar(ToolBar):
     def request_plot(self):
         kwargs = self.make_kwargs()
         # self.controller.update_view_plot(self.model, **kwargs)
-        self.controller(self.model, **self.vars)
+        self.controller(self.model, **kwargs)
 
 
     def make_kwargs(self):

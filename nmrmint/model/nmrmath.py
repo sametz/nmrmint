@@ -274,6 +274,18 @@ def reduce_peaks(plist, tolerance=0):
     return res
 
 
+def normalize(intensities, n=1):
+    """Scale a list of intensities so that they sum to the total number of
+    nuclei.
+
+    :param intensities: [float] A list of intensities.
+    :param n: (int) Number of nuclei."""
+    factor = n / sum(intensities)
+    for index, intensity in enumerate(intensities):
+        # print(index, intensity)
+        intensities[index] = intensity * factor
+
+
 def first_order(signal, couplings):  # Wa, RightHz, WdthHz not implemented yet
     """Uses the above functions to split a signal into a first-order
     multiplet.
@@ -290,6 +302,15 @@ def first_order(signal, couplings):  # Wa, RightHz, WdthHz not implemented yet
     # may be useful in other situations?
     signallist = [signal]
     return reduce_peaks(sorted(multiplet(signallist, couplings)))
+
+
+def normalize_spectrum(spectrum, n=1):
+    freq, int_ = [x for x, y in spectrum], [y for x, y in spectrum]
+    print(freq)
+    print(int_)
+    normalize(int_, n)
+    print(int_)
+    return list(zip(freq, int_))
 
 
 def AB(Jab, Vab, Vcentr, **kwargs):  # Wa, RightHz, WdthHz not implemented yet
@@ -314,10 +335,16 @@ def AB(Jab, Vab, Vcentr, **kwargs):  # Wa, RightHz, WdthHz not implemented yet
     dI = J / (2 * c)
     I1 = 1 - dI
     I2 = 1 + dI
+
+    # nmrmint requires normailization.
+    # integration = 1  # hack in hard-coded integration for now
+    # I1 *= (integration/2)
+    # I2 *= (integration/2)
     I3 = I2
     I4 = I1
     vList = [v1, v2, v3, v4]
     IList = [I1, I2, I3, I4]
+    normalize(IList, 2)
     return list(zip(vList, IList))
 
 
@@ -403,6 +430,7 @@ def AB2(Jab, Vab, Vcentr, **kwargs):  # Wa, RightHz, WdthHz not implemented yet
     I9 = (sqrt(2) * sin_dtheta + sintheta_plus * sintheta_minus) ** 2
     vList = [V1, V2, V3, V4, V5, V6, V7, V8, V9]
     IList = [I1, I2, I3, I4, I5, I6, I7, I8, I9]
+    normalize(IList, 3)
     return list(zip(vList, IList))
 
 
@@ -499,6 +527,7 @@ def ABX(Jab, Jbx, Jax, Vab, Vcentr, **kwargs):
     I14 = I13
     VList = [V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14]
     IList = [I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14]
+    normalize(IList, 3)
     return list(zip(VList, IList))
 
 
@@ -595,6 +624,7 @@ def AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr, **kwargs):
 
     VList = [V1, V2, V3, V4, V5, V6, V7, V8, V9, V10]
     IList = [I1, I2, I3, I4, I5, I6, I7, I8, I9, I10]
+    normalize(IList, 4)
     return list(zip(VList, IList))
 
 
@@ -616,7 +646,7 @@ def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, **kwargs):
     J[1, 3] = Jab
     J[2, 3] = Jbb
     J = J + J.T
-    return nspinspec(freqlist, J)
+    return normalize_spectrum(nspinspec(freqlist, J), 4)
 
 
 def add_spectra(original, additional):

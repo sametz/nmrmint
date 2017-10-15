@@ -237,6 +237,15 @@ def test_reduce_peaks():
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
+def test_normalize():
+    intensities = [1, 3, 4]
+    normalize(intensities)
+    assert intensities == [0.125, 0.375, 0.5]
+    double_intensities = [1, 3, 3, 1]
+    normalize(double_intensities, 2)
+    assert double_intensities == [0.25, 0.75, 0.75, 0.25]
+
+
 def test_first_order():
     refspec = [(293.0, 0.75), (300.0, 1.5), (307.0, 0.75),
                (432.5, 0.0625), (439.5, 0.3125), (446.5, 0.625),
@@ -258,6 +267,11 @@ def test_first_order():
 # Non-QM Second-Order Calculations
 #############################################################################
 
+def test_convert_refspec():
+    refspec = [(1, 1), (2, 3), (3, 3), (4, 1)]
+    new_refspec = normalize_spectrum(refspec, 2)
+    print(sum([y for x, y in new_refspec]))
+    assert new_refspec == [(1, 0.25), (2, 0.75), (3, 0.75), (4, 0.25)]
 
 def test_AB():
     from nmrmint.windnmr_defaults import ABdict
@@ -266,8 +280,18 @@ def test_AB():
                (153.60468635614927, 1.6246950475544244),
                (165.60468635614927, 0.3753049524455757)]
 
+    refspec_normalized = normalize_spectrum(refspec, 2)
+    print('ref normalized:')
+    print(refspec_normalized)
+    print(sum([y for x, y in refspec_normalized]))
+    print(sum(refspec_normalized[1]))
     testspec = AB(**ABdict)
-    np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
+    print('testspec:')
+    print(testspec)
+    print(sum([y for x, y in testspec]))
+    np.testing.assert_array_almost_equal(testspec,
+                                         refspec_normalized,
+                                         decimal=2)
 
 
 def test_AB2():
@@ -281,8 +305,15 @@ def test_AB2():
                (30.134498392075365, 1.5421221179826525),
                (31.75794977340369, 1.3201931947004837),
                (55.300397938882746, 0.001346383244293953)]
-
-    testspec = AB2(**dcp)
+    refspec = normalize_spectrum(refspec, 3)
+    print('ref normalized;')
+    print(refspec)
+    print(sum([y for x, y in refspec]))
+    testspec = sorted(AB2(**dcp))
+    # testspec.sort()
+    print('testspec:')
+    print(testspec)
+    print(sum([y for x, y in testspec]))
     np.testing.assert_array_almost_equal(sorted(testspec), refspec, decimal=2)
 
 
@@ -302,44 +333,15 @@ def test_ABX():
                       (105.0, 1),
                       (80.69806479936946, 0.009709662154539944),
                       (119.30193520063054, 0.009709662154539944)])
-
+    refspec = normalize_spectrum(refspec, 3)
+    print('ref normalized;')
+    print(refspec)
+    print(sum([y for x, y in refspec]))
     testspec = sorted(ABX(**ABXdict))
+    print('testspec:')
+    print(testspec)
+    print(sum([y for x, y in testspec]))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
-
-
-# AMX3 should be removed from codebase in future refactor
-# def test_AMX3():
-#     from nmrmint.windnmr_defaults import AMX3dict
-#     refspec = sorted(
-#         [(136.2804555427071, 0.20634892168199606),
-#          (143.2804555427071, 0.6190467650459882),
-#          (150.2804555427071, 0.6190467650459882),
-#          (157.2804555427071, 0.20634892168199606),
-#          (124.2804555427071, 0.04365107831800394),
-#          (131.2804555427071, 0.13095323495401182),
-#          (138.2804555427071, 0.13095323495401182),
-#          (145.2804555427071, 0.04365107831800394),
-#          (154.7195444572929, 0.04365107831800394),
-#          (161.7195444572929, 0.13095323495401182),
-#          (168.7195444572929, 0.13095323495401182),
-#          (175.7195444572929, 0.04365107831800394),
-#          (142.7195444572929, 0.20634892168199606),
-#          (149.7195444572929, 0.6190467650459882),
-#          (156.7195444572929, 0.6190467650459882),
-#          (163.7195444572929, 0.20634892168199606)]
-#
-#     )
-#     Jab = AMX3dict['Jab']
-#     Jax = AMX3dict['Jax']
-#     Jbx = AMX3dict['Jbx']
-#     Vab = AMX3dict['Vab']
-#     Vcentr = AMX3dict['Vcentr']
-#     Wa = AMX3dict['Wa']
-#     RightHz = AMX3dict['Right-Hz']
-#     WdthHz = AMX3dict['WdthHz']
-#
-#     testspec = sorted(AMX3(Jab, Jax, Jbx, Vab, Vcentr, Wa, RightHz, WdthHz))
-#     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
 def test_ABX3():
@@ -362,8 +364,14 @@ def test_ABX3():
          (168.7195444572929, 0.13095323495401182),
          (175.7195444572929, 0.04365107831800394)]
     )
-
+    refspec = normalize_spectrum(refspec, 2)
+    print('ref normalized;')
+    print(refspec)
+    print(sum([y for x, y in refspec]))
     testspec = sorted(ABX3(**ABX3dict))
+    print('testspec:')
+    print(testspec)
+    print(sum([y for x, y in testspec]))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
@@ -379,8 +387,14 @@ def test_AAXX():
          (141.3990521539908, 0.7961952252387591),
          (116.39905215399081, 0.20380477476124093)]
     )
-
+    refspec = normalize_spectrum(refspec, 4)
+    print('ref normalized;')
+    print(refspec)
+    print(sum([y for x, y in refspec]))
     testspec = sorted(AAXX(**AAXXdict))
+    print('testspec:')
+    print(testspec)
+    print(sum([y for x, y in testspec]))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 
@@ -412,8 +426,14 @@ def test_AABB():
          (203.47950130825626, 0.49078895567299208),
          (207.77859771619566, 0.10166662880050205)]
     )
-
+    refspec = normalize_spectrum(refspec, 4)
+    print('ref normalized;')
+    print(refspec)
+    print(sum([y for x, y in refspec]))
     testspec = sorted(AABB(**AABBdict))
+    print('testspec:')
+    print(testspec)
+    print(sum([y for x, y in testspec]))
     np.testing.assert_array_almost_equal(testspec, refspec, decimal=2)
 
 #############################################################################

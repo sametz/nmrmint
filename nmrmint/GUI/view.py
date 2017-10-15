@@ -460,6 +460,7 @@ class View(Frame):
     def clear(self):
         """ Erase the matplotlib current_canvas."""
         self.canvas.clear()
+        self.total_spectrum = [(100, 1)]
 
     def plot_current(self, x, y):
         """Plot the model's results to the matplotlib current_canvas.

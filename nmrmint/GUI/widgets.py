@@ -326,7 +326,7 @@ class ArraySpinBox(ArrayBox):
         """
         self.entry.bind('<Return>', lambda event: self.on_return(event))
         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
-        self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        # self.entry.bind('<FocusOut>', lambda event: self.refresh())
         self.entry.bind('<ButtonPress-1>', lambda event: self.on_press())
         self.entry.bind('<ButtonRelease-1>', lambda event: self.on_release())
 
