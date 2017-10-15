@@ -3,10 +3,10 @@
 
 import tkinter as tk
 
-from uw_dnmr.controller.controller import Controller
+from nmrmint.controller.controller import Controller
 
 root = tk.Tk()
-root.title('uw_dnmr')
+root.title('nmrmint')
 app = Controller(root)
 
 # workaround fix for Tk problems and mac mouse/trackpad:

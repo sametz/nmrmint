@@ -17,11 +17,11 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2TkAgg)
 from matplotlib.figure import Figure
 
-from uw_dnmr.GUI.frames import RadioFrame
-from uw_dnmr.windnmr_defaults import multiplet_bar_defaults
-from uw_dnmr.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
-                                    SecondOrderSpinBar, DNMR_TwoSingletBar,
-                                    DNMR_AB_Bar)
+from nmrmint.GUI.frames import RadioFrame
+from nmrmint.windnmr_defaults import multiplet_bar_defaults
+from nmrmint.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
+                                  SecondOrderSpinBar, DNMR_TwoSingletBar,
+                                  DNMR_AB_Bar)
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -81,7 +81,7 @@ class MPLgraph(FigureCanvasTkAgg):
 
 
 class View(Frame):
-    """Provides the GUI for uw_dnmr by extending a tkinter Frame.
+    """Provides the GUI for nmrmint by extending a tkinter Frame.
 
     The view assumes the controller offers the following method:
         * update_view_plot
@@ -365,10 +365,10 @@ class View(Frame):
 
 if __name__ == '__main__':
     # Create the main application window:
-    from uw_dnmr.controller import controller
+    from nmrmint.controller import controller
 
     root = Tk()
-    root.title('uw_dnmr')  # working title only!
+    root.title('nmrmint')  # working title only!
     Controller = controller.Controller(root)
 
     # workaround fix for Tk problems and mac mouse/trackpad:
