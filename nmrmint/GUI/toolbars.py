@@ -132,7 +132,7 @@ class FirstOrder_Bar(ToolBar):
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
         for key in ['JAX', '#A', 'JBX', '#B', 'JCX', '#C',
-                         'JDX', '#D']:
+                         'JDX', '#D', 'Vcentr']:
             if '#' not in key:
                 widget = VarBox(self, name=key, **kwargs)
             else:

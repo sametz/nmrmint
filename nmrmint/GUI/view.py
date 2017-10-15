@@ -44,25 +44,13 @@ class MPLgraph(FigureCanvasTkAgg):
 
         :param figure: a matplotlib.figure.Figure object
         """
-        # print('initializing MPLgraph super')
         FigureCanvasTkAgg.__init__(self, figure, master, **options)
-        # print('super initialized')
         self.f = figure
-        # print('figure associated with self.f')
         self.add = figure.add_subplot(111)
-        # print('called figure.add_subplot')
         self.add.invert_xaxis()
-        # print('inverted x axis')
-        # line below used/worked in past...but is it really needed?
-        # self.show()
-        # print('showing MPLgraph')
         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        # print('tk widget packed')
         self.toolbar = NavigationToolbar2TkAgg(self, master)
-        # print('created toolbar')
         self.toolbar.update()
-        # print('toolbar updated')
-        # print('MPLgraph initialized')
 
     def plot(self, x, y):
         """Plot x, y data to the Canvas.
@@ -80,6 +68,54 @@ class MPLgraph(FigureCanvasTkAgg):
         self.f.canvas.draw()
 
 
+class MPLgraph2(FigureCanvasTkAgg):
+    """The Canvas object for plotting simulated spectra.
+
+    MPLgraph extends on FigureCanvasTkAgg by including a reference to a
+    matplotlib Figure object, plus methods for plotting.
+
+    Attributes:
+        (TODO: probably should all be private; learn about private attributes)
+
+    Methods:
+        plot: plot data to the Canvas
+        clear: clear the Canvas
+
+    """
+    def __init__(self, figure, master=None, **options):
+        """Extend FigureCanvasTkAgg with a Matplotlib Figure object, then add
+        and pack itself plus a toolbar into the parent.
+
+        :param figure: a matplotlib.figure.Figure object
+        """
+        FigureCanvasTkAgg.__init__(self, figure, master, **options)
+        self.f = figure
+        self.current_plot = figure.add_subplot(211)
+        self.current_plot.invert_xaxis()
+        self.total_plot = figure.add_subplot(212)
+        self.total_plot.invert_xaxis()
+        self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        self.toolbar = NavigationToolbar2TkAgg(self, master)
+        self.toolbar.update()
+
+    def plot(self, x, y):
+        """Plot x, y data to the Canvas.
+
+        :param x: (numpy linspace)
+        :param y: (numpy linspace)
+        """
+        self.current_plot.plot(x, y)
+        self.total_plot.plot(x, y)
+        # apparently .draw_idle() gives faster refresh than .draw()
+        self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
+
+    def clear(self):
+        """Clear the Canvas."""
+        self.current_plot.clear()
+        self.total_plot.clear()
+        self.f.canvas.draw()
+
+
 class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
 
@@ -92,7 +128,7 @@ class View(Frame):
         initialize_multiplet_bars, initialize_spinbars,
         initialize_dnmr_bars, add_calc_type_frame, add_model_frames,
         add_multiplet_buttons, add_abc_buttons, add_dnmr_buttons,
-        add_custom_buttons, add_plot: used by __init__ to instantiate the GUI.
+        add_custom_buttons, add_current_plot: used by __init__ to instantiate the GUI.
 
         select_calc_type: select the type of calculation to use (i.e
         first-order {'Multiplet'), second-order {'abc...'}, DNMR, or Custom).
@@ -122,10 +158,12 @@ class View(Frame):
 
         self.initialize_multiplet_bars(multiplet_bar_defaults)
         self.initialize_spinbars()
-        self.initialize_dnmr_bars()
+        # self.initialize_dnmr_bars()
         self.add_calc_type_frame()
         self.add_model_frames()
-        self.add_plot()
+        self.add_plots()
+        # self.add_current_plot()
+        # self.add_total_plot()
 
     def initialize_multiplet_bars(self, bar_dict):
         """Instantiate all of the toolbars used for 'Multiplet' subset of
@@ -168,13 +206,13 @@ class View(Frame):
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
                          for spins in self.spin_range]
 
-    def initialize_dnmr_bars(self):
-        """Instantiate all of the toolbars used for the 'DNMR' subset of
-        calculations.
-        """
-        kwargs = {'parent': self.TopFrame, 'controller': self.controller}
-        self.TwoSpinBar = DNMR_TwoSingletBar(**kwargs)
-        self.DNMR_AB_Bar = DNMR_AB_Bar(**kwargs)
+    # def initialize_dnmr_bars(self):
+    #     """Instantiate all of the toolbars used for the 'DNMR' subset of
+    #     calculations.
+    #     """
+    #     kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+    #     self.TwoSpinBar = DNMR_TwoSingletBar(**kwargs)
+    #     self.DNMR_AB_Bar = DNMR_AB_Bar(**kwargs)
 
     def add_calc_type_frame(self):
         """Add a menu for selecting the type of calculation to the upper left
@@ -185,9 +223,7 @@ class View(Frame):
         """
         title = 'Calc Type'
         buttons = (('Multiplet', lambda: self.select_calc_type('multiplet')),
-                   ('ABC...', lambda: self.select_calc_type('abc')),
-                   ('DNMR', lambda: self.select_calc_type('dnmr')),
-                   ('Custom', lambda: self.select_calc_type('custom')))
+                   ('ABC...', lambda: self.select_calc_type('abc')))
 
         self.CalcTypeFrame = RadioFrame(self.SideFrame,
                                         buttons=buttons, title=title,
@@ -223,21 +259,17 @@ class View(Frame):
 
         self.add_multiplet_buttons()
         self.add_abc_buttons()
-        self.add_dnmr_buttons()
-        self.add_custom_buttons()
+        # self.add_dnmr_buttons()
+        # self.add_custom_buttons()
 
         # framedic used by CalcTypeFrame to control individual frames
         self.framedic = {'multiplet': self.MultipletButtons,
-                         'abc': self.ABC_Buttons,
-                         'dnmr': self.DNMR_Buttons,
-                         'custom': self.Custom}
+                         'abc': self.ABC_Buttons}
 
         # active_bar_dict used to keep track of the active model in each
         # individual button menu.
         self.active_bar_dict = {'multiplet': self.ab,
-                                'abc': self.spinbars[0],
-                                'dnmr': self.TwoSpinBar,
-                                'custom': self.ab}
+                                'abc': self.spinbars[0]}
         self.currentframe = 'multiplet'
         self.currentbar = self.ab
         self.currentbar.grid(sticky=W)
@@ -279,37 +311,68 @@ class View(Frame):
                                       buttons=abc_buttons,
                                       title='Number of Spins')
 
-    def add_dnmr_buttons(self):
-        """Add a 'DNMR' menu: models for DNMR line shape analysis.
-
-        Attributes created:
-            DNMR_Buttons: (RadioFrame) Menu for selecting the type of DNMR
-            calculation.
-        """
-        dnmr_buttons = (('2-spin',
-                         lambda: self.select_toolbar(self.TwoSpinBar)),
-                        ('AB Coupled',
-                         lambda: self.select_toolbar(self.DNMR_AB_Bar)))
-        self.DNMR_Buttons = RadioFrame(self.model_frame,
-                                       buttons=dnmr_buttons,
-                                       title='DNMR')
-
-    def add_custom_buttons(self):
-        """Add a label notification that custom models are not implemented
-        yet.
-        """
-        self.Custom = Label(self.model_frame,
-                            text='Custom models not implemented yet')
+    # def add_dnmr_buttons(self):
+    #     """Add a 'DNMR' menu: models for DNMR line shape analysis.
+    #
+    #     Attributes created:
+    #         DNMR_Buttons: (RadioFrame) Menu for selecting the type of DNMR
+    #         calculation.
+    #     """
+    #     dnmr_buttons = (('2-spin',
+    #                      lambda: self.select_toolbar(self.TwoSpinBar)),
+    #                     ('AB Coupled',
+    #                      lambda: self.select_toolbar(self.DNMR_AB_Bar)))
+    #     self.DNMR_Buttons = RadioFrame(self.model_frame,
+    #                                    buttons=dnmr_buttons,
+    #                                    title='DNMR')
+    #
+    # def add_custom_buttons(self):
+    #     """Add a label notification that custom models are not implemented
+    #     yet.
+    #     """
+    #     self.Custom = Label(self.model_frame,
+    #                         text='Custom models not implemented yet')
 
     def add_plot(self):
         """Create a Matplotlib figure, instantiate a MPLgraph canvas with it,
         pack the canvas, and add a "Clear" button at the bottom of the GUI.
         """
+        """Copied over from previous project to show how 1-plot app was set 
+        up. Delete when no longer needed."""
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.canvas = MPLgraph(self.figure, self)
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
         Button(self, text="clear", command=lambda: self.canvas.clear()).pack(
             side=BOTTOM)
+
+    def add_plots(self):
+        self.figure = Figure(figsize=(5, 4), dpi=100)
+        self.canvas = MPLgraph2(self.figure, self)
+        self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+        Button(self, text="clear", command=lambda: self.canvas.clear()).pack(
+            side=BOTTOM)
+
+    def add_current_plot(self):
+        """Create a Matplotlib figure, instantiate a MPLgraph current_canvas with it,
+        pack the current_canvas, and add a "Clear" button at the bottom of the GUI.
+        """
+        self.current_figure = Figure(figsize=(5, 4), dpi=100)
+        self.current_canvas = MPLgraph(self.current_figure, self)
+        self.current_canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+        Button(self, text="clear1", command=lambda:
+        self.current_canvas.clear()).pack(
+            side=TOP)
+
+    def add_total_plot(self):
+        """Create a Matplotlib figure, instantiate a MPLgraph current_canvas with it,
+        pack the current_canvas, and add a "Clear" button at the bottom of the GUI.
+        """
+        self.total_figure = Figure(figsize=(5, 4), dpi=100)
+        self.total_canvas = MPLgraph(self.total_figure, self)
+        self.total_canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+        Button(self, text="clear2",
+               command=lambda: self.total_canvas.clear()
+               ).pack(side=BOTTOM)
 
     def select_calc_type(self, calc_type):
         """Checks if a new calculation tupe submenu has been selected,
@@ -344,18 +407,18 @@ class View(Frame):
     # Controller is postponed by placing it in the following function and
     # having the Controller call it when the View is ready.
     def initialize(self):
-        """Initialize the plot canvas with the simulation for currentbar.
+        """Initialize the plot current_canvas with the simulation for currentbar.
 
         To avoid a circular reference, this method is called by the
         Controller after it instantiates View."""
         self.currentbar.request_plot()
 
     def clear(self):
-        """ Erase the matplotlib canvas."""
+        """ Erase the matplotlib current_canvas."""
         self.canvas.clear()
 
     def plot(self, x, y):
-        """Plot the model's results to the matplotlib canvas.
+        """Plot the model's results to the matplotlib current_canvas.
 
         Arguments:
             x, y: numpy linspaces of x and y coordinates

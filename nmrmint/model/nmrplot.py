@@ -82,7 +82,7 @@ def nmrplot(spectrum, y=1):
 
 def tkplot(spectrum, w=0.5):
     """Generate linspaces of x and y coordinates suitable for plotting on a
-    matplotlib tkinter canvas.
+    matplotlib tkinter current_canvas.
     :param spectrum: A list of (frequency, intensity) tuples
     :param w: peak width at half height
     :return: a tuple of x and y coordinate linspaces
