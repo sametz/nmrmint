@@ -12,8 +12,8 @@ import tkinter as tk
 
 from nmrmint.GUI.view import View
 from nmrmint.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
-                                   first_order)
-from nmrmint.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
+                                   first_order, add_spectra)
+from nmrmint.model.nmrplot import tkplot
 
 
 class Controller:
@@ -52,15 +52,15 @@ class Controller:
                        'AABB': AABB,
                        'AAXX': AAXX,
                        'first_order': first_order,
-                       'nspin': self.call_nspins_model,
-                       'DNMR_Two_Singlets': dnmrplot_2spin,
-                       'DNMR_AB': dnmrplot_AB}
+                       'nspin': self.call_nspins_model}#,
+                       # 'DNMR_Two_Singlets': dnmrplot_2spin,
+                       # 'DNMR_AB': dnmrplot_AB}
 
         self.view = View(root, self)
         self.view.pack(expand=tk.YES, fill=tk.BOTH)
         self.view.initialize()
 
-    def update_view_plot(self, model, *args, **data):
+    def update_view_plot(self, model, total_spectrum, **data):
         """
         Parse the view's request; call the appropriate model for simulated
         spectral data; and tell the view to plot the data.
@@ -81,12 +81,14 @@ class Controller:
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
             plotdata = tkplot(spectrum, w)
-        elif 'DNMR' in model:
-            plotdata = self.models[model](*args)
+        # elif 'DNMR' in model:
+        #     plotdata = self.models[model](*args)
         else:
             print('model not recognized')
             return
-
+        if total_spectrum:
+            print('controller received total spectrum: ', total_spectrum)
+            add_spectra(total_spectrum, spectrum)
         self.view.clear()
         self.view.plot(*plotdata)
 

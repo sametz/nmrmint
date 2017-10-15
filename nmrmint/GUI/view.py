@@ -11,6 +11,7 @@ from collections import OrderedDict
 from tkinter import *
 
 import matplotlib
+import numpy as np
 
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
@@ -20,8 +21,7 @@ from matplotlib.figure import Figure
 from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
-                                  SecondOrderSpinBar, DNMR_TwoSingletBar,
-                                  DNMR_AB_Bar)
+                                  SecondOrderSpinBar)
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -89,6 +89,7 @@ class MPLgraph2(FigureCanvasTkAgg):
         :param figure: a matplotlib.figure.Figure object
         """
         FigureCanvasTkAgg.__init__(self, figure, master, **options)
+        self.total_data = np.array([])
         self.f = figure
         self.current_plot = figure.add_subplot(211)
         self.current_plot.invert_xaxis()
@@ -172,7 +173,7 @@ class View(Frame):
         :param bar_dict: {'model name': {kwargs} dict-of-dicts that stores
         the presets for widget names and values.
         """
-        bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+        bar_kwargs = {'parent': self.TopFrame, 'controller': self.request_plot}
         ab_kwargs = bar_dict['AB']
         ab2_kwargs = bar_dict['AB2']
         abx_kwargs = bar_dict['ABX']
@@ -200,7 +201,7 @@ class View(Frame):
         Keyword arguments:
             **kwargs: standard SecondOrderSpinBar kwargs
         """
-        kwargs = {'controller': self.controller,
+        kwargs = {'controller': self.request_plot,
                   'realtime': True}
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
@@ -400,7 +401,17 @@ class View(Frame):
         except ValueError:
             print('No model yet for this bar')
 
-    # The methods below provide the interface to the controller
+    #########################################################################
+    # The remaining methods below provide the interface to the controller
+    #########################################################################
+
+    # Interface from View to Controller:
+    def request_plot(self, model, **data):
+        """Intercept the toolbar's plot request, include the total spectrum,
+        and request an update from the Controller"""
+        self.controller.update_view_plot(model, self.total_spectrum, **data)
+
+    # Interface from Controller to View:
 
     # To avoid a circular reference, a call to the Controller cannot be made
     # until View is fully instantiated. Initializing the plot with a call to
@@ -411,7 +422,11 @@ class View(Frame):
 
         To avoid a circular reference, this method is called by the
         Controller after it instantiates View."""
+        self.total_spectrum = [(100, 1)]
         self.currentbar.request_plot()
+
+    def update_total_spectrum(self, new_total_spectrum):
+        self.total_spectrum = new_total_spectrum
 
     def clear(self):
         """ Erase the matplotlib current_canvas."""
