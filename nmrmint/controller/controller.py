@@ -10,14 +10,14 @@ Provides the following class:
 
 import tkinter as tk
 
-from uw_dnmr.GUI.view import View
-from uw_dnmr.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
-                                     first_order)
-from uw_dnmr.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
+from nmrmint.GUI.view import View
+from nmrmint.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
+                                   first_order)
+from nmrmint.model.nmrplot import tkplot, dnmrplot_2spin, dnmrplot_AB
 
 
 class Controller:
-    """Instantiate uw_dnmr's view, and pass data and requests to/from
+    """Instantiate nmrmint's view, and pass data and requests to/from
     the model and the view.
     
     The controller assumes the view offers the following methods:
@@ -123,7 +123,7 @@ class Controller:
 
 if __name__ == '__main__':
     root = tk.Tk()
-    root.title('uw_dnmr')  # working title only!
+    root.title('nmrmint')  # working title only!
     app = Controller(root)
 
     # workaround fix for Tk problems and mac mouse/trackpad:
