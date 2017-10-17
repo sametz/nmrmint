@@ -138,6 +138,8 @@ class BaseEntryFrame(Frame):
         self.entry.bind('<Return>', lambda event: self.on_return(event))
         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
         # self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        self.entry.bind('<FocusIn>',
+                        lambda event: self.entry.select_range(0, END))
 
     def on_return(self, event):
         """Refresh the view and shift focus when Return key is hit."""
@@ -335,6 +337,8 @@ class ArraySpinBox(ArrayBox):
         self.entry.bind('<Return>', lambda event: self.on_return(event))
         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
         # self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        self.entry.bind('<FocusIn>',
+                        lambda event: self.entry.selection('range', 0, END))
         self.entry.bind('<ButtonPress-1>', lambda event: self.on_press())
         self.entry.bind('<ButtonRelease-1>', lambda event: self.on_release())
 
