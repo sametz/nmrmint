@@ -147,7 +147,9 @@ class BaseEntryFrame(Frame):
     def refresh(self):
         """Save the Entry value to the data structure then request a view
         refresh."""
+        print('widget', self.name, 'checking entry')
         if self.entry_is_changed():
+            print('entry has changed')
             self.save_entry()
             self.controller()
 
@@ -157,6 +159,8 @@ class BaseEntryFrame(Frame):
 
         :return: True if changed, False if not.
         """
+        print('Current saved value: ', self.current_value)
+        print('Current widget value: ', self.value_var.get())
         return str(self.current_value) != self.value_var.get()
 
     def save_entry(self):
@@ -165,10 +169,14 @@ class BaseEntryFrame(Frame):
         Subclasses should overwrite save_entry to suit needs of their data
         type and call to controller
         """
+        print('entered save_entry')
         if not self.value_var.get():  # if entry left blank,
             self.value_var.set(0.00)  # fill it with zero
         value = float(self.value_var.get())
+        print('new value is: ', value)
+        print('old saved value was: ', current_value)
         self.current_value = value
+        print('new saved value is: ', self.current_value)
 
     def find_next_entry(self, current_widget):
         """Return the next Entry-like widget in tkinter's widget traversal.
@@ -396,8 +404,10 @@ class VarBox(BaseEntryFrame):
         """
         if not self.value_var.get():  # if entry left blank,
             self.value_var.set(0.00)  # fill it with zero
+        value = float(self.value_var.get())
+        self.current_value = value
         # Add the widget's status to the container's dictionary
-        self.dict[self.name] = float(self.value_var.get())
+        self.dict[self.name] = value
 
 
 class IntBox(VarBox):
@@ -418,8 +428,10 @@ class IntBox(VarBox):
         """
         if not self.value_var.get():  # if entry left blank,
             self.value_var.set(0)  # fill it with zero
+        value = int(self.value_var.get())
+        self.current_value = value
         # Add the widget's status to the container's dictionary
-        self.dict[self.name] = int(self.value_var.get())
+        self.dict[self.name] = value
 
     @staticmethod
     def is_valid(entry):

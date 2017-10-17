@@ -151,6 +151,7 @@ class FirstOrder_Bar(ToolBar):
     def request_plot(self):
         kwargs = self.make_kwargs()
         # self.controller.update_view_plot(self.model, **kwargs)
+        print("calling controller with: ", kwargs)
         self.controller(self.model, **kwargs)
 
 
