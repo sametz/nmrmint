@@ -136,10 +136,11 @@ class FirstOrder_Bar(ToolBar):
                      '#C': 0,
                      'JDX': 7,
                      '#D': 0,
-                     'Vcentr': 150}
+                     'Vcentr': 150,
+                     '# of nuclei': 1}
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
-        for key in ['JAX', '#A', 'JBX', '#B', 'JCX', '#C',
+        for key in ['# of nuclei','JAX', '#A', 'JBX', '#B', 'JCX', '#C',
                          'JDX', '#D', 'Vcentr']:
             if '#' not in key:
                 widget = VarBox(self, name=key, **kwargs)
@@ -174,7 +175,8 @@ class FirstOrder_Bar(ToolBar):
         _Jdx = self.vars['JDX']
         _d = self.vars['#D']
         _Vcentr = self.vars['Vcentr']
-        singlet = (_Vcentr, 1)  # using default intensity of 1
+        _integration = self.vars['# of nuclei']
+        singlet = (_Vcentr, _integration)
         allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
         couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
         data = {'signal': singlet,
