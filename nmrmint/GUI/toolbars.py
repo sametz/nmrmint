@@ -67,6 +67,10 @@ class ToolBar(Frame):
         self.controller = controller
         self.model = 'model'  # must be overwritten by subclasses
         self.vars = {}
+        self.add_spectra_button = Button(self,
+                                         text='Add To Total',
+                                         command=lambda: self.add_spectra())
+        self.add_spectra_button.pack(side=RIGHT)
 
     def request_plot(self):
         """Send request to controller to recalculate and refresh the view's
@@ -74,6 +78,10 @@ class ToolBar(Frame):
         """
         # self.controller.update_view_plot(self.model, **self.vars)
         self.controller(self.model, **self.vars)
+
+    def add_spectra(self):
+        print('I want to add the spectra!')
+        self.master.master.request_add_plot(self.model, **self.vars)
 
 class MultipletBar(ToolBar):
     """Extends/overwrites ToolBar to accept a model name, a dict of initial
@@ -173,6 +181,10 @@ class FirstOrder_Bar(ToolBar):
                 'couplings': couplings}
         return data
 
+    def add_spectra(self):
+        print('I want to add the spectra!')
+        kwargs = self.make_kwargs()
+        self.master.master.request_add_plot(self.model, **kwargs)
 
 class SecondOrderBar(Frame):
     """
@@ -225,6 +237,7 @@ class SecondOrderBar(Frame):
         self.add_frequency_widgets(n)
         self.add_peakwidth_widget()
         self.add_J_button(n)
+        self.add_addspectra_button()
 
     def add_frequency_widgets(self, n):
         for freq in range(n):
@@ -242,6 +255,12 @@ class SecondOrderBar(Frame):
         vj_button = Button(self, text="Enter Js",
                            command=lambda: self.vj_popup(n))
         vj_button.pack(side=LEFT, expand=N, fill=NONE)
+
+    def add_addspectra_button(self):
+        self.add_spectra_button = Button(self,
+                                         text='Add To Total',
+                                         command=lambda: self.add_spectra())
+        self.add_spectra_button.pack(side=RIGHT)
 
     def vj_popup(self, n):
         """
@@ -293,6 +312,15 @@ class SecondOrderBar(Frame):
 
         # self.controller.update_view_plot('nspin', **kwargs)
         self.controller('nspin', **kwargs)
+
+    def add_spectra(self):
+        """Adapt 2D array data to kwargs of correct type for the controller."""
+        kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
+                  'j': self.j,
+                  'w': self.w_array[0, 0]}  # controller takes float for w
+
+        # self.controller.update_view_plot('nspin', **kwargs)
+        self.master.master.request_add_plot('nspin', **kwargs)
 
 
 class SecondOrderSpinBar(SecondOrderBar):

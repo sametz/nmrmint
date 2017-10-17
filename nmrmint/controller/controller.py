@@ -84,6 +84,51 @@ class Controller:
 
         if model in multiplet_models:
             spectrum = self.models[model](**data)
+            # add_spectra(total_spectrum, spectrum)
+            plotdata = tkplot(spectrum)
+            # total_plotdata = tkplot(total_spectrum)
+        elif model == 'nspin':
+            spectrum, w = self.models[model](**data)
+            # add_spectra(total_spectrum, spectrum)
+            plotdata = tkplot(spectrum, w)
+            # total_plotdata = tkplot(total_spectrum, w)
+        # elif 'DNMR' in model:
+        #     plotdata = self.models[model](*args)
+        else:
+            print('model not recognized')
+            return
+
+        # print('controller created new total spectrum:')
+        # print(total_spectrum)
+        # if total_spectrum:
+        # add_spectra(total_spectrum, spectrum)
+        # total_plotdata = tkplot()
+        self.view.clear_current()
+        # self.view.update_total_spectrum(total_spectrum)
+        self.view.plot_current(*plotdata)
+        # self.view.plot_total(*total_plotdata)
+
+    def add_view_plots(self, model, total_spectrum, **data):
+        """
+        Parse the view's request; call the appropriate model for simulated
+        spectral data; and tell the view to plot the data.
+
+        :param model: (str) The type of calculation to be performed.
+        :param args: DNMR model is called with positional arguments.
+        :param data: first-order and second-order simulations are called with
+        keyword arguments.
+
+        :return: None (including when model is not recognized)
+        """
+        print('controller wants to add the plots!')
+        multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
+                            'first_order']
+        print('Controller call #%d' % self.counter)
+        print('controller received total spectrum:')
+        print(total_spectrum)
+
+        if model in multiplet_models:
+            spectrum = self.models[model](**data)
             add_spectra(total_spectrum, spectrum)
             plotdata = tkplot(spectrum)
             total_plotdata = tkplot(total_spectrum)
@@ -137,6 +182,10 @@ class Controller:
                 print('w missing')
         else:
             return nspinspec(v, j), w
+
+    # def add_view_plots(self, model, total_spectrum, **data):
+    #     print('controller wants to add spectra!')
+
 
 
 if __name__ == '__main__':

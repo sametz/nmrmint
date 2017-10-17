@@ -130,12 +130,16 @@ class MPLgraph2(FigureCanvasTkAgg):
         :param x: (numpy linspace)
         :param y: (numpy linspace)
         """
+        # for some reason axes were getting flipped after adding, so:
+        self.current_plot.invert_xaxis()
         self.current_plot.plot(x, y)
         # self.total_plot.plot(x, y)
         # apparently .draw_idle() gives faster refresh than .draw()
         self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
 
     def plot_total(self, x, y):
+        # for some reason total_plot axis gets flipped, so:
+        self.total_plot.invert_xaxis()
         self.total_plot.plot(x, y)
         self.f.canvas.draw_idle()
 
@@ -456,6 +460,10 @@ class View(Frame):
         """Intercept the toolbar's plot request, include the total spectrum,
         and request an update from the Controller"""
         self.controller.update_view_plot(model, self.total_spectrum, **data)
+
+    def request_add_plot(self, model, **data):
+        print('The view wants to add the plots!')
+        self.controller.add_view_plots(model, self.total_spectrum, **data)
 
     # Interface from Controller to View:
 

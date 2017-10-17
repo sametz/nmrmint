@@ -651,6 +651,11 @@ def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, **kwargs):
 
 def add_spectra(original, additional):
     original.extend(additional)
+    # temp hack; note spectrum sorted in tkplot as well!
+    # original.sort()
+    # original = reduce_peaks(original)
+
+
 
 #
 # def dnmr_2spin(v, va, vb, ka, Wa, Wb, pa):
