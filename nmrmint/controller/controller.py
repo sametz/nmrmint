@@ -89,6 +89,7 @@ class Controller:
             total_plotdata = tkplot(total_spectrum)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
+            add_spectra(total_spectrum, spectrum)
             plotdata = tkplot(spectrum, w)
             total_plotdata = tkplot(total_spectrum, w)
         # elif 'DNMR' in model:
@@ -103,6 +104,7 @@ class Controller:
         # add_spectra(total_spectrum, spectrum)
         # total_plotdata = tkplot()
         self.view.clear()
+        self.view.update_total_spectrum(total_spectrum)
         self.view.plot_current(*plotdata)
         self.view.plot_total(*total_plotdata)
 

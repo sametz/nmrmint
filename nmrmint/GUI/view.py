@@ -145,6 +145,14 @@ class MPLgraph2(FigureCanvasTkAgg):
         self.total_plot.clear()
         self.f.canvas.draw()
 
+    def clear_current(self):
+        self.current_plot.clear()
+        self.f.canvas.draw_idle()
+
+    def clear_total(self):
+        self.total_plot.clear()
+        self.f.canvas.draw_idle()
+
 
 class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
@@ -191,6 +199,7 @@ class View(Frame):
         # self.initialize_dnmr_bars()
         self.add_calc_type_frame()
         self.add_model_frames()
+        self.add_buttons()
         self.add_plots()
         # self.add_current_plot()
         # self.add_total_plot()
@@ -375,11 +384,19 @@ class View(Frame):
         Button(self, text="clear", command=lambda: self.canvas.clear()).pack(
             side=BOTTOM)
 
+    def add_buttons(self):
+        top_clear = Button(self.SideFrame, text="Clear Current Spectrum",
+                           command=lambda: self.clear_current())
+        bottom_clear = Button(self.SideFrame, text="Clear Total Spectrum",
+                              command=lambda: self.clear_total())
+        top_clear.pack()
+        bottom_clear.pack()
+
     def add_plots(self):
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.canvas = MPLgraph2(self.figure, self)
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
-        Button(self, text="clear", command=lambda: self.canvas.clear()).pack(
+        Button(self, text="clear", command=lambda: self.clear()).pack(
             side=BOTTOM)
 
     def add_current_plot(self):
@@ -462,6 +479,14 @@ class View(Frame):
         self.canvas.clear()
         self.total_spectrum = [(100, 1)]
 
+    def clear_current(self):
+        print('I want to clear the current!')
+        self.canvas.clear_current()
+
+    def clear_total(self):
+        print('I want to clear the total!')
+        self.total_spectrum = [(100, 1)]
+        self.canvas.clear_total()
     def plot_current(self, x, y):
         """Plot the model's results to the matplotlib current_canvas.
 
