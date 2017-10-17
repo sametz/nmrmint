@@ -170,7 +170,7 @@ def simsignals(H, nspins):
     return spectrum
 
 
-def nspinspec(freqs, couplings):
+def nspinspec(freqs, couplings, normalize=True):
     """
     Function that calculates a spectrum for n spin-half nuclei.
     Inputs:
@@ -185,7 +185,10 @@ def nspinspec(freqs, couplings):
     """
     nspins = len(freqs)
     H = hamiltonian(freqs, couplings)
-    return simsignals(H, nspins)
+    spectrum = simsignals(H, nspins)
+    if normalize:
+        spectrum = normalize_spectrum(spectrum, nspins)
+    return spectrum
 
 
 ##############################################################################
