@@ -192,7 +192,10 @@ class View(Frame):
         Frame.__init__(self, parent, **options)
         self.controller = controller
         # sys.settrace(trace_calls)
-        self.SideFrame = Frame(self, relief=RIDGE, borderwidth=3)
+        self.history_past = []
+        self.history_future = []
+
+        self.SideFrame = Frame(self, relief=RIDGE, borderwidth=3, bg='orange')
         self.SideFrame.pack(side=LEFT, expand=NO, fill=Y)
 
         self.TopFrame = Frame(self, relief=RIDGE, borderwidth=1)
@@ -205,6 +208,7 @@ class View(Frame):
         self.add_model_frames()
         self.add_buttons()
         self.add_plots()
+        self.add_history_buttons()
         # self.add_current_plot()
         # self.add_total_plot()
 
@@ -400,8 +404,8 @@ class View(Frame):
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.canvas = MPLgraph2(self.figure, self)
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
-        Button(self, text="clear", command=lambda: self.clear()).pack(
-            side=BOTTOM)
+        # Button(self, text="clear", command=lambda: self.clear()).pack(
+        #     side=BOTTOM)
 
     def add_current_plot(self):
         """Create a Matplotlib figure, instantiate a MPLgraph current_canvas with it,
@@ -424,6 +428,16 @@ class View(Frame):
         Button(self, text="clear2",
                command=lambda: self.total_canvas.clear()
                ).pack(side=BOTTOM)
+
+    def add_history_buttons(self):
+        history_frame = Frame(self, bg='green')
+        history_frame.pack(side=TOP)
+        back = Button(history_frame, text='Back',
+                      command=lambda: self.go_back())
+        forward = Button(history_frame, text='Forward',
+                         command=lambda: self.go_forward())
+        back.pack(side=LEFT)
+        forward.pack(side=RIGHT)
 
     def select_calc_type(self, calc_type):
         """Checks if a new calculation tupe submenu has been selected,
@@ -450,6 +464,20 @@ class View(Frame):
             self.currentbar.request_plot()
         except ValueError:
             print('No model yet for this bar')
+
+    def go_back(self):
+        print('Go back!')
+        self.history_future.append(self.history_past.pop())
+        self.total_spectrum = self.history_past[-1]
+        print('current spectrum:')
+        print(self.total_spectrum)
+
+    def go_forward(self):
+        print('Go forward!')
+        self.history_past.append(self.history_future.pop())
+        self.total_spectrum = self.history_past[-1]
+        print('current spectrum:')
+        print(self.total_spectrum)
 
     #########################################################################
     # The remaining methods below provide the interface to the controller
@@ -481,6 +509,8 @@ class View(Frame):
 
     def update_total_spectrum(self, new_total_spectrum):
         self.total_spectrum = new_total_spectrum
+        self.history_past.append(self.total_spectrum)
+        self.history_future = []
 
     def clear(self):
         """ Erase the matplotlib current_canvas."""
