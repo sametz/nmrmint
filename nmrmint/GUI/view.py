@@ -467,15 +467,21 @@ class View(Frame):
 
     def go_back(self):
         print('Go back!')
-        self.history_future.append(self.history_past.pop())
-        self.total_spectrum = self.history_past[-1]
+        try:
+            self.history_future.append(self.history_past.pop())
+            self.total_spectrum = self.history_past[-1]
+        except IndexError:
+            print('Back all the way.')
         print('current spectrum:')
         print(self.total_spectrum)
 
     def go_forward(self):
         print('Go forward!')
-        self.history_past.append(self.history_future.pop())
-        self.total_spectrum = self.history_past[-1]
+        try:
+            self.history_past.append(self.history_future.pop())
+            self.total_spectrum = self.history_past[-1]
+        except IndexError:
+            print('Forward all the way.')
         print('current spectrum:')
         print(self.total_spectrum)
 
@@ -509,7 +515,7 @@ class View(Frame):
 
     def update_total_spectrum(self, new_total_spectrum):
         self.total_spectrum = new_total_spectrum
-        self.history_past.append(self.total_spectrum)
+        self.history_past.append(self.total_spectrum[:])
         self.history_future = []
 
     def clear(self):
