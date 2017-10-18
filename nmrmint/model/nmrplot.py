@@ -90,7 +90,9 @@ def tkplot(spectrum, w=0.5):
     spectrum.sort()
     r_limit = spectrum[-1][0] + 50
     l_limit = spectrum[0][0] - 50
-    x = np.linspace(l_limit, r_limit, 2400)
+    # testing indicated the following was a sweetspot resolution
+    x = np.linspace(l_limit, r_limit, #2400)
+                    40 * (r_limit - l_limit))
     y = add_signals(x, spectrum, w)
     return x, y
 

@@ -132,7 +132,7 @@ class MPLgraph2(FigureCanvasTkAgg):
         """
         # for some reason axes were getting flipped after adding, so:
         self.current_plot.invert_xaxis()
-        self.current_plot.plot(x, y)
+        self.current_plot.plot(x, y, linewidth=1)
         # self.total_plot.plot(x, y)
         # apparently .draw_idle() gives faster refresh than .draw()
         self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
@@ -140,7 +140,7 @@ class MPLgraph2(FigureCanvasTkAgg):
     def plot_total(self, x, y):
         # for some reason total_plot axis gets flipped, so:
         self.total_plot.invert_xaxis()
-        self.total_plot.plot(x, y)
+        self.total_plot.plot(x, y, linewidth=1)
         self.f.canvas.draw_idle()
 
     def clear(self):
