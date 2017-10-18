@@ -192,6 +192,10 @@ class View(Frame):
         Frame.__init__(self, parent, **options)
         self.controller = controller
         # sys.settrace(trace_calls)
+
+        # currently for debugging purposes, initial/blank spectra will have a
+        # "TMS" peak at 0 that integrates to 1H.
+        self.blank_spectrum = [(0, 1)]
         self.history_past = []
         self.history_future = []
 
@@ -277,6 +281,17 @@ class View(Frame):
                                         relief=SUNKEN, borderwidth=1)
         self.CalcTypeFrame.pack(side=TOP, expand=NO, fill=X)
 
+    def select_calc_type(self, calc_type):
+        """Checks if a new calculation tupe submenu has been selected,
+        and if so displays it and updates the currentframe reference.
+        """
+        if calc_type != self.currentframe:
+            self.framedic[self.currentframe].grid_remove()
+            self.currentframe = calc_type
+            self.framedic[self.currentframe].grid()
+            # retrieve and select current active bar of frame
+            self.select_toolbar(self.active_bar_dict[self.currentframe])
+
     def add_model_frames(self):
         """Add a submenu for selecting the exact calculation model,
         below CalcTypeFrame.
@@ -358,6 +373,21 @@ class View(Frame):
                                       buttons=abc_buttons,
                                       title='Number of Spins')
 
+    def select_toolbar(self, toolbar):
+        """Replaces the old toolbar with the new toolbar.
+
+        :param toolbar: the toolbar to replace currentbar in the GUI.
+        """
+        self.currentbar.grid_remove()
+        self.currentbar = toolbar
+        self.currentbar.grid(sticky=W)
+        # record current bar of currentframe:
+        self.active_bar_dict[self.currentframe] = toolbar
+        try:
+            self.currentbar.request_plot()
+        except ValueError:
+            print('No model yet for this bar')
+
     # def add_dnmr_buttons(self):
     #     """Add a 'DNMR' menu: models for DNMR line shape analysis.
     #
@@ -438,52 +468,48 @@ class View(Frame):
                          command=lambda: self.go_forward())
         back.pack(side=LEFT)
         forward.pack(side=RIGHT)
+        dump = Button(self, text='DUMP HISTORY',
+                      command=lambda: self.dump_history())
+        dump.pack(side=TOP)
 
-    def select_calc_type(self, calc_type):
-        """Checks if a new calculation tupe submenu has been selected,
-        and if so displays it and updates the currentframe reference.
-        """
-        if calc_type != self.currentframe:
-            self.framedic[self.currentframe].grid_remove()
-            self.currentframe = calc_type
-            self.framedic[self.currentframe].grid()
-            # retrieve and select current active bar of frame
-            self.select_toolbar(self.active_bar_dict[self.currentframe])
 
-    def select_toolbar(self, toolbar):
-        """Replaces the old toolbar with the new toolbar.
-
-        :param toolbar: the toolbar to replace currentbar in the GUI.
-        """
-        self.currentbar.grid_remove()
-        self.currentbar = toolbar
-        self.currentbar.grid(sticky=W)
-        # record current bar of currentframe:
-        self.active_bar_dict[self.currentframe] = toolbar
-        try:
-            self.currentbar.request_plot()
-        except ValueError:
-            print('No model yet for this bar')
 
     def go_back(self):
         print('Go back!')
         try:
             self.history_future.append(self.history_past.pop())
             self.total_spectrum = self.history_past[-1]
+            print('New past history:')
+            print(self.history_past)
+            print('New future history:')
+            print(self.history_future)
         except IndexError:
             print('Back all the way.')
+            print('Stopped at spectrum:')
+            print(self.total_spectrum)
+            return
         print('current spectrum:')
         print(self.total_spectrum)
+        self.request_refresh_total_plot(self.total_spectrum)
 
     def go_forward(self):
         print('Go forward!')
         try:
             self.history_past.append(self.history_future.pop())
+            print('New past history:')
+            print(self.history_past)
+            print('New future history:')
+            print(self.history_future)
             self.total_spectrum = self.history_past[-1]
         except IndexError:
             print('Forward all the way.')
+            print('Stopped at spectrum:')
+            print(self.total_spectrum)
+            return
         print('current spectrum:')
         print(self.total_spectrum)
+        self.request_refresh_total_plot(self.total_spectrum)
+
 
     #########################################################################
     # The remaining methods below provide the interface to the controller
@@ -499,6 +525,9 @@ class View(Frame):
         print('The view wants to add the plots!')
         self.controller.add_view_plots(model, self.total_spectrum, **data)
 
+    def request_refresh_total_plot(self, spectrum, *w):
+        self.controller.refresh_total_spectrum(spectrum, *w)
+
     # Interface from Controller to View:
 
     # To avoid a circular reference, a call to the Controller cannot be made
@@ -510,18 +539,25 @@ class View(Frame):
 
         To avoid a circular reference, this method is called by the
         Controller after it instantiates View."""
-        self.total_spectrum = [(100, 1)]
+        self.total_spectrum = self.blank_spectrum
         self.currentbar.request_plot()
+        self.controller.refresh_total_spectrum(self.total_spectrum)
+        self.history_past.append(self.total_spectrum[:])
+        print('New past history:')
+        print(self.history_past)
 
     def update_total_spectrum(self, new_total_spectrum):
         self.total_spectrum = new_total_spectrum
         self.history_past.append(self.total_spectrum[:])
         self.history_future = []
-
+        print('New past history:')
+        print(self.history_past)
+        print('New future history:')
+        print(self.history_future)
     def clear(self):
         """ Erase the matplotlib current_canvas."""
         self.canvas.clear()
-        self.total_spectrum = [(100, 1)]
+        self.total_spectrum = self.blank_spectrum
 
     def clear_current(self):
         print('I want to clear the current!')
@@ -529,8 +565,9 @@ class View(Frame):
 
     def clear_total(self):
         print('I want to clear the total!')
-        self.total_spectrum = [(100, 1)]
+        self.total_spectrum = self.blank_spectrum
         self.canvas.clear_total()
+
     def plot_current(self, x, y):
         """Plot the model's results to the matplotlib current_canvas.
 
@@ -541,6 +578,15 @@ class View(Frame):
 
     def plot_total(self, x, y):
         self.canvas.plot_total(x, y)
+
+    # debugging below
+    def dump_history(self):
+        print('Current past history contents:')
+        print(self.history_past)
+        print('Current future history contents:')
+        print(self.history_future)
+        print('Current total_spectrum:')
+        print(self.total_spectrum)
 
 
 if __name__ == '__main__':

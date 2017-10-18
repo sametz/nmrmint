@@ -108,6 +108,12 @@ class Controller:
         self.view.plot_current(*plotdata)
         # self.view.plot_total(*total_plotdata)
 
+
+    def refresh_total_spectrum(self, spectrum, *w):
+        plotdata = tkplot(spectrum, *w)
+        self.view.canvas.clear_total()
+        self.view.plot_total(*plotdata)
+
     def add_view_plots(self, model, total_spectrum, **data):
         """
         Parse the view's request; call the appropriate model for simulated
@@ -127,16 +133,18 @@ class Controller:
         print('controller received total spectrum:')
         print(total_spectrum)
 
+        total_spectrum_copy = total_spectrum[:]
+
         if model in multiplet_models:
             spectrum = self.models[model](**data)
-            add_spectra(total_spectrum, spectrum)
+            add_spectra(total_spectrum_copy, spectrum)
             plotdata = tkplot(spectrum)
-            total_plotdata = tkplot(total_spectrum)
+            total_plotdata = tkplot(total_spectrum_copy)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
-            add_spectra(total_spectrum, spectrum)
+            add_spectra(total_spectrum_copy, spectrum)
             plotdata = tkplot(spectrum, w)
-            total_plotdata = tkplot(total_spectrum, w)
+            total_plotdata = tkplot(total_spectrum_copy, w)
         # elif 'DNMR' in model:
         #     plotdata = self.models[model](*args)
         else:
@@ -149,7 +157,7 @@ class Controller:
         # add_spectra(total_spectrum, spectrum)
         # total_plotdata = tkplot()
         self.view.clear()
-        self.view.update_total_spectrum(total_spectrum)
+        self.view.update_total_spectrum(total_spectrum_copy)
         self.view.plot_current(*plotdata)
         self.view.plot_total(*total_plotdata)
 
@@ -185,6 +193,8 @@ class Controller:
 
     # def add_view_plots(self, model, total_spectrum, **data):
     #     print('controller wants to add spectra!')
+
+
 
 
 
