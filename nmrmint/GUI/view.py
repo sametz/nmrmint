@@ -476,18 +476,19 @@ class View(Frame):
 
     def go_back(self):
         print('Go back!')
-        try:
+        if len(self.history_past) > 1:
             self.history_future.append(self.history_past.pop())
             self.total_spectrum = self.history_past[-1]
             print('New past history:')
             print(self.history_past)
             print('New future history:')
             print(self.history_future)
-        except IndexError:
+        else:
             print('Back all the way.')
             print('Stopped at spectrum:')
             print(self.total_spectrum)
             return
+
         print('current spectrum:')
         print(self.total_spectrum)
         self.request_refresh_total_plot(self.total_spectrum)
