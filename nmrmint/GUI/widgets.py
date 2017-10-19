@@ -561,6 +561,23 @@ class VarButtonBox(VarBox):
             self.after(50, lambda: self.change_value(increment))
 
 
+class SimpleVariableBox(BaseEntryFrame):
+    """Subclass of BaseEntryFrame that takes a variable as an argument and
+    rewrites it with the Entry's contents when changes are committed.
+    """
+
+    def __init__(self, parent=None, value=0.5, **options):
+        self.initial_value = value
+        BaseEntryFrame.__init__(self, parent, **options)
+    def save_entry(self):
+        if not self.value_var.get():  # if entry left blank,
+            self.value_var.set(0.01)  # fill it with 0.01
+        value = float(self.value_var.get())
+        print('new  width value is: ', value)
+        print('old width value was: ', self.current_value)
+        self.current_value = value
+        print('new saved width value is: ', self.current_value)
+
 if __name__ == '__main__':
     import numpy as np
 
@@ -613,3 +630,4 @@ if __name__ == '__main__':
             break
         except UnicodeDecodeError:
             pass
+

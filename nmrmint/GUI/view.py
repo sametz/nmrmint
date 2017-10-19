@@ -23,6 +23,7 @@ from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
                                   SecondOrderSpinBar)
+from nmrmint.GUI.widgets import SimpleVariableBox
 
 
 def trace_calls(frame, event, arg):
@@ -210,6 +211,7 @@ class View(Frame):
         # self.initialize_dnmr_bars()
         self.add_calc_type_frame()
         self.add_model_frames()
+        self.add_width_entry()
         self.add_buttons()
         self.add_plots()
         self.add_history_buttons()
@@ -422,6 +424,14 @@ class View(Frame):
         Button(self, text="clear", command=lambda: self.canvas.clear()).pack(
             side=BOTTOM)
 
+    def add_width_entry(self):
+        self.peak_width = 0.5
+        self.peak_width_widget = SimpleVariableBox(self.SideFrame,
+                                              name='Peak Width',
+                                              controller=self.set_peak_width)
+        self.peak_width_widget.pack(side=TOP)
+
+
     def add_buttons(self):
         top_clear = Button(self.SideFrame, text="Clear Current Spectrum",
                            command=lambda: self.clear_current())
@@ -472,7 +482,10 @@ class View(Frame):
                       command=lambda: self.dump_history())
         dump.pack(side=TOP)
 
-
+    def set_peak_width(self):
+        print('I want to change the peak width!')
+        self.peak_width = self.peak_width_widget.current_value
+        print('Current width is now: ', self.peak_width)
 
     def go_back(self):
         print('Go back!')
