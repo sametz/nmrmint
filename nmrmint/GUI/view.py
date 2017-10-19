@@ -7,12 +7,12 @@ reference and methods for plotting data.
 
 * View: an extension of tkinter Frame that provides the main GUI.
 """
+import sys
 from collections import OrderedDict
 from tkinter import *
 
 import matplotlib
 import numpy as np
-import sys
 
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
@@ -24,30 +24,6 @@ from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
                                   SecondOrderSpinBar)
 from nmrmint.GUI.widgets import SimpleVariableBox
-
-
-def trace_calls(frame, event, arg):
-    if event != 'call':
-        return
-    co = frame.f_code
-    func_name = co.co_name
-    if func_name == 'write':
-        # Ignore write() calls from print statements
-        return
-    func_line_no = frame.f_lineno
-    func_filename = co.co_filename
-
-    if "/Users/geoffreysametz/Google Drive/Programming/NMR code/nmrmint" not \
-            in func_filename:
-        return
-
-    caller = frame.f_back
-    caller_line_no = caller.f_lineno
-    caller_filename = caller.f_code.co_filename
-    print('Call to %s on line %s of %s from line %s of %s' % \
-        (func_name, func_line_no, func_filename,
-         caller_line_no, caller_filename))
-    return
 
 
 class MPLgraph(FigureCanvasTkAgg):
@@ -163,15 +139,17 @@ class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
 
     The view assumes the controller offers the following method:
-        * update_view_plot
+        * update_current_plot
     The toolbars (in toolbars.py) must ensure that the data they send via
-    request_plot is of the type required by the controller's update_view_plot.
+    request_plot is of the type required by the controller's
+    update_current_plot.
 
     Methods:
         initialize_multiplet_bars, initialize_spinbars,
         initialize_dnmr_bars, add_calc_type_frame, add_model_frames,
         add_multiplet_buttons, add_abc_buttons, add_dnmr_buttons,
-        add_custom_buttons, add_current_plot: used by __init__ to instantiate the GUI.
+        add_custom_buttons, add_current_plot: used by __init__ to instantiate
+        the GUI.
 
         select_calc_type: select the type of calculation to use (i.e
         first-order {'Multiplet'), second-order {'abc...'}, DNMR, or Custom).
@@ -426,11 +404,11 @@ class View(Frame):
 
     def add_width_entry(self):
         self.peak_width = 0.5
-        self.peak_width_widget = SimpleVariableBox(self.SideFrame,
-                                              name='Peak Width',
-                                              controller=self.set_peak_width)
+        self.peak_width_widget = SimpleVariableBox(
+            self.SideFrame,
+            name='Peak Width',
+            controller=self.set_peak_width)
         self.peak_width_widget.pack(side=TOP)
-
 
     def add_buttons(self):
         top_clear = Button(self.SideFrame, text="Clear Current Spectrum",
@@ -448,19 +426,20 @@ class View(Frame):
         #     side=BOTTOM)
 
     def add_current_plot(self):
-        """Create a Matplotlib figure, instantiate a MPLgraph current_canvas with it,
-        pack the current_canvas, and add a "Clear" button at the bottom of the GUI.
+        """Create a Matplotlib figure, instantiate a MPLgraph current_canvas
+        with it, pack the current_canvas, and add a "Clear" button at the
+        bottom of the GUI.
         """
         self.current_figure = Figure(figsize=(5, 4), dpi=100)
         self.current_canvas = MPLgraph(self.current_figure, self)
         self.current_canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
-        Button(self, text="clear1", command=lambda:
-        self.current_canvas.clear()).pack(
-            side=TOP)
+        Button(self, text="clear1",
+               command=lambda: self.current_canvas.clear()).pack(side=TOP)
 
     def add_total_plot(self):
-        """Create a Matplotlib figure, instantiate a MPLgraph current_canvas with it,
-        pack the current_canvas, and add a "Clear" button at the bottom of the GUI.
+        """Create a Matplotlib figure, instantiate a MPLgraph current_canvas
+        with it, pack the current_canvas, and add a "Clear" button at the
+        bottom of the GUI.
         """
         self.total_figure = Figure(figsize=(5, 4), dpi=100)
         self.total_canvas = MPLgraph(self.total_figure, self)
@@ -478,6 +457,8 @@ class View(Frame):
                          command=lambda: self.go_forward())
         back.pack(side=LEFT)
         forward.pack(side=RIGHT)
+
+        # Dump button for debugging history
         dump = Button(self, text='DUMP HISTORY',
                       command=lambda: self.dump_history())
         dump.pack(side=TOP)
@@ -524,7 +505,6 @@ class View(Frame):
         print(self.total_spectrum)
         self.request_refresh_total_plot(self.total_spectrum)
 
-
     #########################################################################
     # The remaining methods below provide the interface to the controller
     #########################################################################
@@ -533,14 +513,14 @@ class View(Frame):
     def request_plot(self, model, **data):
         """Intercept the toolbar's plot request, include the total spectrum,
         and request an update from the Controller"""
-        self.controller.update_view_plot(model, self.total_spectrum, **data)
+        self.controller.update_current_plot(model, **data)
 
     def request_add_plot(self, model, **data):
         print('The view wants to add the plots!')
         self.controller.add_view_plots(model, self.total_spectrum, **data)
 
     def request_refresh_total_plot(self, spectrum, *w):
-        self.controller.refresh_total_spectrum(spectrum, *w)
+        self.controller.update_total_plot(spectrum, *w)
 
     # Interface from Controller to View:
 
@@ -555,7 +535,7 @@ class View(Frame):
         Controller after it instantiates View."""
         self.total_spectrum = self.blank_spectrum
         self.currentbar.request_plot()
-        self.controller.refresh_total_spectrum(self.total_spectrum)
+        self.controller.update_total_plot(self.total_spectrum)
         self.history_past.append(self.total_spectrum[:])
         print('New past history:')
         print(self.history_past)
@@ -568,6 +548,7 @@ class View(Frame):
         print(self.history_past)
         print('New future history:')
         print(self.history_future)
+
     def clear(self):
         """ Erase the matplotlib current_canvas."""
         self.canvas.clear()
@@ -601,6 +582,31 @@ class View(Frame):
         print(self.history_future)
         print('Current total_spectrum:')
         print(self.total_spectrum)
+
+
+# Debugging routines:
+def trace_calls(frame, event, arg):
+    if event != 'call':
+        return
+    co = frame.f_code
+    func_name = co.co_name
+    if func_name == 'write':
+        # Ignore write() calls from print statements
+        return
+    func_line_no = frame.f_lineno
+    func_filename = co.co_filename
+
+    if "/Users/geoffreysametz/Google Drive/Programming/NMR code/nmrmint" not \
+            in func_filename:
+        return
+
+    caller = frame.f_back
+    caller_line_no = caller.f_lineno
+    caller_filename = caller.f_code.co_filename
+    print('Call to %s on line %s of %s from line %s of %s' %
+          (func_name, func_line_no, func_filename,
+           caller_line_no, caller_filename))
+    return
 
 
 if __name__ == '__main__':

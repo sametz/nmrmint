@@ -43,7 +43,7 @@ class ToolBar(Frame):
 
     methods:
         request_plot: sends model type and data to the controller. Assumes
-        controller has an update_view_plot function.
+        controller has an update_current_plot function.
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
@@ -76,7 +76,7 @@ class ToolBar(Frame):
         """Send request to controller to recalculate and refresh the view's
         plot.
         """
-        # self.controller.update_view_plot(self.model, **self.vars)
+        # self.controller.update_current_plot(self.model, **self.vars)
         self.controller(self.model, **self.vars)
 
     def add_spectra(self):
@@ -150,7 +150,7 @@ class FirstOrder_Bar(ToolBar):
 
     def request_plot(self):
         kwargs = self.make_kwargs()
-        # self.controller.update_view_plot(self.model, **kwargs)
+        # self.controller.update_current_plot(self.model, **kwargs)
         print("calling controller with: ", kwargs)
         self.controller(self.model, **kwargs)
 
@@ -213,7 +213,7 @@ class SecondOrderBar(Frame):
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
-        architecture. Assumes controller has an update_view_plot method.
+        architecture. Assumes controller has an update_current_plot method.
         model (str): the type of calculation requested (interpreted by the
         controller).
         v (numpy 2D array): the frequency list (located in v[0, :]
@@ -313,7 +313,7 @@ class SecondOrderBar(Frame):
                   'j': self.j,
                   'w': self.w_array[0, 0]}  # controller takes float for w
 
-        # self.controller.update_view_plot('nspin', **kwargs)
+        # self.controller.update_current_plot('nspin', **kwargs)
         self.controller('nspin', **kwargs)
 
     def add_spectra(self):
@@ -322,7 +322,7 @@ class SecondOrderBar(Frame):
                   'j': self.j,
                   'w': self.w_array[0, 0]}  # controller takes float for w
 
-        # self.controller.update_view_plot('nspin', **kwargs)
+        # self.controller.update_current_plot('nspin', **kwargs)
         self.master.master.request_add_plot('nspin', **kwargs)
 
 
@@ -421,7 +421,7 @@ class SecondOrderSpinBar(SecondOrderBar):
 #         _Wa = self.vars['Wa']
 #         _Wb = self.vars['Wb']
 #         _pa = self.vars['%a'] / 100
-#         self.controller.update_view_plot(self.model,
+#         self.controller.update_current_plot(self.model,
 #                                          _Va, _Vb, _ka, _Wa, _Wb, _pa)
 #
 #
@@ -468,7 +468,7 @@ class SecondOrderSpinBar(SecondOrderBar):
 #             _kAB = self.vars['kAB']
 #             _W = self.vars['W']
 #
-#             self.controller.update_view_plot(self.model, _Va, _Vb, _J, _kAB, _W)
+#             self.controller.update_current_plot(self.model, _Va, _Vb, _J, _kAB, _W)
 
 
 if __name__ == '__main__':

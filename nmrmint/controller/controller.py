@@ -8,6 +8,7 @@ Provides the following class:
                 the view.
 """
 
+import sys
 import tkinter as tk
 
 from nmrmint.GUI.view import View
@@ -15,7 +16,6 @@ from nmrmint.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
                                    first_order, add_spectra)
 from nmrmint.model.nmrplot import tkplot
 
-import sys
 
 class Controller:
     """Instantiate nmrmint's view, and pass data and requests to/from
@@ -24,7 +24,7 @@ class Controller:
     The controller assumes the view offers the following methods:
     
     * initialize()--Initializes the view. Currrently, just "OKs" the View 
-    to call Controller.update_view_plot after view's instantiation. 
+    to call Controller.update_current_plot after view's instantiation.
     
     * clear()--clears the view's plot.
     
@@ -32,13 +32,15 @@ class Controller:
     
     The controller provides the following methods:
     
-    * update_view_plot: parse the data sent by the view; call the appropriate
-    model simulation; and tell the view to plot the model's simulated
-    spectral data.
+    * update_current_plot: update the current (top) spectrum of the View.
+
+    * update_total_plot: update the total (summation, bottom) spectrum of the
+    View.
 
     * call_nspins_model: provide an interface that allows the model to be
     called with the view's second-order data.
     """
+    # TODO: refactor to reduce code redundancy
 
     def __init__(self, root):
         """Instantiate the view as a child of root, and then initializes it.
@@ -54,85 +56,67 @@ class Controller:
                        'AABB': AABB,
                        'AAXX': AAXX,
                        'first_order': first_order,
-                       'nspin': self.call_nspins_model}#,
-                       # 'DNMR_Two_Singlets': dnmrplot_2spin,
-                       # 'DNMR_AB': dnmrplot_AB}
+                       'nspin': self.call_nspins_model}
 
         self.view = View(root, self)
         self.view.pack(expand=tk.YES, fill=tk.BOTH)
         self.view.initialize()
-        # sys.settrace(self.update_view_plot)
+        # sys.settrace(self.update_current_plot)
 
-    def update_view_plot(self, model, total_spectrum, **data):
+    def update_current_plot(self, model, **data):
         """
-        Parse the view's request; call the appropriate model for simulated
-        spectral data; and tell the view to plot the data.
+        Pass the View's current (top) plot data to the appropriate
+        model; simulate spectral data; and tell the view to plot the data.
 
         :param model: (str) The type of calculation to be performed.
-        :param args: DNMR model is called with positional arguments.
-        :param data: first-order and second-order simulations are called with
-        keyword arguments.
+        :param data: kwargs for the requested model.
 
         :return: None (including when model is not recognized)
         """
-        self.counter += 1
         multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
                             'first_order']
-        print('Controller call #%d' % self.counter)
-        print('controller received total spectrum:')
-        print(total_spectrum)
 
         if model in multiplet_models:
             spectrum = self.models[model](**data)
-            # add_spectra(total_spectrum, spectrum)
             plotdata = tkplot(spectrum)
-            # total_plotdata = tkplot(total_spectrum)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
-            # add_spectra(total_spectrum, spectrum)
             plotdata = tkplot(spectrum, w)
-            # total_plotdata = tkplot(total_spectrum, w)
-        # elif 'DNMR' in model:
-        #     plotdata = self.models[model](*args)
         else:
             print('model not recognized')
             return
 
-        # print('controller created new total spectrum:')
-        # print(total_spectrum)
-        # if total_spectrum:
-        # add_spectra(total_spectrum, spectrum)
-        # total_plotdata = tkplot()
         self.view.clear_current()
-        # self.view.update_total_spectrum(total_spectrum)
         self.view.plot_current(*plotdata)
-        # self.view.plot_total(*total_plotdata)
 
+    def update_total_plot(self, spectrum, *w):
+        """Call model to calculate plot data from the provided spectrum,
+        then call View to plot the result.
 
-    def refresh_total_spectrum(self, spectrum, *w):
+        :param spectrum: [(float, float)...] The spectrum to be plotted as
+        the total (bottom) spectrum in the View.
+        :param w: optional peak width at half height.
+        """
         plotdata = tkplot(spectrum, *w)
         self.view.canvas.clear_total()
         self.view.plot_total(*plotdata)
 
     def add_view_plots(self, model, total_spectrum, **data):
-        """
-        Parse the view's request; call the appropriate model for simulated
-        spectral data; and tell the view to plot the data.
+        """Compute a spectrum from model, **data, add it to another spectrum,
+        and refresh the View's plots plus total_spectrum/history.
 
         :param model: (str) The type of calculation to be performed.
-        :param args: DNMR model is called with positional arguments.
-        :param data: first-order and second-order simulations are called with
-        keyword arguments.
+        :param total_spectrum: [(float, float)...] The spectrum that the new
+        spectral data will be added to.
+        :param data: kwargs required by the model.
 
         :return: None (including when model is not recognized)
         """
-        print('controller wants to add the plots!')
+        # TODO: The one-line description of add_view_plots indicates that this
+        # should not be one function, but several.
+
         multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
                             'first_order']
-        print('Controller call #%d' % self.counter)
-        print('controller received total spectrum:')
-        print(total_spectrum)
-
         total_spectrum_copy = total_spectrum[:]
 
         if model in multiplet_models:
@@ -145,17 +129,10 @@ class Controller:
             add_spectra(total_spectrum_copy, spectrum)
             plotdata = tkplot(spectrum, w)
             total_plotdata = tkplot(total_spectrum_copy, w)
-        # elif 'DNMR' in model:
-        #     plotdata = self.models[model](*args)
         else:
             print('model not recognized')
             return
 
-        print('controller created new total spectrum:')
-        print(total_spectrum)
-        # if total_spectrum:
-        # add_spectra(total_spectrum, spectrum)
-        # total_plotdata = tkplot()
         self.view.clear()
         self.view.update_total_spectrum(total_spectrum_copy)
         self.view.plot_current(*plotdata)
@@ -190,12 +167,6 @@ class Controller:
                 print('w missing')
         else:
             return nspinspec(v, j), w
-
-    # def add_view_plots(self, model, total_spectrum, **data):
-    #     print('controller wants to add spectra!')
-
-
-
 
 
 if __name__ == '__main__':
