@@ -444,8 +444,6 @@ class View(Frame):
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
         self.history_past.append(self.total_spectrum[:])
-        print('New past history:')
-        print(self.history_past)
 
     def update_total_spectrum(self, new_total_spectrum):
         """Set the current total spectrum, adding it to the history list of

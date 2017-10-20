@@ -80,7 +80,9 @@ class ToolBar(Frame):
         self.controller(self.model, **self.vars)
 
     def add_spectra(self):
-        print('I want to add the spectra!')
+        """Send request to controller to add the current spectrum to the
+        total spectrum.
+        """
         self.master.master.request_add_plot(self.model, **self.vars)
 
 
@@ -150,9 +152,8 @@ class FirstOrderBar(ToolBar):
             widget.pack(side=LEFT)
 
     def request_plot(self):
+        """Request the Controller to plot the spectrum."""
         kwargs = self.make_kwargs()
-        # self.controller.update_current_plot(self.model, **kwargs)
-        print("calling controller with: ", kwargs)
         self.controller(self.model, **kwargs)
 
     def make_kwargs(self):
@@ -185,7 +186,6 @@ class FirstOrderBar(ToolBar):
         return data
 
     def add_spectra(self):
-        print('I want to add the spectra!')
         kwargs = self.make_kwargs()
         self.master.master.request_add_plot(self.model, **kwargs)
 
@@ -314,7 +314,6 @@ class SecondOrderBar(Frame):
                   'j': self.j,
                   'w': self.w_array[0, 0]}  # controller takes float for w
 
-        # self.controller.update_current_plot('nspin', **kwargs)
         self.controller('nspin', **kwargs)
 
     def add_spectra(self):

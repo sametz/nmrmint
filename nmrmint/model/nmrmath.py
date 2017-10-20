@@ -287,7 +287,6 @@ def normalize(intensities, n=1):
     :param n: (int) Number of nuclei."""
     factor = n / sum(intensities)
     for index, intensity in enumerate(intensities):
-        # print(index, intensity)
         intensities[index] = intensity * factor
 
 
@@ -310,11 +309,14 @@ def first_order(signal, couplings):  # Wa, RightHz, WdthHz not implemented yet
 
 
 def normalize_spectrum(spectrum, n=1):
+    """Normalize the intensities in a spectrum so that total intensity equals
+    value n (nominally the number of nuclei giving rise to the signal).
+
+    :param spectrum: [(float, float)...] a list of (frequency, intensity)
+    tuples.
+    :param n: total intensity to normalize to."""
     freq, int_ = [x for x, y in spectrum], [y for x, y in spectrum]
-    print(freq)
-    print(int_)
     normalize(int_, n)
-    print(int_)
     return list(zip(freq, int_))
 
 
