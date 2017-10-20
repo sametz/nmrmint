@@ -2,15 +2,15 @@
 Provides the View for the UW-DNMR Model-View-Controller.
 
 Provides the following classes:
-* MPLgraph: Extension of FigureCanvasTkAgg that includes a matplotlib Figure
+* MPLplot: Extension of FigureCanvasTkAgg that includes a matplotlib Figure
 reference and methods for plotting data.
 
 * View: an extension of tkinter Frame that provides the main GUI.
 """
-from collections import OrderedDict
 from tkinter import *
 
 import matplotlib
+import numpy as np
 
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
@@ -19,12 +19,12 @@ from matplotlib.figure import Figure
 
 from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
-from nmrmint.GUI.toolbars import (MultipletBar, FirstOrder_Bar,
-                                  SecondOrderSpinBar, DNMR_TwoSingletBar,
-                                  DNMR_AB_Bar)
+from nmrmint.GUI.toolbars import (MultipletBar, FirstOrderBar,
+                                  SecondOrderSpinBar)
+from nmrmint.GUI.widgets import SimpleVariableBox
 
 
-class MPLgraph(FigureCanvasTkAgg):
+class MPLplot(FigureCanvasTkAgg):
     """The Canvas object for plotting simulated spectra.
 
     MPLgraph extends on FigureCanvasTkAgg by including a reference to a
@@ -34,8 +34,12 @@ class MPLgraph(FigureCanvasTkAgg):
         (TODO: probably should all be private; learn about private attributes)
 
     Methods:
-        plot: plot data to the Canvas
-        clear: clear the Canvas
+        plot_current: plot data to the top axis (i.e. the spectrum affected
+        by the current toolbar inputs)
+        plot_total: plot data to the bottom axis (i.e. the summation spectrum)
+        clear_all: clears both plots
+        clear_current: clears the top plot
+        clear_total: clears the bottom plot
 
     """
     def __init__(self, figure, master=None, **options):
@@ -44,55 +48,71 @@ class MPLgraph(FigureCanvasTkAgg):
 
         :param figure: a matplotlib.figure.Figure object
         """
-        # print('initializing MPLgraph super')
         FigureCanvasTkAgg.__init__(self, figure, master, **options)
-        # print('super initialized')
+        self.total_data = np.array([])
         self.f = figure
-        # print('figure associated with self.f')
-        self.add = figure.add_subplot(111)
-        # print('called figure.add_subplot')
-        self.add.invert_xaxis()
-        # print('inverted x axis')
-        # line below used/worked in past...but is it really needed?
-        # self.show()
-        # print('showing MPLgraph')
+        self.current_plot = figure.add_subplot(211)
+        self.current_plot.invert_xaxis()
+        self.total_plot = figure.add_subplot(212)
+        self.total_plot.invert_xaxis()
         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        # print('tk widget packed')
         self.toolbar = NavigationToolbar2TkAgg(self, master)
-        # print('created toolbar')
         self.toolbar.update()
-        # print('toolbar updated')
-        # print('MPLgraph initialized')
 
-    def plot(self, x, y):
-        """Plot x, y data to the Canvas.
+    def plot_current(self, x, y):
+        """Plot x, y data to the current_plot axis.
 
         :param x: (numpy linspace)
         :param y: (numpy linspace)
         """
-        self.add.plot(x, y)
-        # apparently .draw_idle() gives faster refresh than .draw()
+        # for some reason axes were getting flipped after adding, so:
+        self.current_plot.invert_xaxis()
+        self.current_plot.plot(x, y, linewidth=1)
         self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
 
-    def clear(self):
-        """Clear the Canvas."""
-        self.add.clear()
-        self.f.canvas.draw()
+    def plot_total(self, x, y):
+        """Plot x, y data to the total_plot axis.
+
+        :param x: (numpy linspace)
+        :param y: (numpy linspace)
+        """
+        # for some reason total_plot axis gets flipped, so:
+        self.total_plot.invert_xaxis()
+        self.total_plot.plot(x, y, linewidth=1)
+        self.f.canvas.draw_idle()
+
+    def clear_all(self):
+        """Clear all spectra plots."""
+        self.current_plot.clear()
+        self.total_plot.clear()
+        self.f.canvas.draw_idle()
+
+    def clear_current(self):
+        """Clear the current spectrum plot"""
+        self.current_plot.clear()
+        self.f.canvas.draw_idle()
+
+    def clear_total(self):
+        """Clear the summation spectrum plot."""
+        self.total_plot.clear()
+        self.f.canvas.draw_idle()
 
 
 class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
 
     The view assumes the controller offers the following method:
-        * update_view_plot
+        * update_current_plot
     The toolbars (in toolbars.py) must ensure that the data they send via
-    request_plot is of the type required by the controller's update_view_plot.
+    request_refresh_current_plot is of the type required by the controller's
+    update_current_plot.
 
     Methods:
         initialize_multiplet_bars, initialize_spinbars,
         initialize_dnmr_bars, add_calc_type_frame, add_model_frames,
         add_multiplet_buttons, add_abc_buttons, add_dnmr_buttons,
-        add_custom_buttons, add_plot: used by __init__ to instantiate the GUI.
+        add_custom_buttons, add_current_plot: used by __init__ to instantiate
+        the GUI.
 
         select_calc_type: select the type of calculation to use (i.e
         first-order {'Multiplet'), second-order {'abc...'}, DNMR, or Custom).
@@ -113,6 +133,13 @@ class View(Frame):
         :param controller: the Controller to this View."""
         Frame.__init__(self, parent, **options)
         self.controller = controller
+        # sys.settrace(trace_calls)
+
+        # currently for debugging purposes, initial/blank spectra will have a
+        # "TMS" peak at 0 that integrates to 1H.
+        self.blank_spectrum = [(0, 1)]
+        self.history_past = []
+        self.history_future = []
 
         self.SideFrame = Frame(self, relief=RIDGE, borderwidth=3)
         self.SideFrame.pack(side=LEFT, expand=NO, fill=Y)
@@ -122,10 +149,12 @@ class View(Frame):
 
         self.initialize_multiplet_bars(multiplet_bar_defaults)
         self.initialize_spinbars()
-        self.initialize_dnmr_bars()
         self.add_calc_type_frame()
         self.add_model_frames()
-        self.add_plot()
+        self.add_width_entry()
+        self.add_clear_buttons()
+        self.add_plots()
+        self.add_history_buttons()
 
     def initialize_multiplet_bars(self, bar_dict):
         """Instantiate all of the toolbars used for 'Multiplet' subset of
@@ -134,7 +163,7 @@ class View(Frame):
         :param bar_dict: {'model name': {kwargs} dict-of-dicts that stores
         the presets for widget names and values.
         """
-        bar_kwargs = {'parent': self.TopFrame, 'controller': self.controller}
+        bar_kwargs = {'parent': self.TopFrame, 'controller': self.request_refresh_current_plot}
         ab_kwargs = bar_dict['AB']
         ab2_kwargs = bar_dict['AB2']
         abx_kwargs = bar_dict['ABX']
@@ -148,7 +177,7 @@ class View(Frame):
         self.abx3 = MultipletBar(**abx3_kwargs, **bar_kwargs)
         self.aaxx = MultipletBar(**aaxx_kwargs, **bar_kwargs)
         self.aabb = MultipletBar(**aabb_kwargs, **bar_kwargs)
-        self.firstorder = FirstOrder_Bar(**bar_kwargs)
+        self.firstorder = FirstOrderBar(**bar_kwargs)
 
     def initialize_spinbars(self):
         """Instantiate all of the toolbars used for the 'ABC...' subset of
@@ -158,23 +187,12 @@ class View(Frame):
             spin_range: the number of spins the program will accomodate.
             spinbars: a list of SecondOrderSpinBar objects, one for each
             number of spins to simulate.
-
-        Keyword arguments:
-            **kwargs: standard SecondOrderSpinBar kwargs
         """
-        kwargs = {'controller': self.controller,
+        kwargs = {'controller': self.request_refresh_current_plot,
                   'realtime': True}
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
                          for spins in self.spin_range]
-
-    def initialize_dnmr_bars(self):
-        """Instantiate all of the toolbars used for the 'DNMR' subset of
-        calculations.
-        """
-        kwargs = {'parent': self.TopFrame, 'controller': self.controller}
-        self.TwoSpinBar = DNMR_TwoSingletBar(**kwargs)
-        self.DNMR_AB_Bar = DNMR_AB_Bar(**kwargs)
 
     def add_calc_type_frame(self):
         """Add a menu for selecting the type of calculation to the upper left
@@ -185,14 +203,23 @@ class View(Frame):
         """
         title = 'Calc Type'
         buttons = (('Multiplet', lambda: self.select_calc_type('multiplet')),
-                   ('ABC...', lambda: self.select_calc_type('abc')),
-                   ('DNMR', lambda: self.select_calc_type('dnmr')),
-                   ('Custom', lambda: self.select_calc_type('custom')))
+                   ('ABC...', lambda: self.select_calc_type('abc')))
 
         self.CalcTypeFrame = RadioFrame(self.SideFrame,
                                         buttons=buttons, title=title,
                                         relief=SUNKEN, borderwidth=1)
         self.CalcTypeFrame.pack(side=TOP, expand=NO, fill=X)
+
+    def select_calc_type(self, calc_type):
+        """Checks if a new calculation tupe submenu has been selected,
+        and if so displays it and updates the currentframe reference.
+        """
+        if calc_type != self.currentframe:
+            self.frame_dict[self.currentframe].grid_remove()
+            self.currentframe = calc_type
+            self.frame_dict[self.currentframe].grid()
+            # retrieve and select current active bar of frame
+            self.select_toolbar(self.active_bar_dict[self.currentframe])
 
     def add_model_frames(self):
         """Add a submenu for selecting the exact calculation model,
@@ -205,7 +232,7 @@ class View(Frame):
         Attributes created:
         model_frame: (Frame) 'houses' the different submenus.
 
-        framedic: {(str): (RadioFrame)} matches the name of a calculation
+        frame_dict: {(str): (RadioFrame)} matches the name of a calculation
         submenu to the submenu object.
 
         active_bar_dict: {(str): (Toolbar object)} Keeps track of what the
@@ -223,21 +250,15 @@ class View(Frame):
 
         self.add_multiplet_buttons()
         self.add_abc_buttons()
-        self.add_dnmr_buttons()
-        self.add_custom_buttons()
 
-        # framedic used by CalcTypeFrame to control individual frames
-        self.framedic = {'multiplet': self.MultipletButtons,
-                         'abc': self.ABC_Buttons,
-                         'dnmr': self.DNMR_Buttons,
-                         'custom': self.Custom}
+        # frame_dict used by CalcTypeFrame to control individual frames
+        self.frame_dict = {'multiplet': self.MultipletButtons,
+                           'abc': self.ABC_Buttons}
 
         # active_bar_dict used to keep track of the active model in each
         # individual button menu.
         self.active_bar_dict = {'multiplet': self.ab,
-                                'abc': self.spinbars[0],
-                                'dnmr': self.TwoSpinBar,
-                                'custom': self.ab}
+                                'abc': self.spinbars[0]}
         self.currentframe = 'multiplet'
         self.currentbar = self.ab
         self.currentbar.grid(sticky=W)
@@ -279,49 +300,6 @@ class View(Frame):
                                       buttons=abc_buttons,
                                       title='Number of Spins')
 
-    def add_dnmr_buttons(self):
-        """Add a 'DNMR' menu: models for DNMR line shape analysis.
-
-        Attributes created:
-            DNMR_Buttons: (RadioFrame) Menu for selecting the type of DNMR
-            calculation.
-        """
-        dnmr_buttons = (('2-spin',
-                         lambda: self.select_toolbar(self.TwoSpinBar)),
-                        ('AB Coupled',
-                         lambda: self.select_toolbar(self.DNMR_AB_Bar)))
-        self.DNMR_Buttons = RadioFrame(self.model_frame,
-                                       buttons=dnmr_buttons,
-                                       title='DNMR')
-
-    def add_custom_buttons(self):
-        """Add a label notification that custom models are not implemented
-        yet.
-        """
-        self.Custom = Label(self.model_frame,
-                            text='Custom models not implemented yet')
-
-    def add_plot(self):
-        """Create a Matplotlib figure, instantiate a MPLgraph canvas with it,
-        pack the canvas, and add a "Clear" button at the bottom of the GUI.
-        """
-        self.figure = Figure(figsize=(5, 4), dpi=100)
-        self.canvas = MPLgraph(self.figure, self)
-        self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
-        Button(self, text="clear", command=lambda: self.canvas.clear()).pack(
-            side=BOTTOM)
-
-    def select_calc_type(self, calc_type):
-        """Checks if a new calculation tupe submenu has been selected,
-        and if so displays it and updates the currentframe reference.
-        """
-        if calc_type != self.currentframe:
-            self.framedic[self.currentframe].grid_remove()
-            self.currentframe = calc_type
-            self.framedic[self.currentframe].grid()
-            # retrieve and select current active bar of frame
-            self.select_toolbar(self.active_bar_dict[self.currentframe])
-
     def select_toolbar(self, toolbar):
         """Replaces the old toolbar with the new toolbar.
 
@@ -337,30 +315,209 @@ class View(Frame):
         except ValueError:
             print('No model yet for this bar')
 
-    # The methods below provide the interface to the controller
+    def add_width_entry(self):
+        """Add a labeled widget for entering desired peak width.
+
+        Feature currently inactive.
+        """
+        self.peak_width = 0.5
+        self.peak_width_widget = SimpleVariableBox(
+            self.SideFrame,
+            name='Peak Width',
+            controller=self.set_peak_width)
+        self.peak_width_widget.pack(side=TOP)
+
+    def set_peak_width(self):
+        """Currently has no effect."""
+        self.peak_width = self.peak_width_widget.current_value
+
+    def add_clear_buttons(self):
+        """Add separate buttons for clearing the top (current) and bottom
+        (total) spectra.
+        """
+        top_clear = Button(self.SideFrame, text="Clear Current Spectrum",
+                           command=lambda: self.clear_current())
+        bottom_clear = Button(self.SideFrame, text="Clear Total Spectrum",
+                              command=lambda: self.clear_total())
+        top_clear.pack()
+        bottom_clear.pack()
+
+    def add_plots(self):
+        """Add a MPLplot canvas to the GUI"""
+        self.figure = Figure(figsize=(7, 5.6), dpi=100)  # original figsize 5, 4
+        self.canvas = MPLplot(self.figure, self)
+        self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
+
+    def add_history_buttons(self):
+        """Add buttons to the GUI for moving forward/back in the total
+        spectrum creation history.
+
+        Change DUMP = True to include the DUMP HISTORY button for debugging.
+        """
+        DUMP = True
+        history_frame = Frame(self)
+        history_frame.pack(side=TOP)
+        back = Button(history_frame, text='Back',
+                      command=lambda: self.go_back())
+        forward = Button(history_frame, text='Forward',
+                         command=lambda: self.go_forward())
+        back.pack(side=LEFT)
+        forward.pack(side=RIGHT)
+
+        # Dump button for debugging history
+        if DUMP:
+            dump_button = Button(self, text='DUMP HISTORY',
+                                 command=lambda: self.dump_history())
+            dump_button.pack(side=TOP)
+
+    def go_back(self):
+        """Step back one point in the total spectrum history and refresh the
+        spectrum plot, or beep if already at beginning.
+        """
+        if len(self.history_past) > 1:
+            self.history_future.append(self.history_past.pop())
+            self.total_spectrum = self.history_past[-1]
+        else:
+            self.bell()
+            return
+
+        self.request_refresh_total_plot(self.total_spectrum)
+
+    def go_forward(self):
+        """Step forward one point in the total spectrum history and refresh the
+        spectrum plot, or beep if already at end.
+        """
+        try:
+            self.history_past.append(self.history_future.pop())
+            self.total_spectrum = self.history_past[-1]
+        except IndexError:
+            self.bell()
+            return
+
+        self.request_refresh_total_plot(self.total_spectrum)
+
+    #########################################################################
+    # Methods below provide the interface to the controller
+    #########################################################################
+
+    # Interface from View to Controller:
+    def request_refresh_current_plot(self, model, **data):
+        """Intercept the toolbar's plot request, include the total spectrum,
+        and request an update from the Controller
+
+        :param: model: (str) Name of the model to use for calculation.
+        :param data: (dict) kwargs for the requested model calculation.
+        """
+        self.controller.update_current_plot(model, **data)
+
+    def request_add_plot(self, model, **data):
+        """Add the current (top) spectrum to the sum (bottom) spectrum.
+
+        :param model: (str) Name of the model used for calculating the
+        current (top) spectrum.
+        :param data: (dict) kwargs for the requested model calculation.
+        """
+        self.controller.add_view_plots(model, self.total_spectrum, **data)
+
+    def request_refresh_total_plot(self, spectrum, *w):
+        """Request a plot of the total (summation, botttom) spectrum using
+        the provided spectrum and optional line width.
+
+        :param spectrum: ([(float, float)...] A list of (frequency,
+        intensity) tuples.
+        :param w: optional peak width at half height.
+        """
+        self.controller.update_total_plot(spectrum, *w)
+
+    # Interface from Controller to View:
 
     # To avoid a circular reference, a call to the Controller cannot be made
     # until View is fully instantiated. Initializing the plot with a call to
     # Controller is postponed by placing it in the following function and
     # having the Controller call it when the View is ready.
     def initialize(self):
-        """Initialize the plot canvas with the simulation for currentbar.
+        """Initialize the plots.
 
         To avoid a circular reference, this method is called by the
         Controller after it instantiates View."""
+        self.total_spectrum = self.blank_spectrum
         self.currentbar.request_plot()
+        self.controller.update_total_plot(self.total_spectrum)
+        self.history_past.append(self.total_spectrum[:])
+
+    def update_total_spectrum(self, new_total_spectrum):
+        """Set the current total spectrum, adding it to the history list of
+        changes, and deleting the forward history.
+
+        :param new_total_spectrum: ([(float, float)...] A list of (frequency,
+        intensity) tuples."""
+        self.total_spectrum = new_total_spectrum
+        self.history_past.append(self.total_spectrum[:])
+        self.history_future = []
 
     def clear(self):
-        """ Erase the matplotlib canvas."""
-        self.canvas.clear()
+        """Erase all plots."""
+        self.canvas.clear_all()
+        self.total_spectrum = self.blank_spectrum
 
-    def plot(self, x, y):
-        """Plot the model's results to the matplotlib canvas.
+    def clear_current(self):
+        """Erase the current (top) spectrum plot."""
+        self.canvas.clear_current()
+
+    def clear_total(self):
+        """Erase the total (bottom) spectrum plot."""
+        self.total_spectrum = self.blank_spectrum
+        self.canvas.clear_total()
+
+    def plot_current(self, x, y):
+        """Plot data to the current spectrum's axis (top).
 
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
-        self.canvas.plot(x, y)
+        self.canvas.plot_current(x, y)
+
+    def plot_total(self, x, y):
+        """Plot data to the total spectrum's axis (bottom).
+
+        Arguments:
+            x, y: numpy linspaces of x and y coordinates
+        """
+        self.canvas.plot_total(x, y)
+
+    # debugging below
+    def dump_history(self):
+        print('Current past history contents:')
+        print(self.history_past)
+        print('Current future history contents:')
+        print(self.history_future)
+        print('Current total_spectrum:')
+        print(self.total_spectrum)
+
+
+# Debugging routines:
+def trace_calls(frame, event, arg):
+    if event != 'call':
+        return
+    co = frame.f_code
+    func_name = co.co_name
+    if func_name == 'write':
+        # Ignore write() calls from print statements
+        return
+    func_line_no = frame.f_lineno
+    func_filename = co.co_filename
+
+    if "/Users/geoffreysametz/Google Drive/Programming/NMR code/nmrmint" not \
+            in func_filename:
+        return
+
+    caller = frame.f_back
+    caller_line_no = caller.f_lineno
+    caller_filename = caller.f_code.co_filename
+    print('Call to %s on line %s of %s from line %s of %s' %
+          (func_name, func_line_no, func_filename,
+           caller_line_no, caller_filename))
+    return
 
 
 if __name__ == '__main__':

@@ -91,8 +91,8 @@ class BaseEntryFrame(Frame):
         self.controller = controller
 
         # How the initial value for the widget depends on subclass, so:
-        if not self.initial_value:
-            self.initial_value = 0.00  # Should be overridden by subclass
+        # if not self.initial_value:
+        #     self.initial_value = 0.00  # Should be overridden by subclass
 
         self.initialize()
         self.add_label()
@@ -137,7 +137,9 @@ class BaseEntryFrame(Frame):
         """
         self.entry.bind('<Return>', lambda event: self.on_return(event))
         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
-        self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        # self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        self.entry.bind('<FocusIn>',
+                        lambda event: self.entry.select_range(0, END))
 
     def on_return(self, event):
         """Refresh the view and shift focus when Return key is hit."""
@@ -326,7 +328,9 @@ class ArraySpinBox(ArrayBox):
         """
         self.entry.bind('<Return>', lambda event: self.on_return(event))
         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
-        self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        # self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        self.entry.bind('<FocusIn>',
+                        lambda event: self.entry.selection('range', 0, END))
         self.entry.bind('<ButtonPress-1>', lambda event: self.on_press())
         self.entry.bind('<ButtonRelease-1>', lambda event: self.on_release())
 
@@ -396,8 +400,10 @@ class VarBox(BaseEntryFrame):
         """
         if not self.value_var.get():  # if entry left blank,
             self.value_var.set(0.00)  # fill it with zero
+        value = float(self.value_var.get())
+        self.current_value = value
         # Add the widget's status to the container's dictionary
-        self.dict[self.name] = float(self.value_var.get())
+        self.dict[self.name] = value
 
 
 class IntBox(VarBox):
@@ -411,6 +417,17 @@ class IntBox(VarBox):
     # look into tkinter built-in entry boxes as component.
     def __init__(self, parent=None, **options):
         VarBox.__init__(self, parent, **options)
+
+    def save_entry(self):
+        """Saves widget's entry in the parent's dict, filling the entry with
+        0.00 if it was empty.
+        """
+        if not self.value_var.get():  # if entry left blank,
+            self.value_var.set(0)  # fill it with zero
+        value = int(self.value_var.get())
+        self.current_value = value
+        # Add the widget's status to the container's dictionary
+        self.dict[self.name] = value
 
     @staticmethod
     def is_valid(entry):
@@ -536,6 +553,22 @@ class VarButtonBox(VarBox):
             self.after(50, lambda: self.change_value(increment))
 
 
+class SimpleVariableBox(BaseEntryFrame):
+    """Subclass of BaseEntryFrame that takes a variable as an argument and
+    rewrites it with the Entry's contents when changes are committed.
+    """
+
+    def __init__(self, parent=None, value=0.5, **options):
+        self.initial_value = value
+        BaseEntryFrame.__init__(self, parent, **options)
+
+    def save_entry(self):
+        if not self.value_var.get():  # if entry left blank,
+            self.value_var.set(0.01)  # fill it with 0.01
+        value = float(self.value_var.get())
+        self.current_value = value
+
+
 if __name__ == '__main__':
     import numpy as np
 
@@ -570,6 +603,9 @@ if __name__ == '__main__':
                    else val(parent=mainwindow, name=key+' example',
                             dict_=dummy_dict, controller=dummy_controller)
                    for key, val in widgets.items()]
+    widget_list.append(SimpleVariableBox(parent=mainwindow,
+                                         name='SimpleVariableBox example',
+                                         value=20.0))
     for widget in widget_list:
         widget.pack(side=LEFT)
 

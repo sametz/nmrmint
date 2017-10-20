@@ -43,7 +43,7 @@ class ToolBar(Frame):
 
     methods:
         request_plot: sends model type and data to the controller. Assumes
-        controller has an update_view_plot function.
+        controller has an update_current_plot function.
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
@@ -67,12 +67,23 @@ class ToolBar(Frame):
         self.controller = controller
         self.model = 'model'  # must be overwritten by subclasses
         self.vars = {}
+        self.add_spectra_button = Button(self,
+                                         text='Add To Total',
+                                         command=lambda: self.add_spectra())
+        self.add_spectra_button.pack(side=RIGHT)
 
     def request_plot(self):
         """Send request to controller to recalculate and refresh the view's
         plot.
         """
-        self.controller.update_view_plot(self.model, **self.vars)
+        # self.controller.update_current_plot(self.model, **self.vars)
+        self.controller(self.model, **self.vars)
+
+    def add_spectra(self):
+        """Send request to controller to add the current spectrum to the
+        total spectrum.
+        """
+        self.master.master.request_add_plot(self.model, **self.vars)
 
 
 class MultipletBar(ToolBar):
@@ -109,7 +120,7 @@ class MultipletBar(ToolBar):
             widget.pack(side=LEFT)
 
 
-class FirstOrder_Bar(ToolBar):
+class FirstOrderBar(ToolBar):
     """A subclass of ToolBar designed for use with first-order (
     single-signal) simulations.
 
@@ -128,11 +139,12 @@ class FirstOrder_Bar(ToolBar):
                      '#C': 0,
                      'JDX': 7,
                      '#D': 0,
-                     'Vcentr': 150}
+                     'Vcentr': 150,
+                     '# of nuclei': 1}
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
-        for key in ['JAX', '#A', 'JBX', '#B', 'JCX', '#C',
-                         'JDX', '#D']:
+        for key in ['# of nuclei', 'JAX', '#A', 'JBX', '#B', 'JCX', '#C',
+                    'JDX', '#D', 'Vcentr']:
             if '#' not in key:
                 widget = VarBox(self, name=key, **kwargs)
             else:
@@ -140,8 +152,9 @@ class FirstOrder_Bar(ToolBar):
             widget.pack(side=LEFT)
 
     def request_plot(self):
+        """Request the Controller to plot the spectrum."""
         kwargs = self.make_kwargs()
-        self.controller.update_view_plot(self.model, **kwargs)
+        self.controller(self.model, **kwargs)
 
     def make_kwargs(self):
         """Convert the dictionary of widget entries (self.vars) to a dict
@@ -156,20 +169,25 @@ class FirstOrder_Bar(ToolBar):
         interest with that same J value.
         """
         _Jax = self.vars['JAX']
-        _a   = self.vars['#A']
+        _a = self.vars['#A']
         _Jbx = self.vars['JBX']
         _b = self.vars['#B']
         _Jcx = self.vars['JCX']
-        _c   = self.vars['#C']
+        _c = self.vars['#C']
         _Jdx = self.vars['JDX']
         _d = self.vars['#D']
         _Vcentr = self.vars['Vcentr']
-        singlet = (_Vcentr, 1)  # using default intensity of 1
+        _integration = self.vars['# of nuclei']
+        singlet = (_Vcentr, _integration)
         allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
         couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
         data = {'signal': singlet,
                 'couplings': couplings}
         return data
+
+    def add_spectra(self):
+        kwargs = self.make_kwargs()
+        self.master.master.request_add_plot(self.model, **kwargs)
 
 
 class SecondOrderBar(Frame):
@@ -196,7 +214,7 @@ class SecondOrderBar(Frame):
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
-        architecture. Assumes controller has an update_view_plot method.
+        architecture. Assumes controller has an update_current_plot method.
         model (str): the type of calculation requested (interpreted by the
         controller).
         v (numpy 2D array): the frequency list (located in v[0, :]
@@ -223,6 +241,7 @@ class SecondOrderBar(Frame):
         self.add_frequency_widgets(n)
         self.add_peakwidth_widget()
         self.add_J_button(n)
+        self.add_addspectra_button()
 
     def add_frequency_widgets(self, n):
         for freq in range(n):
@@ -240,6 +259,12 @@ class SecondOrderBar(Frame):
         vj_button = Button(self, text="Enter Js",
                            command=lambda: self.vj_popup(n))
         vj_button.pack(side=LEFT, expand=N, fill=NONE)
+
+    def add_addspectra_button(self):
+        self.add_spectra_button = Button(self,
+                                         text='Add To Total',
+                                         command=lambda: self.add_spectra())
+        self.add_spectra_button.pack(side=RIGHT)
 
     def vj_popup(self, n):
         """
@@ -289,7 +314,16 @@ class SecondOrderBar(Frame):
                   'j': self.j,
                   'w': self.w_array[0, 0]}  # controller takes float for w
 
-        self.controller.update_view_plot('nspin', **kwargs)
+        self.controller('nspin', **kwargs)
+
+    def add_spectra(self):
+        """Adapt 2D array data to kwargs of correct type for the controller."""
+        kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
+                  'j': self.j,
+                  'w': self.w_array[0, 0]}  # controller takes float for w
+
+        # self.controller.update_current_plot('nspin', **kwargs)
+        self.master.master.request_add_plot('nspin', **kwargs)
 
 
 class SecondOrderSpinBar(SecondOrderBar):
@@ -339,107 +373,9 @@ class SecondOrderSpinBar(SecondOrderBar):
         wbox.pack(side=LEFT)
 
 
-class DNMR_TwoSingletBar(ToolBar):
-    """
-    A toolbar designed for the DNMR simulation for 2 uncoupled exchanging
-    nuclei.
-
-    Method:
-        request_plot: sends model type and data to the controller
-
-    Attributes:
-        Va and Vb (float): the chemcial shifts for nuclei a and b at the slow
-        exchange limit.
-        ka (float): the a-->b rate constant (note: WINDNMR uses ka + kb here)
-        Wa and Wb (float): the width at half height of the signals for nuclei a
-        and b at the slow exchange limit.
-        pa (float): the % of molecules in state a. Note: must be converted to
-        mol fraction prior to calling the controller.
-    """
-
-    def __init__(self, parent=None, **options):
-        """Bloated code just to get toolbar reimplemented after refactor"""
-        ToolBar.__init__(self, parent, **options)
-
-        self.model = 'DNMR_Two_Singlets'
-        self.vars = {'Va': 165.00,
-                     'Vb': 135.00,
-                     'ka': 1.50,
-                     'Wa': 0.5,
-                     'Wb': 0.5,
-                     '%a': 50}
-        kwargs = {'dict_': self.vars,
-                  'controller': self.request_plot,
-                  'realtime': True}
-        Va = VarButtonBox(parent=self, name='Va', **kwargs)
-        Vb = VarButtonBox(parent=self, name='Vb', **kwargs)
-        ka = VarButtonBox(parent=self, name='ka', **kwargs)
-        Wa = VarButtonBox(parent=self, name='Wa', **kwargs)
-        Wb = VarButtonBox(parent=self, name='Wb', **kwargs)
-        pa = VarButtonBox(parent=self, name='%a', **kwargs)
-        for widget in [Va, Vb, ka, Wa, Wb, pa]:
-            widget.pack(side=LEFT)
-
-    def request_plot(self):
-        _Va = self.vars['Va']
-        _Vb = self.vars['Vb']
-        _ka = self.vars['ka']
-        _Wa = self.vars['Wa']
-        _Wb = self.vars['Wb']
-        _pa = self.vars['%a'] / 100
-        self.controller.update_view_plot(self.model,
-                                         _Va, _Vb, _ka, _Wa, _Wb, _pa)
-
-
-class DNMR_AB_Bar(ToolBar):
-        """
-        A toolbar designed for the DNMR simulation for 2 coupled exchanging
-        nuclei.
-
-        Method:
-            request_plot: sends model type and data to the controller
-
-        Attributes:
-            Va and Vb (float): the chemcial shifts for nuclei a and b at the
-            slow exchange limit.
-            J (float): the Jab coupling constant
-            kAB (float): the exchange rate constant
-            W (float): the peak width at half-height at the slow exchange limit
-        """
-
-        def __init__(self, parent=None, **options):
-            ToolBar.__init__(self, parent, **options)
-            self.model = 'DNMR_AB'
-            self.vars = {'Va': 165.00,
-                         'Vb': 135.00,
-                         'J': 12.00,
-                         'kAB': 1.50,
-                         'W': 0.5}
-            kwargs = {'dict_': self.vars,
-                      'realtime': True,
-                      'controller': self.request_plot}
-            Va = VarButtonBox(parent=self, name='Va', **kwargs)
-            Vb = VarButtonBox(parent=self, name='Vb', **kwargs)
-            J = VarButtonBox(parent=self, name='J', **kwargs)
-            kAB = VarButtonBox(parent=self, name='kAB', **kwargs)
-            # W is a tkinter string, so use W_
-            W_ = VarButtonBox(parent=self, name='W', **kwargs)
-            for widget in [Va, Vb, J, kAB, W_]:
-                widget.pack(side=LEFT)
-
-        def request_plot(self):
-            _Va = self.vars['Va']
-            _Vb = self.vars['Vb']
-            _J = self.vars['J']
-            _kAB = self.vars['kAB']
-            _W = self.vars['W']
-
-            self.controller.update_view_plot(self.model, _Va, _Vb, _J, _kAB, _W)
-
-
 if __name__ == '__main__':
 
-    from nmrmint.reichdefaults import multiplet_bar_defaults
+    from nmrmint.windnmr_defaults import multiplet_bar_defaults
 
 
     class DummyController:
@@ -458,8 +394,7 @@ if __name__ == '__main__':
                                  **multiplet_bar_defaults['AAXX'])
     test_multibar.pack(side=TOP)
 
-    toolbars = [FirstOrder_Bar, SecondOrderBar, SecondOrderSpinBar,
-                DNMR_TwoSingletBar, DNMR_AB_Bar]
+    toolbars = [FirstOrderBar, SecondOrderBar, SecondOrderSpinBar]
     for toolbar in toolbars:
         toolbar(root, controller=dummy_controller).pack(side=TOP)
 
