@@ -603,6 +603,9 @@ if __name__ == '__main__':
                    else val(parent=mainwindow, name=key+' example',
                             dict_=dummy_dict, controller=dummy_controller)
                    for key, val in widgets.items()]
+    widget_list.append(SimpleVariableBox(parent=mainwindow,
+                                         name='SimpleVariableBox example',
+                                         value=20.0))
     for widget in widget_list:
         widget.pack(side=LEFT)
 
