@@ -83,6 +83,7 @@ class ToolBar(Frame):
         print('I want to add the spectra!')
         self.master.master.request_add_plot(self.model, **self.vars)
 
+
 class MultipletBar(ToolBar):
     """Extends/overwrites ToolBar to accept a model name, a dict of initial
     values, and widget list, and populates the ToolBar with the required
@@ -117,7 +118,7 @@ class MultipletBar(ToolBar):
             widget.pack(side=LEFT)
 
 
-class FirstOrder_Bar(ToolBar):
+class FirstOrderBar(ToolBar):
     """A subclass of ToolBar designed for use with first-order (
     single-signal) simulations.
 
@@ -140,8 +141,8 @@ class FirstOrder_Bar(ToolBar):
                      '# of nuclei': 1}
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
-        for key in ['# of nuclei','JAX', '#A', 'JBX', '#B', 'JCX', '#C',
-                         'JDX', '#D', 'Vcentr']:
+        for key in ['# of nuclei', 'JAX', '#A', 'JBX', '#B', 'JCX', '#C',
+                    'JDX', '#D', 'Vcentr']:
             if '#' not in key:
                 widget = VarBox(self, name=key, **kwargs)
             else:
@@ -153,7 +154,6 @@ class FirstOrder_Bar(ToolBar):
         # self.controller.update_current_plot(self.model, **kwargs)
         print("calling controller with: ", kwargs)
         self.controller(self.model, **kwargs)
-
 
     def make_kwargs(self):
         """Convert the dictionary of widget entries (self.vars) to a dict
@@ -168,11 +168,11 @@ class FirstOrder_Bar(ToolBar):
         interest with that same J value.
         """
         _Jax = self.vars['JAX']
-        _a   = self.vars['#A']
+        _a = self.vars['#A']
         _Jbx = self.vars['JBX']
         _b = self.vars['#B']
         _Jcx = self.vars['JCX']
-        _c   = self.vars['#C']
+        _c = self.vars['#C']
         _Jdx = self.vars['JDX']
         _d = self.vars['#D']
         _Vcentr = self.vars['Vcentr']
@@ -188,6 +188,7 @@ class FirstOrder_Bar(ToolBar):
         print('I want to add the spectra!')
         kwargs = self.make_kwargs()
         self.master.master.request_add_plot(self.model, **kwargs)
+
 
 class SecondOrderBar(Frame):
     """
@@ -373,104 +374,6 @@ class SecondOrderSpinBar(SecondOrderBar):
         wbox.pack(side=LEFT)
 
 
-# class DNMR_TwoSingletBar(ToolBar):
-#     """
-#     A toolbar designed for the DNMR simulation for 2 uncoupled exchanging
-#     nuclei.
-#
-#     Method:
-#         request_plot: sends model type and data to the controller
-#
-#     Attributes:
-#         Va and Vb (float): the chemcial shifts for nuclei a and b at the slow
-#         exchange limit.
-#         ka (float): the a-->b rate constant (note: WINDNMR uses ka + kb here)
-#         Wa and Wb (float): the width at half height of the signals for nuclei a
-#         and b at the slow exchange limit.
-#         pa (float): the % of molecules in state a. Note: must be converted to
-#         mol fraction prior to calling the controller.
-#     """
-#
-#     def __init__(self, parent=None, **options):
-#         """Bloated code just to get toolbar reimplemented after refactor"""
-#         ToolBar.__init__(self, parent, **options)
-#
-#         self.model = 'DNMR_Two_Singlets'
-#         self.vars = {'Va': 165.00,
-#                      'Vb': 135.00,
-#                      'ka': 1.50,
-#                      'Wa': 0.5,
-#                      'Wb': 0.5,
-#                      '%a': 50}
-#         kwargs = {'dict_': self.vars,
-#                   'controller': self.request_plot,
-#                   'realtime': True}
-#         Va = VarButtonBox(parent=self, name='Va', **kwargs)
-#         Vb = VarButtonBox(parent=self, name='Vb', **kwargs)
-#         ka = VarButtonBox(parent=self, name='ka', **kwargs)
-#         Wa = VarButtonBox(parent=self, name='Wa', **kwargs)
-#         Wb = VarButtonBox(parent=self, name='Wb', **kwargs)
-#         pa = VarButtonBox(parent=self, name='%a', **kwargs)
-#         for widget in [Va, Vb, ka, Wa, Wb, pa]:
-#             widget.pack(side=LEFT)
-#
-#     def request_plot(self):
-#         _Va = self.vars['Va']
-#         _Vb = self.vars['Vb']
-#         _ka = self.vars['ka']
-#         _Wa = self.vars['Wa']
-#         _Wb = self.vars['Wb']
-#         _pa = self.vars['%a'] / 100
-#         self.controller.update_current_plot(self.model,
-#                                          _Va, _Vb, _ka, _Wa, _Wb, _pa)
-#
-#
-# class DNMR_AB_Bar(ToolBar):
-#         """
-#         A toolbar designed for the DNMR simulation for 2 coupled exchanging
-#         nuclei.
-#
-#         Method:
-#             request_plot: sends model type and data to the controller
-#
-#         Attributes:
-#             Va and Vb (float): the chemcial shifts for nuclei a and b at the
-#             slow exchange limit.
-#             J (float): the Jab coupling constant
-#             kAB (float): the exchange rate constant
-#             W (float): the peak width at half-height at the slow exchange limit
-#         """
-#
-#         def __init__(self, parent=None, **options):
-#             ToolBar.__init__(self, parent, **options)
-#             self.model = 'DNMR_AB'
-#             self.vars = {'Va': 165.00,
-#                          'Vb': 135.00,
-#                          'J': 12.00,
-#                          'kAB': 1.50,
-#                          'W': 0.5}
-#             kwargs = {'dict_': self.vars,
-#                       'realtime': True,
-#                       'controller': self.request_plot}
-#             Va = VarButtonBox(parent=self, name='Va', **kwargs)
-#             Vb = VarButtonBox(parent=self, name='Vb', **kwargs)
-#             J = VarButtonBox(parent=self, name='J', **kwargs)
-#             kAB = VarButtonBox(parent=self, name='kAB', **kwargs)
-#             # W is a tkinter string, so use W_
-#             W_ = VarButtonBox(parent=self, name='W', **kwargs)
-#             for widget in [Va, Vb, J, kAB, W_]:
-#                 widget.pack(side=LEFT)
-#
-#         def request_plot(self):
-#             _Va = self.vars['Va']
-#             _Vb = self.vars['Vb']
-#             _J = self.vars['J']
-#             _kAB = self.vars['kAB']
-#             _W = self.vars['W']
-#
-#             self.controller.update_current_plot(self.model, _Va, _Vb, _J, _kAB, _W)
-
-
 if __name__ == '__main__':
 
     from nmrmint.windnmr_defaults import multiplet_bar_defaults
@@ -492,7 +395,7 @@ if __name__ == '__main__':
                                  **multiplet_bar_defaults['AAXX'])
     test_multibar.pack(side=TOP)
 
-    toolbars = [FirstOrder_Bar, SecondOrderBar, SecondOrderSpinBar]
+    toolbars = [FirstOrderBar, SecondOrderBar, SecondOrderSpinBar]
     for toolbar in toolbars:
         toolbar(root, controller=dummy_controller).pack(side=TOP)
 

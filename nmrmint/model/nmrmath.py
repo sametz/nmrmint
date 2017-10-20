@@ -179,6 +179,8 @@ def nspinspec(freqs, couplings, normalize=True):
         of nuclei in the list corresponds to the column and row order in the
         matrix, e.g. couplings[0][1] and [1]0] are the J coupling between
         the nuclei of freqs[0] and freqs [1].
+        :param normalize: (bool) True if the intensities should be normalized
+        so that total intensity equals the total number of nuclei.
     Returns:
     -spectrum: a list of (frequency, intensity) tuples.
     Dependencies: hamiltonian, simsignals
@@ -386,10 +388,6 @@ def AB2(Jab, Vab, Vcentr, **kwargs):  # Wa, RightHz, WdthHz not implemented yet
     C_plus = sqrt(dV ** 2 + dV * J + (9 / 4) * (J ** 2)) / 2
     C_minus = sqrt(dV ** 2 - dV * J + (9 / 4) * (J ** 2)) / 2
 
-    # Next 2 lines not needed?
-    sin2theta_plus = J / (sqrt(2) * C_plus)  # Reich: sin2x
-    sin2theta_minus = J / (sqrt(2) * C_minus)  # Reich: sin2y
-
     cos2theta_plus = (dV / 2 + J / 4) / C_plus  # Reich: cos2x
     cos2theta_minus = (dV / 2 - J / 4) / C_minus  # Reich: cos2y
 
@@ -534,21 +532,6 @@ def ABX(Jab, Jbx, Jax, Vab, Vcentr, **kwargs):
     return list(zip(VList, IList))
 
 
-# Not being used, so should remove from codebase
-# def AMX3(Jab, Jax, Jbx, Vab, Vcentr):  # Wa, RightHz, WdthHz not implemented yet
-#     """
-#     Uses the AMX approximate solution described on Reich's website.
-#     However, WINDNMR uses a true ABX3 solution. AMX3 included here
-#     for future consideration.
-#     """
-#     # This was the function taken from the Jupyter ABX3 notebook, but
-#     # I think this needs to be fixed to make use of Jbx.
-#     abq = AB(Jab, Vab, Vcentr, Wa, RightHz, WdthHz)
-#     # return abq
-#     res = reduce_peaks(sorted(multiplet(abq, [(Jax, 3)])))
-#     return res
-
-
 def ABX3(Jab, Jax, Jbx, Vab, Vcentr, **kwargs):
     # Wa, RightHz, WdthHz not implemented yet
     """
@@ -632,7 +615,7 @@ def AAXX(Jaa, Jxx, Jax, Jax_prime, Vcentr, **kwargs):
 
 
 def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, **kwargs):
-    #Wa, RightHz, WdthHz not implemented yet
+    # Wa, RightHz, WdthHz not implemented yet
     """
     A wrapper for a second-order AA'BB' calculation, but using the
     values taken from the WINDNMR-style AA'BB' bar selected by the Multiplet
@@ -654,228 +637,6 @@ def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, **kwargs):
 
 def add_spectra(original, additional):
     original.extend(additional)
-    # temp hack; note spectrum sorted in tkplot as well!
-    # original.sort()
-    # original = reduce_peaks(original)
-
-
-
-#
-# def dnmr_2spin(v, va, vb, ka, Wa, Wb, pa):
-#     """
-#     A translation of the equation from Sandström's Dynamic NMR Spectroscopy,
-#     p. 14, for the uncoupled 2-site exchange simulation.
-#     v: frequency whose amplitude is to be calculated
-#     va, vb: frequencies of a and b singlets (slow exchange limit) (va > vb)
-#     ka: rate constant for state A--> state B
-#     pa: fraction of population in state Adv: frequency difference (va - vb)
-#     between a and b singlets (slow exchange)
-#     Wa, Wb: peak widths at half height (slow exchange), used to calculate T2s
-#     """
-#     pi = np.pi
-#     pb = 1 - pa
-#     tau = pb / ka
-#     dv = va - vb
-#     Dv = (va + vb) / 2 - v
-#     T2a = 1 / (pi * Wa)
-#     T2b = 1 / (pi * Wb)
-#
-#     P = tau * ((1 / (T2a * T2b)) - 4 * (pi ** 2) * (Dv ** 2) +
-#                (pi ** 2) * (dv ** 2))
-#     P += ((pa / T2a) + (pb / T2b))
-#
-#     Q = tau * (2 * pi * Dv - pi * dv * (pa - pb))
-#
-#     R = 2 * pi * Dv * (1 + tau * ((1 / T2a) + (1 / T2b)))
-#     R += pi * dv * tau * ((1 / T2b) - (1 / T2a)) + pi * dv * (pa - pb)
-#
-#     I = (P * (1 + tau * ((pb / T2a) + (pa / T2b))) + Q * R) / (P ** 2 + R ** 2)
-#     return I
-#
-#
-# def d2s_func(va, vb, ka, wa, wb, pa):
-#     """
-#     Create a function that requires only frequency as an argurment, and used to
-#     calculate intensities across array of frequencies in the DNMR
-#     spectrum for two uncoupled spin-half nuclei.
-#
-#     The idea is to calculate expressions
-#     that are independant of frequency only once, and then use them in a new
-#     function that depends only on v. This would avoid unneccessarily
-#     repeating some of the same operations.
-#
-#     This function-within-a-function should be refactored to
-#     function-within-class!
-#
-#     :param va: The frequency of nucleus 'a' at the slow exchange limit. va > vb
-#     :param vb: The frequency of nucleus 'b' at the slow exchange limit. vb < va
-#     :param ka: The rate constant for state a--> state b
-#     :param wa: The width at half heigh of the signal for nucleus a (at the slow
-#     exchange limit).
-#     :param wb: The width at half heigh of the signal for nucleus b (at the slow
-#     exchange limit).
-#     :param pa: The fraction of the population in state a.
-#     :param pa: fraction of population in state a
-#     wa, wb: peak widths at half height (slow exchange), used to calculate T2s
-#
-#     returns: a function that takes v (x coord or numpy linspace) as an argument
-#     and returns intensity (y).
-#     """
-#
-#     # TODO: factor pis out; redo comments to explain excision of v-independent
-#     # terms
-#
-#     pi = np.pi
-#     pi_squared = pi ** 2
-#     T2a = 1 / (pi * wa)
-#     T2b = 1 / (pi * wb)
-#     pb = 1 - pa
-#     tau = pb / ka
-#     dv = va - vb
-#     Dv = (va + vb) / 2
-#     P = tau * (1 / (T2a * T2b) + pi_squared * (dv ** 2)) + (pa / T2a + pb / T2b)
-#     p = 1 + tau * ((pb / T2a) + (pa / T2b))
-#     Q = tau * (- pi * dv * (pa - pb))
-#     R = pi * dv * tau * ((1 / T2b) - (1 / T2a)) + pi * dv * (pa - pb)
-#     r = 2 * pi * (1 + tau * ((1 / T2a) + (1 / T2b)))
-#
-#     def maker(v):
-#         """
-#         Scheduled for refactoring.
-#         :param v: frequency
-#         :return: function that calculates the intensity at v
-#         """
-#         # TODO: fix docstring, explain _P _Q etc correlate to P, Q etc in lit.
-#         # FIXED: previous version of this function used
-#         # nonlocal Dv, P, Q, R
-#         # but apparently when function called repeatedly these values would
-#         # become corrupted (turning into arrays?!)
-#         # Solution: add underscores to create copies of any variables in
-#         # outer scope whose values are changed in the inner scope.
-#
-#         _Dv = Dv - v
-#         _P = P - tau * 4 * pi_squared * (_Dv ** 2)
-#         _Q = Q + tau * 2 * pi * _Dv
-#         _R = R + _Dv * r
-#         return(_P * p + _Q * _R) / (_P ** 2 + _R ** 2)
-#     return maker
-#
-#
-# def d2s_func_old(va, vb, ka, Wa, Wb, pa):
-#     """
-#     A function factory that creates tailored
-#     dnmr_2spin-like functions for greater speed.
-#     v: frequency whose amplitude is to be calculated
-#     va, vb: frequencies of a and b singlets (slow exchange limit) (va > vb)
-#     ka: rate constant for state A--> state B
-#     pa: fraction of population in state Adv: frequency difference (va - vb)
-#     between a and b singlets (slow exchange)
-#     Wa, Wb: peak widths at half height (slow exchange), used to calculate T2s
-#
-#     returns: a function that takes v (x coord or numpy linspace) as an argument
-#     and returns intensity (y).
-#     """
-#     pi = np.pi
-#     pi_squared = pi ** 2
-#     T2a = 1 / (pi * Wa)
-#     T2b = 1 / (pi * Wb)
-#     pb = 1 - pa
-#     tau = pb / ka
-#     dv = va - vb
-#     Dv = (va + vb) / 2
-#     P = tau * (1 / (T2a * T2b) + pi_squared * (dv ** 2)) + (pa / T2a + pb / T2b)
-#     p = 1 + tau * ((pb / T2a) + (pa / T2b))
-#     Q = tau * (- pi * dv * (pa - pb))
-#     R = pi * dv * tau * ((1 / T2b) - (1 / T2a)) + pi * dv * (pa - pb)
-#     r = 2 * pi * (1 + tau * ((1 / T2a) + (1 / T2b)))
-#
-#     def maker(v):
-#         # TODO: fix this function so inner scope uses _Dv, _P etc
-#         nonlocal Dv, P, Q, R
-#         Dv -= v
-#         P -= tau * 4 * pi_squared * (Dv ** 2)
-#         Q += tau * 2 * pi * Dv
-#         R += Dv * r
-#         return(P * p + Q * R) / (P ** 2 + R ** 2)
-#     return maker
-#
-#
-# def reich(v, va, vb, ka, Wa, Wb, pa):
-#     """
-#     A traslation of the actual VB code used in WINDNMR. Was used for error
-#     checking. Scheduled for deletion.
-#     """
-#     # print('Reich was entered')
-#     PI = np.pi
-#     R21 = PI * Wa
-#     R22 = PI * Wb
-#     mshifts1 = va
-#     mshifts2 = vb
-#     pop1 = pa
-#     pop2 = 1 - pop1  # i.e. pb
-#     tau = pop2 / ka
-#     deltanu = va - vb
-#     r1 = 1 + tau * (R21 + R22)
-#     Rr2 = PI * deltanu * tau * (R22 - R21)
-#     R3 = PI * deltanu * (pop1 - pop2)
-#     p1 = tau * R21 * R22
-#     p3 = tau * PI * PI * deltanu * deltanu
-#     PI2 = tau * 4 * PI * PI
-#     pitau = tau * 2 * PI
-#     popratio1 = p1 + p3 + (pop1 * R21) + (pop2 * R22)
-#     popratio2 = 1 + tau * ((pop2 * R21) + (pop1 * R22))
-#     CentFreq = 0.5 * (mshifts1 + mshifts2)
-#     Delfreq = CentFreq - v
-#     p2 = PI2 * Delfreq * Delfreq
-#     P = -p2 + popratio1
-#     Q = pitau * Delfreq - tau * R3
-#     R = 2 * PI * Delfreq * r1 + Rr2 + R3
-#     return (P * popratio2 + Q * R) / ((P * P) + (R * R))
-#
-#
-# def dnmr_AB(v, v1, v2, J, k, W):
-#     """
-#     A translation of the equation from Weil's JCE paper (NOTE: Reich pointed
-#     out that it has a sign typo!).
-#     p. 14, for the uncoupled 2-site exchange simulation.
-#     v: frequency whose amplitude is to be calculated
-#     va, vb: frequencies of a and b nuclei (slow exchange limit, no coupling;
-#     va > vb)
-#     ka: rate constant for state A--> state B
-#     pa: fraction of population in state Adv: frequency difference (va - vb)
-#     between a and b singlets (slow exchange)
-#     T2a, T2b: T2 (transverse relaxation time) for each nuclei
-#     returns: amplitude at frequency v
-#     """
-#     pi = np.pi
-#     vo = (v1 + v2) / 2
-#     tau = 1 / k
-#     tau2 = 1 / (pi * W)
-#     a1_plus = 4 * pi ** 2 * (vo - v + J / 2) ** 2
-#     a1_minus = 4 * pi ** 2 * (vo - v - J / 2) ** 2
-#     a2 = - ((1 / tau) + (1 / tau2)) ** 2
-#     a3 = - pi ** 2 * (v1 - v2) ** 2
-#     a4 = - pi ** 2 * J ** 2 + (1 / tau ** 2)
-#     a_plus = a1_plus + a2 + a3 + a4
-#     a_minus = a1_minus + a2 + a3 + a4
-#
-#     b_plus = 4 * pi * (vo - v + J / 2) * (
-#         (1 / tau) + (1 / tau2)) - 2 * pi * J / tau
-#     b_minus = 4 * pi * (vo - v - J / 2) * (
-#         (1 / tau) + (1 / tau2)) + 2 * pi * J / tau
-#
-#     r_plus = 2 * pi * (vo - v + J)
-#     r_minus = 2 * pi * (vo - v - J)
-#
-#     s = (2 / tau) + (1 / tau2)
-#
-#     n1 = r_plus * b_plus - s * a_plus
-#     d1 = a_plus ** 2 + b_plus ** 2
-#     n2 = r_minus * b_minus - s * a_minus
-#     d2 = a_minus ** 2 + b_minus ** 2
-#
-#     I = (n1 / d1) + (n2 / d2)
-#     return I
 
 
 if __name__ == '__main__':

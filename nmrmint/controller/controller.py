@@ -26,7 +26,7 @@ class Controller:
     * initialize()--Initializes the view. Currrently, just "OKs" the View 
     to call Controller.update_current_plot after view's instantiation.
     
-    * clear()--clears the view's plot.
+    * clear_all()--clears the view's plot.
     
     * plot(x, y)--accept a tuple of x, y numpy arrays and plot the data.
     
