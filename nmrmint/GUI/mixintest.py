@@ -553,9 +553,7 @@ class VarButtonBox(VarBox):
             self.after(50, lambda: self.change_value(increment))
 
 
-class HorizontalEntryFrame(BaseEntryFrame):
-    def __init__(self, parent=None, **options):
-        BaseEntryFrame.__init__(self, parent, **options)
+class MixinHorizontal:
 
     def add_label(self):
         """Add self.name to a Label at the left of the frame."""
@@ -568,6 +566,35 @@ class HorizontalEntryFrame(BaseEntryFrame):
         self.entry.pack(side=LEFT, fill=X)
         self.entry.config(textvariable=self.value_var)
 
+class MixinInt:
+
+    def save_entry(self):
+        """Saves widget's entry in the parent's dict, filling the entry with
+        0.00 if it was empty.
+        """
+        if not self.value_var.get():  # if entry left blank,
+            self.value_var.set(0)  # fill it with zero
+        value = int(self.value_var.get())
+        self.current_value = value
+
+    @staticmethod
+    def is_valid(entry):
+        """Test to see if entry is acceptable (either empty, or able to be
+        converted to the desired type.)
+        """
+        if not entry:
+            return True  # Empty string: OK if entire entry deleted
+        try:
+            int(entry)
+            return True
+        except ValueError:
+            return False
+
+
+
+# class HorizontalIntBox(MixinHorizontal, IntBox):
+#     def __init__(self, **kwargs):
+#         super(HorizontalIntBox, self).__init__(**kwargs)
 
 class SimpleVariableBox(BaseEntryFrame):
     """Subclass of BaseEntryFrame that takes a variable as an argument and
@@ -584,6 +611,10 @@ class SimpleVariableBox(BaseEntryFrame):
         value = float(self.value_var.get())
         self.current_value = value
 
+class HorizontalEntryFrame(MixinHorizontal, MixinInt, SimpleVariableBox):
+    def __init__(self, **kwargs):
+        # self.initial_value = 19  # testing purposes only
+        super(HorizontalEntryFrame, self).__init__(**kwargs)
 
 if __name__ == '__main__':
     import numpy as np
@@ -622,6 +653,11 @@ if __name__ == '__main__':
     widget_list.append(SimpleVariableBox(parent=mainwindow,
                                          name='SimpleVariableBox example',
                                          value=20.0))
+    horizontal_test = HorizontalEntryFrame(parent=mainwindow,
+                                           name='horizontal test',
+                                           value=18)
+    widget_list.append(horizontal_test)
+
     for widget in widget_list:
         widget.pack(side=LEFT)
 

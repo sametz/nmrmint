@@ -22,6 +22,7 @@ from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.toolbars import (MultipletBar, FirstOrderBar,
                                   SecondOrderSpinBar)
 from nmrmint.GUI.widgets import SimpleVariableBox
+from nmrmint.GUI.mixintest import HorizontalEntryFrame
 
 
 class MPLplot(FigureCanvasTkAgg):
@@ -108,7 +109,7 @@ class View(Frame):
     update_current_plot.
 
     Methods:
-        initialize_multiplet_bars, initialize_spinbars,
+        initialize_first_order_bar, initialize_spinbars,
         initialize_dnmr_bars, add_calc_type_frame, add_model_frames,
         add_multiplet_buttons, add_abc_buttons, add_dnmr_buttons,
         add_custom_buttons, add_current_plot: used by __init__ to instantiate
@@ -147,37 +148,21 @@ class View(Frame):
         self.TopFrame = Frame(self, relief=RIDGE, borderwidth=1)
         self.TopFrame.pack(side=TOP, expand=NO, fill=X)
 
-        self.initialize_multiplet_bars(multiplet_bar_defaults)
+        self.initialize_first_order_bar()
         self.initialize_spinbars()
         self.add_calc_type_frame()
+        self.add_nuclei_number_entry()
         self.add_model_frames()
         self.add_width_entry()
         self.add_clear_buttons()
         self.add_plots()
         self.add_history_buttons()
 
-    def initialize_multiplet_bars(self, bar_dict):
-        """Instantiate all of the toolbars used for 'Multiplet' subset of
-        calculations.
-
-        :param bar_dict: {'model name': {kwargs} dict-of-dicts that stores
-        the presets for widget names and values.
-        """
-        bar_kwargs = {'parent': self.TopFrame, 'controller': self.request_refresh_current_plot}
-        ab_kwargs = bar_dict['AB']
-        ab2_kwargs = bar_dict['AB2']
-        abx_kwargs = bar_dict['ABX']
-        abx3_kwargs = bar_dict['ABX3']
-        aaxx_kwargs = bar_dict['AAXX']
-        aabb_kwargs = bar_dict['AABB']
-
-        self.ab = MultipletBar(**ab_kwargs, **bar_kwargs)
-        self.ab2 = MultipletBar(**ab2_kwargs, **bar_kwargs)
-        self.abx = MultipletBar(**abx_kwargs, **bar_kwargs)
-        self.abx3 = MultipletBar(**abx3_kwargs, **bar_kwargs)
-        self.aaxx = MultipletBar(**aaxx_kwargs, **bar_kwargs)
-        self.aabb = MultipletBar(**aabb_kwargs, **bar_kwargs)
-        self.firstorder = FirstOrderBar(**bar_kwargs)
+    def initialize_first_order_bar(self):
+        """Instantiate the toolbar for first-order model."""
+        bar_kwargs = {'parent': self.TopFrame,
+                      'controller': self.request_refresh_current_plot}
+        self.first_order_bar = FirstOrderBar(**bar_kwargs)
 
     def initialize_spinbars(self):
         """Instantiate all of the toolbars used for the 'ABC...' subset of
@@ -221,6 +206,17 @@ class View(Frame):
             # retrieve and select current active bar of frame
             self.select_toolbar(self.active_bar_dict[self.currentframe])
 
+    def add_nuclei_number_entry(self):
+        self.nuc_number_frame = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='Number of nuclei:',
+            value=2,
+            controller=self.set_nuc_number)
+        self.nuc_number_frame.pack(side=TOP)
+
+    def set_nuc_number(self):
+        print('set the nuc number!')
+
     def add_model_frames(self):
         """Add a submenu for selecting the exact calculation model,
         below CalcTypeFrame.
@@ -257,29 +253,17 @@ class View(Frame):
 
         # active_bar_dict used to keep track of the active model in each
         # individual button menu.
-        self.active_bar_dict = {'multiplet': self.ab,
+        self.active_bar_dict = {'multiplet': self.first_order_bar,
                                 'abc': self.spinbars[0]}
         self.currentframe = 'multiplet'
-        self.currentbar = self.ab
+        self.currentbar = self.first_order_bar
         self.currentbar.grid(sticky=W)
 
     def add_multiplet_buttons(self):
-        """"Add a 'Multiplet' menu: 'canned' solutions for common spin systems.
-
-        Attributes created:
-            MultipletButtons: (RadioFrame) Menu for selecting model
+        """"Hacked out for now so there's an empty frame to swap in/out.
+        Will be factored out.
         """
-        multiplet_buttons = (('AB', lambda: self.select_toolbar(self.ab)),
-                             ('AB2', lambda: self.select_toolbar(self.ab2)),
-                             ('ABX', lambda: self.select_toolbar(self.abx)),
-                             ('ABX3', lambda: self.select_toolbar(self.abx3)),
-                             ("AA'XX'", lambda: self.select_toolbar(self.aaxx)),
-                             ('1stOrd',
-                              lambda: self.select_toolbar(self.firstorder)),
-                             ("AA'BB'", lambda: self.select_toolbar(self.aabb)))
-        self.MultipletButtons = RadioFrame(self.model_frame,
-                                           buttons=multiplet_buttons,
-                                           title='Multiplet')
+        self.MultipletButtons = Frame(self.model_frame)
         self.MultipletButtons.grid(row=0, column=0, sticky=N)
 
     def add_abc_buttons(self):
@@ -405,7 +389,7 @@ class View(Frame):
         """Intercept the toolbar's plot request, include the total spectrum,
         and request an update from the Controller
 
-        :param: model: (str) Name of the model to use for calculation.
+        :param model: (str) Name of the model to use for calculation.
         :param data: (dict) kwargs for the requested model calculation.
         """
         self.controller.update_current_plot(model, **data)
