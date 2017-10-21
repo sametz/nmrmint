@@ -108,6 +108,10 @@ class View(Frame):
     request_refresh_current_plot is of the type required by the controller's
     update_current_plot.
 
+    Attributes:
+    active_bar_dict: {(str): (Toolbar object)} Keeps track of what the
+    active toolbar is for each calculation type.
+
     Methods:
         initialize_first_order_bar, initialize_spinbars,
         initialize_dnmr_bars, add_calc_type_frame, add_model_frames,
@@ -135,6 +139,7 @@ class View(Frame):
         Frame.__init__(self, parent, **options)
         self.controller = controller
         self.nuclei_number = 2
+
         # sys.settrace(trace_calls)
 
         # currently for debugging purposes, initial/blank spectra will have a
@@ -153,7 +158,7 @@ class View(Frame):
         self.initialize_spinbars()
         self.add_calc_type_frame()
         self.add_nuclei_number_entry()
-        self.add_model_frames()
+        # self.add_model_frames()
         self.add_width_entry()
         self.add_clear_buttons()
         self.add_plots()
@@ -180,6 +185,8 @@ class View(Frame):
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
                          for spins in self.spin_range]
 
+
+
     def add_calc_type_frame(self):
         """Add a menu for selecting the type of calculation to the upper left
         of the GUI.
@@ -189,105 +196,22 @@ class View(Frame):
         """
         title = 'Simulation'
         buttons = (('First-Order',
-                    lambda: self.select_toolbar(self.first_order_bar)),
+                    lambda: self.select_first_order()),
                    ('Second-Order',
-                    lambda spins=self.nuclei_number: self.select_toolbar(
-                        self.spinbars[spins - 2])))
+                    lambda: self.select_second_order()))
 
         self.CalcTypeFrame = RadioFrame(self.SideFrame,
                                         buttons=buttons, title=title,
                                         relief=SUNKEN, borderwidth=1)
         self.CalcTypeFrame.pack(side=TOP, expand=NO, fill=X)
 
-    def select_calc_type(self, calc_type):
-        """Checks if a new calculation tupe submenu has been selected,
-        and if so displays it and updates the currentframe reference.
-        """
-        if calc_type != self.currentframe:
-            self.frame_dict[self.currentframe].grid_remove()
-            self.currentframe = calc_type
-            self.frame_dict[self.currentframe].grid()
-            # retrieve and select current active bar of frame
-            self.select_toolbar(self.active_bar_dict[self.currentframe])
+    def select_first_order(self):
+        self.calc_type = 'first-order'
+        self.select_toolbar(self.first_order_bar)
 
-    def add_nuclei_number_entry(self):
-        self.nuc_number_frame = HorizontalEntryFrame(
-            parent=self.SideFrame,
-            name='Number of nuclei:',
-            value=self.nuclei_number,
-            controller=self.set_nuc_number)
-        self.nuc_number_frame.pack(side=TOP)
-
-    def set_nuc_number(self):
-        self.nuclei_number = self.nuc_number_frame.current_value
+    def select_second_order(self):
+        self.calc_type = 'second-order'
         self.select_toolbar(self.spinbars[self.nuclei_number - 2])
-
-    def add_model_frames(self):
-        """Add a submenu for selecting the exact calculation model,
-        below CalcTypeFrame.
-
-        The different submenus are all grid() into a parent Frame(
-        model_frame), allowing only one to be displayed at a time (toggled
-        between via the CalcTypeFrame radio buttons).
-
-        Attributes created:
-        model_frame: (Frame) 'houses' the different submenus.
-
-        frame_dict: {(str): (RadioFrame)} matches the name of a calculation
-        submenu to the submenu object.
-
-        active_bar_dict: {(str): (Toolbar object)} Keeps track of what the
-        active toolbar is for each calculation type.
-
-        currentframe: (RadioFrame) Keeps track of the current selected
-        Calculation Type submenu.
-
-        currentbar: (Toolbar object) Keeps track of the current displayed
-        toolbar.
-
-        """
-        self.model_frame = Frame(self.SideFrame)
-        self.model_frame.pack(side=TOP, anchor=N, expand=YES, fill=X)
-
-        self.add_multiplet_buttons()
-        self.add_abc_buttons()
-
-        # frame_dict used by CalcTypeFrame to control individual frames
-        self.frame_dict = {'multiplet': self.MultipletButtons,
-                           'abc': self.ABC_Buttons}
-
-        # active_bar_dict used to keep track of the active model in each
-        # individual button menu.
-        self.active_bar_dict = {'multiplet': self.first_order_bar,
-                                'abc': self.spinbars[0]}
-        self.currentframe = 'multiplet'
-        self.currentbar = self.first_order_bar
-        self.currentbar.grid(sticky=W)
-
-    def add_multiplet_buttons(self):
-        """"Hacked out for now so there's an empty frame to swap in/out.
-        Will be factored out.
-        """
-        self.MultipletButtons = Frame(self.model_frame)
-        self.MultipletButtons.grid(row=0, column=0, sticky=N)
-
-    def add_abc_buttons(self):
-        """Add a menu for selecting the number of nuclei to perform a
-        second-order calculation on, and its corresponding toolbar.
-
-        Attribute created:
-            ABC_Buttons: (RadioFrame) Menu for selecting number of nuclei for
-            the QM model.
-        """
-        abc_buttons_list = [
-            (str(spins),
-             lambda spins=spins: self.select_toolbar(self.spinbars[spins - 2])
-             ) for spins in self.spin_range]
-        abc_buttons = tuple(abc_buttons_list)
-        self.ABC_Buttons = RadioFrame(self.model_frame,
-                                      # self.SideFrame,
-                                      buttons=abc_buttons,
-                                      title='Number of Spins')
 
     def select_toolbar(self, toolbar):
         """Replaces the old toolbar with the new toolbar.
@@ -298,11 +222,104 @@ class View(Frame):
         self.currentbar = toolbar
         self.currentbar.grid(sticky=W)
         # record current bar of currentframe:
-        self.active_bar_dict[self.currentframe] = toolbar
+        self.active_bar_dict[self.calc_type] = toolbar
         try:
             self.currentbar.request_plot()
         except ValueError:
             print('No model yet for this bar')
+
+    # def select_calc_type(self, calc_type):
+    #     """Checks if a new calculation tupe submenu has been selected,
+    #     and if so displays it and updates the currentframe reference.
+    #     """
+    #     if calc_type != self.currentframe:
+    #         self.frame_dict[self.currentframe].grid_remove()
+    #         self.currentframe = calc_type
+    #         self.frame_dict[self.currentframe].grid()
+    #         # retrieve and select current active bar of frame
+    #         self.select_toolbar(self.active_bar_dict[self.currentframe])
+
+    def add_nuclei_number_entry(self):
+        self.nuc_number_frame = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='Number of nuclei:',
+            value=self.nuclei_number,
+            controller=self.set_nuc_number)
+        self.nuc_number_frame.pack(side=TOP)
+
+    def set_nuc_number(self):
+        print('# nuclei was: ', self.nuclei_number)
+        self.nuclei_number = self.nuc_number_frame.current_value
+        print('# nuclei is now: ', self.nuclei_number)
+        self.select_toolbar(self.spinbars[self.nuclei_number - 2])
+
+    # def add_model_frames(self):
+    #     """Add a submenu for selecting the exact calculation model,
+    #     below CalcTypeFrame.
+    #
+    #     The different submenus are all grid() into a parent Frame(
+    #     model_frame), allowing only one to be displayed at a time (toggled
+    #     between via the CalcTypeFrame radio buttons).
+    #
+    #     Attributes created:
+    #     model_frame: (Frame) 'houses' the different submenus.
+    #
+    #     frame_dict: {(str): (RadioFrame)} matches the name of a calculation
+    #     submenu to the submenu object.
+    #
+    #     active_bar_dict: {(str): (Toolbar object)} Keeps track of what the
+    #     active toolbar is for each calculation type.
+    #
+    #     currentframe: (RadioFrame) Keeps track of the current selected
+    #     Calculation Type submenu.
+    #
+    #     currentbar: (Toolbar object) Keeps track of the current displayed
+    #     toolbar.
+    #
+    #     """
+    #     self.model_frame = Frame(self.SideFrame)
+    #     self.model_frame.pack(side=TOP, anchor=N, expand=YES, fill=X)
+    #
+    #     self.add_multiplet_buttons()
+    #     self.add_abc_buttons()
+    #
+    #     # frame_dict used by CalcTypeFrame to control individual frames
+    #     self.frame_dict = {'multiplet': self.MultipletButtons,
+    #                        'abc': self.ABC_Buttons}
+    #
+    #     # active_bar_dict used to keep track of the active model in each
+    #     # individual button menu.
+    #     self.active_bar_dict = {'multiplet': self.first_order_bar,
+    #                             'abc': self.spinbars[0]}
+    #     self.currentframe = 'multiplet'
+    #     self.currentbar = self.first_order_bar
+    #     self.currentbar.grid(sticky=W)
+    #
+    # def add_multiplet_buttons(self):
+    #     """"Hacked out for now so there's an empty frame to swap in/out.
+    #     Will be factored out.
+    #     """
+    #     self.MultipletButtons = Frame(self.model_frame)
+    #     self.MultipletButtons.grid(row=0, column=0, sticky=N)
+    #
+    # def add_abc_buttons(self):
+    #     """Add a menu for selecting the number of nuclei to perform a
+    #     second-order calculation on, and its corresponding toolbar.
+    #
+    #     Attribute created:
+    #         ABC_Buttons: (RadioFrame) Menu for selecting number of nuclei for
+    #         the QM model.
+    #     """
+    #     abc_buttons_list = [
+    #         (str(spins),
+    #          lambda spins=spins: self.select_toolbar(self.spinbars[spins - 2])
+    #          ) for spins in self.spin_range]
+    #     abc_buttons = tuple(abc_buttons_list)
+    #     self.ABC_Buttons = RadioFrame(self.model_frame,
+    #                                   # self.SideFrame,
+    #                                   buttons=abc_buttons,
+    #                                   title='Number of Spins')
+
 
     def add_width_entry(self):
         """Add a labeled widget for entering desired peak width.
@@ -429,6 +446,10 @@ class View(Frame):
 
         To avoid a circular reference, this method is called by the
         Controller after it instantiates View."""
+        self.currentbar = self.first_order_bar
+        self.currentbar.grid(sticky=W)
+        self.active_bar_dict = {'first-order': self.first_order_bar,
+                                'second-order': self.spinbars[0]}
         self.total_spectrum = self.blank_spectrum
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
