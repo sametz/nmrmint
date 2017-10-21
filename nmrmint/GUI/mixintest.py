@@ -566,6 +566,7 @@ class MixinHorizontal:
         self.entry.pack(side=LEFT, fill=X)
         self.entry.config(textvariable=self.value_var)
 
+
 class MixinInt:
 
     def save_entry(self):
@@ -591,6 +592,30 @@ class MixinInt:
             return False
 
 
+class MixinIntRange:
+
+    def save_entry(self):
+        """Saves widget's entry in the parent's dict, filling the entry with
+        0.00 if it was empty.
+        """
+        if not self.value_var.get():  # if entry left blank,
+            self.value_var.set(0)  # fill it with zero
+        value = int(self.value_var.get())
+        self.current_value = value
+
+    @staticmethod
+    def is_valid(entry):
+        """Test to see if entry is acceptable (either empty, or able to be
+        converted to the desired type.)
+        """
+        if not entry:
+            return True  # Empty string: OK if entire entry deleted
+        try:
+            int(entry)
+            return 2 <= int(entry) <= 8
+        except ValueError:
+            return False
+
 
 # class HorizontalIntBox(MixinHorizontal, IntBox):
 #     def __init__(self, **kwargs):
@@ -611,10 +636,13 @@ class SimpleVariableBox(BaseEntryFrame):
         value = float(self.value_var.get())
         self.current_value = value
 
-class HorizontalEntryFrame(MixinHorizontal, MixinInt, SimpleVariableBox):
+
+class HorizontalEntryFrame(MixinHorizontal, MixinIntRange,
+                           SimpleVariableBox):
     def __init__(self, **kwargs):
         # self.initial_value = 19  # testing purposes only
         super(HorizontalEntryFrame, self).__init__(**kwargs)
+
 
 if __name__ == '__main__':
     import numpy as np

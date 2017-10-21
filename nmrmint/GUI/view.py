@@ -134,6 +134,7 @@ class View(Frame):
         :param controller: the Controller to this View."""
         Frame.__init__(self, parent, **options)
         self.controller = controller
+        self.nuclei_number = 2
         # sys.settrace(trace_calls)
 
         # currently for debugging purposes, initial/blank spectra will have a
@@ -186,9 +187,12 @@ class View(Frame):
         Attribute created:
             CalcTypeFrame: the RadioFrame being packed into the GUI.
         """
-        title = 'Calc Type'
-        buttons = (('Multiplet', lambda: self.select_calc_type('multiplet')),
-                   ('ABC...', lambda: self.select_calc_type('abc')))
+        title = 'Simulation'
+        buttons = (('First-Order',
+                    lambda: self.select_toolbar(self.first_order_bar)),
+                   ('Second-Order',
+                    lambda spins=self.nuclei_number: self.select_toolbar(
+                        self.spinbars[spins - 2])))
 
         self.CalcTypeFrame = RadioFrame(self.SideFrame,
                                         buttons=buttons, title=title,
@@ -210,12 +214,13 @@ class View(Frame):
         self.nuc_number_frame = HorizontalEntryFrame(
             parent=self.SideFrame,
             name='Number of nuclei:',
-            value=2,
+            value=self.nuclei_number,
             controller=self.set_nuc_number)
         self.nuc_number_frame.pack(side=TOP)
 
     def set_nuc_number(self):
-        print('set the nuc number!')
+        self.nuclei_number = self.nuc_number_frame.current_value
+        self.select_toolbar(self.spinbars[self.nuclei_number - 2])
 
     def add_model_frames(self):
         """Add a submenu for selecting the exact calculation model,
