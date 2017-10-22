@@ -1,17 +1,17 @@
 """Custom widgets composed from standard tkinter widgets.
 
 Provides the following classes:
-* EntryFrame: a base class for a Frame that contains a Label and an Entry
+* BaseEntryFrame: a base class for a Frame that contains a Label and an Entry
 widget, has custom behavior, and calls back when a change to the entry has
 been committed.
 
-* ArrayBox: a subclass of EntryFrame that reads/writes its value from/to a
+* ArrayBox: a subclass of BaseEntryFrame that reads/writes its value from/to a
 2-D numpy array.
 
 * ArraySpinBox: a subclass of ArrayBox that uses a SpinBox widget instead of
 an Entry widget.
 
-* VarBox: Similar to EntryFrame, but is not provided a data structure or
+* VarBox: Similar to BaseEntryFrame, but is not provided a data structure or
 controller callback in its arguments. Instead, it assumes the parent has the
 necessary attribute and method. TODO: refactor this out of the first-order
 toolbars and use ArrayBox instead.
@@ -24,6 +24,10 @@ float-only or int-only entries.
 * VarButtonBox: emulates the WINDNMR-style entry boxes, like a deluxe
 SpinBox. TODO: refactor so that up/down arrow behavior, methods etc are
 identical to those in ArraySpinBox.
+
+* SimpleVariableBox: A subclass of BaseEntryFrame that takes initial and
+minimum-value argument, instantiates the Entry with the initial value,
+and defaults to the custom minimum value when empty.
 """
 from tkinter import *
 
@@ -38,11 +42,11 @@ class BaseEntryFrame(Frame):
     ('controller') as an argument, and calls that function when a change is
     committed to the Entry's value.
 
-    EntryFrame is intended as a new base class that will be inherited from.
+    BaseEntryFrame is intended as a new base class that will be inherited from.
 
     Methods:
         initialize, add_label, add_entry, bind_entry, and validate_entry: are
-        called by __init__ to initialize EntryFrame. TODO: review all code
+        called by __init__ to initialize BaseEntryFrame. TODO: review all code
         and learn appropriate use of private methods to refactor.
 
         on_return: binding for <Return>
@@ -61,7 +65,7 @@ class BaseEntryFrame(Frame):
         (default: either blank, or a number).
 
         save_entry: saves the Entry value to the relevant data structure.
-        Intended to be overwritten by subclasses of EntryFrame.
+        Intended to be overwritten by subclasses of BaseEntryFrame.
 
     TODO:
         * 'model' is a misleading argument name when a MVC design is used.
@@ -105,7 +109,8 @@ class BaseEntryFrame(Frame):
         Create a StringVar object; initialize self.value with the initial
         number, and initialize StringVar with that same value.
 
-        Subclasses of EntryFrame should overwrite this function to accomodate
+        Subclasses of BasentryFrame should overwrite this function to
+        accomodate
         however initial values are passed into them.
         """
         self.value_var = StringVar()
@@ -117,7 +122,7 @@ class BaseEntryFrame(Frame):
         Label(self, text=self.name, bg=self.color, bd=0).pack(side=TOP)
 
     def add_entry(self):
-        """Add an Entry widget to the EntryFrame.
+        """Add an Entry widget to the BaseEntryFrame.
 
         Subclasses of EntryBox that use a different entry widget (e.g. SpinBox)
         should overwrite this function.
@@ -130,7 +135,7 @@ class BaseEntryFrame(Frame):
     def bind_entry(self):
         """Define behavior when the Entry widget loses focus.
 
-        EntryFrame assumes action should only be taken when a change in the
+        BaseEntryFrame assumes action should only be taken when a change in the
         Entry widget is "committed" by hitting Return, Tab, or clicking
         outside the widget.
         Subclasses may overwrite/extend bind_entry to tailor behavior.
@@ -204,7 +209,7 @@ class BaseEntryFrame(Frame):
     def is_valid(entry):
         """Test to see if entry is acceptable (either empty, or able to be
         converted to the desired type.)
-        The base EntryFrame class assumes the entry contents should be
+        The BaseEntryFrame class assumes the entry contents should be
         a float, and that a blank entry should be filled with 0.00.  A subclass
         that wants non-float entries must override this method.
         """
@@ -236,7 +241,7 @@ class ArrayBox(BaseEntryFrame):
     def __init__(self, parent=None,
                  array=None, coord=(0, 0),
                  **options):
-        """Extend EntryFrame with references to a 2-D array and the
+        """Extend BaseEntryFrame with references to a 2-D array and the
         coordinate to a specific cell in the array.
 
         :param array: a 2-D numpy array.
@@ -553,37 +558,120 @@ class VarButtonBox(VarBox):
             self.after(50, lambda: self.change_value(increment))
 
 
-class HorizontalEntryFrame(BaseEntryFrame):
-    def __init__(self, parent=None, **options):
+class SimpleVariableBox(BaseEntryFrame):
+    """Subclass of BaseEntryFrame that takes a variable as an argument and
+    rewrites it with the Entry's contents when changes are committed.
+
+    Method overwritten:
+    save_entry: If entry left blank, it is filled with the minimum value
+    specified by new kwarg 'min'.
+    """
+
+    def __init__(self, parent=None, value=0.5, min=0, **options):
+        """Extend BaseEntryFrame by implementing initial value and minimum
+        value parameters.
+
+        :param value: (float) Value to instantiate Entry with.
+        :param min: (float) Minimum value the Entry is allowed to hold.
+        """
+        self.initial_value = value
+        self.minimum_value = min
         BaseEntryFrame.__init__(self, parent, **options)
 
+    def save_entry(self):
+        """Overrides parent method so that an empty Entry field is filled
+        with min value.
+        """
+        if not self.value_var.get():  # if entry left blank,
+            self.value_var.set(self.minimum_value)
+        value = float(self.value_var.get())
+        self.current_value = value
+
+
+class MixinHorizontal:
+    """Override add_label and add_entry methods to provide a horizontal
+    arrangement instead of vertical.
+    """
     def add_label(self):
         """Add self.name to a Label at the left of the frame."""
         Label(self, text=self.name, bg=self.color, bd=0).pack(side=LEFT)
 
     def add_entry(self):
-        """Add an Entry widget to the EntryFrame."""
+        """Add an Entry widget."""
         self.entry = Entry(self, width=7,
                            validate='key')  # check for number on keypress)
         self.entry.pack(side=LEFT, fill=X)
         self.entry.config(textvariable=self.value_var)
 
 
-class SimpleVariableBox(BaseEntryFrame):
-    """Subclass of BaseEntryFrame that takes a variable as an argument and
-    rewrites it with the Entry's contents when changes are committed.
-    """
-
-    def __init__(self, parent=None, value=0.5, min=0, **options):
-        self.initial_value = value
-        self.minimum_value = min
-        BaseEntryFrame.__init__(self, parent, **options)
-
+class MixinInt:
+    """Override save_entry and is_valid methods to restrict Entry values to
+    integers."""
     def save_entry(self):
+        """Saves widget's entry in the parent's dict, filling the entry with
+        0.00 if it was empty.
+        """
         if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(self.minimum_value)
-        value = float(self.value_var.get())
+            self.value_var.set(0)  # fill it with zero
+        value = int(self.value_var.get())
         self.current_value = value
+
+    @staticmethod
+    def is_valid(entry):
+        """Test to see if entry is acceptable (either empty, or able to be
+        converted to the desired type.)
+        """
+        if not entry:
+            return True  # Empty string: OK if entire entry deleted
+        try:
+            int(entry)
+            return True
+        except ValueError:
+            return False
+
+
+class MixinIntRange:
+    """Similar to MixinIntRange, but restricts integer range to specified
+    min/max values.
+
+    Currently hardcoded to 2-8 range."""
+    def save_entry(self):
+        """Saves widget's entry in the parent's dict, filling the entry with
+        0.00 if it was empty.
+        """
+        if not self.value_var.get():  # if entry left blank,
+            self.value_var.set(0)  # fill it with zero
+        value = int(self.value_var.get())
+        self.current_value = value
+
+    @staticmethod
+    def is_valid(entry):
+        """Test to see if entry is acceptable (either empty, or able to be
+        converted to the desired type.)
+        """
+        if not entry:
+            return True  # Empty string: OK if entire entry deleted
+        try:
+            int(entry)
+            return 2 <= int(entry) <= 8
+        except ValueError:
+            return False
+
+
+class HorizontalIntBox(MixinHorizontal, IntBox):
+    """An IntBox with a horizontal layout."""
+    def __init__(self, **kwargs):
+        super(HorizontalIntBox, self).__init__(**kwargs)
+
+
+class HorizontalEntryFrame(MixinHorizontal, MixinIntRange,
+                           SimpleVariableBox):
+    """A SimpleVariableBox with a horizontal layout, and with Entry values
+    limited to integers in the 2-8 range (currently hardcoded in
+    MixinIntRange).
+    """
+    def __init__(self, **kwargs):
+        super(HorizontalEntryFrame, self).__init__(**kwargs)
 
 
 if __name__ == '__main__':
@@ -620,9 +708,15 @@ if __name__ == '__main__':
                    else val(parent=mainwindow, name=key+' example',
                             dict_=dummy_dict, controller=dummy_controller)
                    for key, val in widgets.items()]
-    widget_list.append(SimpleVariableBox(parent=mainwindow,
-                                         name='SimpleVariableBox example',
-                                         value=20.0))
+    simple_variable_box = SimpleVariableBox(parent=mainwindow,
+                                            name='SimpleVariableBox example',
+                                            value=20.0)
+    widget_list.append(simple_variable_box)
+    horizontal_test = HorizontalEntryFrame(parent=mainwindow,
+                                           name='horizontal test',
+                                           value=18)
+    widget_list.append(horizontal_test)
+
     for widget in widget_list:
         widget.pack(side=LEFT)
 

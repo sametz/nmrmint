@@ -21,8 +21,7 @@ from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.toolbars import (FirstOrderBar,
                                   SecondOrderSpinBar)
-from nmrmint.GUI.widgets import SimpleVariableBox
-from nmrmint.GUI.mixintest import HorizontalEntryFrame
+from nmrmint.GUI.widgets import HorizontalEntryFrame, SimpleVariableBox
 
 
 class MPLplot(FigureCanvasTkAgg):
@@ -102,15 +101,38 @@ class MPLplot(FigureCanvasTkAgg):
 class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
 
-    The view assumes the controller offers the following method:
+    The view assumes the controller offers the following methods:
         * update_current_plot
+        * add_view_plots
+        * update_total_plot
+
     The toolbars (in toolbars.py) must ensure that the data they send via
     request_refresh_current_plot is of the type required by the controller's
     update_current_plot.
 
     Attributes:
-    active_bar_dict: {(str): (Toolbar object)} Keeps track of what the
-    active toolbar is for each calculation type.
+        nuclei_number: (int) the number of nuclei being modeled in the current
+        second-order toolbar
+
+        spectrometer_frequency: the (proton resonance) frequency for the
+        simulated spectrometer.
+
+        blank_spectrum: [(int, int)...] the spectrum to instantiate the total
+        spectrum window with. [(0, 0)] if blank (baseline) spectrum.
+
+        The following two stacks provide backward/forward navigation:
+        history_past: [[(int, int)...]...] A list of spectra constituting the
+        history of changes made to the total spectrum.
+        history_future: [[(int, int)...]...] A list of spectra constituting
+        the "forward in time" changes to the total spectrum.
+
+        SideFrame: (tkinter.Frame) Holds the side toolbar of the GUI
+
+        TopFrame: (tkinter.Frame) Holds the top (model) toolbars of the GUI
+
+        active_bar_dict: {(str): (Toolbar object)} Keeps track of what the
+        active toolbar is for each calculation type.
+
 
     Methods:
         initialize_first_order_bar, initialize_spinbars,
@@ -185,8 +207,6 @@ class View(Frame):
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
                          for spins in self.spin_range]
-
-
 
     def add_calc_type_frame(self):
         """Add a menu for selecting the type of calculation to the upper left
@@ -532,6 +552,8 @@ class View(Frame):
 
 
 # Debugging routines:
+
+# following is taken from PyMOTW: https://pymotw.com/2/sys/tracing.html
 def trace_calls(frame, event, arg):
     if event != 'call':
         return
