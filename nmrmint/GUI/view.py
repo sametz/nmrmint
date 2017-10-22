@@ -342,6 +342,7 @@ class View(Frame):
         """Set the spectrometer frequency."""
         self.spectrometer_frequency = self.spec_freq_widget.current_value
         self.currentbar.set_freq(self.spectrometer_frequency)
+        self.request_refresh_total_plot(self.total_spectrum)
 
     def add_width_entry(self):
         """Add a labeled widget for entering desired peak width.
