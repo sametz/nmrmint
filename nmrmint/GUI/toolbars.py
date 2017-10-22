@@ -44,6 +44,8 @@ class ToolBar(Frame):
     methods:
         request_plot: sends model type and data to the controller. Assumes
         controller has an update_current_plot function.
+        add_spectra: adds the spectrum the ToolBar is currently modeling to
+        the total spectrum.
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
@@ -86,49 +88,30 @@ class ToolBar(Frame):
         self.master.master.request_add_plot(self.model, **self.vars)
 
 
-# class MultipletBar(ToolBar):
-#     """Extends/overwrites ToolBar to accept a model name, a dict of initial
-#     values, and widget list, and populates the ToolBar with the required
-#     widgets.
-#
-#     vars is used to both initialize the toolbar, and store the widget values.
-#     """
-#     def __init__(self, parent=None, model=None, vars=None, widgets=None,
-#                  **options):
-#         """
-#         Override ToolBar's model and vars, and add a list of widget names.
-#
-#         Keyword arguments:
-#         :param parent: parent tkinter object
-#         :param model: (str) the type of calculation requested (interpreted by
-#         the controller).
-#         :param vars: (dict) {'widget': float} Used to both initialize the
-#         toolbar on instantiation, and hold a record of current widget values.
-#         Passed to controller as kwargs.
-#         :param widgets: [(string)...] A list of widgets (keys in self.vars)
-#         in the order that the widgets should appear in the toolbar.
-#         :param options: standard ToolBar kwargs
-#         """
-#         ToolBar.__init__(self, parent, **options)
-#         self.model = model
-#         self.vars = vars
-#         self.widgets = widgets
-#         kwargs = {'dict_': self.vars,
-#                   'controller': self.request_plot}
-#         for key in widgets:
-#             widget = VarBox(self, name=key, **kwargs)
-#             widget.pack(side=LEFT)
-
-
 class FirstOrderBar(ToolBar):
-    """A subclass of ToolBar designed for use with first-order (
-    single-signal) simulations.
+    """A subclass of ToolBar designed for use with first-order (single-signal)
+    simulations.
 
-    Overrides request_plot and includes method make_kwargs, to convert
-    self.vars into **kwargs of the correct type for passing to the controller.
+    Extends ToolBar with the following attributes:
+        spec_freq: (float) the simulated spectrometer frequency.
+
+    Extends ToolBar with the following methods:
+        set_freq(freq: float): sets attribute spec_freq and update the
+        current spectrum accordingly.
+        make_kwargs: converts toolbar data to appropriate kwargs for calling
+        the controller. Includes conversion from ppm to Hz.
+
+    Overrides the following methods, to make use of make_kwargs:
+        request_plot
+        add_spectra
     """
 
     def __init__(self, parent=None, spec_freq=300, **options):
+        """Instantiate the ToolBar with appropriate widgets for first-order
+        calculations.
+
+        :param spec_freq: the frequency of the simulated spectrometer.
+        """
         ToolBar.__init__(self, parent, **options)
         self.spec_freq = spec_freq
         self.model = 'first_order'
@@ -153,8 +136,12 @@ class FirstOrderBar(ToolBar):
             widget.pack(side=LEFT)
 
     def set_freq(self, freq):
+        """Set the simulated spectrometer frequency and update the current
+        plot accordingly.
+
+        :param freq: (float) the frequency of the spectrometer to simulate.
+        """
         self.spec_freq = freq
-        print('1st order toolbar freq set to: ', self.spec_freq)
         self.request_plot()
 
     def request_plot(self):
@@ -195,6 +182,9 @@ class FirstOrderBar(ToolBar):
         return data
 
     def add_spectra(self):
+        """Add the (top) current spectrum simulation to the (bottom) total
+        simulated spectrum plot.
+        """
         kwargs = self.make_kwargs()
         self.master.master.request_add_plot(self.model, **kwargs)
 
@@ -213,24 +203,33 @@ class SecondOrderBar(Frame):
     of the frequencies, and self.v[0, 0] provides the peak width.
 
     Methods:
-        add_frequency_widgets, add_peakwidth_widget, add_J_button: add the
-        required widgets to the toolbar. Only intented to be called by
-        __init__. TODO: review all code and learn appropriate use of private
-        methods to refactor.
-        vj_popup: opens a window for the entry of J values as well as
+        * add_frequency_widgets, add_peakwidth_widget, add_J_button,
+        add_addspectra_button: add the required widgets to the toolbar. Only
+        intented to be called by __init__. TODO: review all code and learn
+        appropriate use of private methods to refactor.
+        * vj_popup: opens a window for the entry of J values as well as
         frequencies.
-        request_plot: sends model type and data to the controller
+        * set_freq(freq: float): sets attribute spec_freq and update the
+        current spectrum accordingly.
+        * update_v: converts the current ppm values (v_ppm) to Hz and
+        overwrites v with them (provides interface between the ppm-using
+        toolbar and the Hz-using controller/model)
+        * request_plot: sends model type and data to the controller
+        * add_spectra: adds the spectrum the ToolBar is currently modeling to
+        the total spectrum.
 
     Attributes:
-        controller: the Controller object of the Model-View-Controller
+        * controller: the Controller object of the Model-View-Controller
         architecture. Assumes controller has an update_current_plot method.
         model (str): the type of calculation requested (interpreted by the
         controller).
-        v (numpy 2D array): the frequency list (located in v[0, :]
-        j (numpy 2D array): the symmetric matrix of J coupling constants
+        * v (numpy 2D array): the frequency list (located in v[0, :]
+        * j (numpy 2D array): the symmetric matrix of J coupling constants
         (j[m, n] = j[n, m] = coupling between nuclei m and n)
-        w (numpy 2D array): the width of the signal at half height (located
+        * w (numpy 2D array): the width of the signal at half height (located
         in w[0, 0]
+        * spec_freq: (float) the simulated spectrometer frequency.
+        * v_ppm: The conversion of v (in Hz) to ppm.
     """
 
     def __init__(self, parent=None, controller=None, n=4, spec_freq=300,
@@ -241,6 +240,7 @@ class SecondOrderBar(Frame):
         :param parent: the parent tkinter object
         :param controller: the Controller object of the MVC application
         :param n: the number of nuclei in the spin system
+        :param spec_freq: (float) the frequency of the simulated spectrometer.
         :param options: standard optional kwargs for a tkinter Frame
         """
         Frame.__init__(self, parent, **options)
@@ -256,6 +256,10 @@ class SecondOrderBar(Frame):
         self.add_addspectra_button()
 
     def add_frequency_widgets(self, n):
+        """Add frequency-entry widgets to the toolbar.
+
+        :param n: (int) The number of nuclei being simulated.
+        """
         for freq in range(n):
             vbox = ArrayBox(self, array=self.v_ppm, coord=(0, freq),
                             name='V' + str(freq + 1),
@@ -263,16 +267,24 @@ class SecondOrderBar(Frame):
             vbox.pack(side=LEFT)
 
     def add_peakwidth_widget(self):
+        """Add peak width-entry widget to the toolbar."""
         wbox = ArrayBox(self, array=self.w_array, coord=(0, 0), name="W",
                         controller=self.request_plot)
         wbox.pack(side=LEFT)
 
     def add_J_button(self, n):
+        """Add a button to the toolbar that will pop up the J-entry window.
+
+        :param n: (int) The number of nuclei being simulated.
+        """
         vj_button = Button(self, text="Enter Js",
                            command=lambda: self.vj_popup(n))
         vj_button.pack(side=LEFT, expand=N, fill=NONE)
 
     def add_addspectra_button(self):
+        """Add a button to the toolbar that will add the (top) current
+        simulated spectrum to the (bottom) total spectrum plot.
+        """
         self.add_spectra_button = Button(self,
                                          text='Add To Total',
                                          command=lambda: self.add_spectra())
@@ -321,11 +333,19 @@ class SecondOrderBar(Frame):
         datagrid.pack()
 
     def set_freq(self, freq):
+        """Set the simulated spectrometer frequency and update the current
+        plot accordingly.
+
+        :param freq: (float) the frequency of the spectrometer to simulate.
+        """
         self.spec_freq = freq
         print('2nd-order toolbar freq set to: ', self.spec_freq)
         self.request_plot()
 
     def update_v(self):
+        """Translate the ppm frequencies in v_ppm to Hz, and overwrite v
+        with the result.
+        """
         self.v = self.v_ppm * self.spec_freq
 
     def request_plot(self):
@@ -410,11 +430,6 @@ if __name__ == '__main__':
 
     root = Tk()
     root.title('test toolbars')
-
-    test_multibar = MultipletBar(parent=root,
-                                 controller=DummyController,
-                                 **multiplet_bar_defaults['AAXX'])
-    test_multibar.pack(side=TOP)
 
     toolbars = [FirstOrderBar, SecondOrderBar, SecondOrderSpinBar]
     for toolbar in toolbars:
