@@ -86,38 +86,38 @@ class ToolBar(Frame):
         self.master.master.request_add_plot(self.model, **self.vars)
 
 
-class MultipletBar(ToolBar):
-    """Extends/overwrites ToolBar to accept a model name, a dict of initial
-    values, and widget list, and populates the ToolBar with the required
-    widgets.
-
-    vars is used to both initialize the toolbar, and store the widget values.
-    """
-    def __init__(self, parent=None, model=None, vars=None, widgets=None,
-                 **options):
-        """
-        Override ToolBar's model and vars, and add a list of widget names.
-
-        Keyword arguments:
-        :param parent: parent tkinter object
-        :param model: (str) the type of calculation requested (interpreted by
-        the controller).
-        :param vars: (dict) {'widget': float} Used to both initialize the
-        toolbar on instantiation, and hold a record of current widget values.
-        Passed to controller as kwargs.
-        :param widgets: [(string)...] A list of widgets (keys in self.vars)
-        in the order that the widgets should appear in the toolbar.
-        :param options: standard ToolBar kwargs
-        """
-        ToolBar.__init__(self, parent, **options)
-        self.model = model
-        self.vars = vars
-        self.widgets = widgets
-        kwargs = {'dict_': self.vars,
-                  'controller': self.request_plot}
-        for key in widgets:
-            widget = VarBox(self, name=key, **kwargs)
-            widget.pack(side=LEFT)
+# class MultipletBar(ToolBar):
+#     """Extends/overwrites ToolBar to accept a model name, a dict of initial
+#     values, and widget list, and populates the ToolBar with the required
+#     widgets.
+#
+#     vars is used to both initialize the toolbar, and store the widget values.
+#     """
+#     def __init__(self, parent=None, model=None, vars=None, widgets=None,
+#                  **options):
+#         """
+#         Override ToolBar's model and vars, and add a list of widget names.
+#
+#         Keyword arguments:
+#         :param parent: parent tkinter object
+#         :param model: (str) the type of calculation requested (interpreted by
+#         the controller).
+#         :param vars: (dict) {'widget': float} Used to both initialize the
+#         toolbar on instantiation, and hold a record of current widget values.
+#         Passed to controller as kwargs.
+#         :param widgets: [(string)...] A list of widgets (keys in self.vars)
+#         in the order that the widgets should appear in the toolbar.
+#         :param options: standard ToolBar kwargs
+#         """
+#         ToolBar.__init__(self, parent, **options)
+#         self.model = model
+#         self.vars = vars
+#         self.widgets = widgets
+#         kwargs = {'dict_': self.vars,
+#                   'controller': self.request_plot}
+#         for key in widgets:
+#             widget = VarBox(self, name=key, **kwargs)
+#             widget.pack(side=LEFT)
 
 
 class FirstOrderBar(ToolBar):
@@ -128,8 +128,9 @@ class FirstOrderBar(ToolBar):
     self.vars into **kwargs of the correct type for passing to the controller.
     """
 
-    def __init__(self, parent=None, **options):
+    def __init__(self, parent=None, spec_freq=300, **options):
         ToolBar.__init__(self, parent, **options)
+        self.spec_freq = spec_freq
         self.model = 'first_order'
         self.vars = {'JAX': 7.00,
                      '#A': 2,
@@ -139,7 +140,7 @@ class FirstOrderBar(ToolBar):
                      '#C': 0,
                      'JDX': 7,
                      '#D': 0,
-                     'Vcentr': 150,
+                     'Vcentr': 150 / self.spec_freq,
                      '# of nuclei': 1}
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
@@ -150,6 +151,11 @@ class FirstOrderBar(ToolBar):
             else:
                 widget = IntBox(self, name=key, **kwargs)
             widget.pack(side=LEFT)
+
+    def set_freq(self, freq):
+        self.spec_freq = freq
+        print('1st order toolbar freq set to: ', self.spec_freq)
+        self.request_plot()
 
     def request_plot(self):
         """Request the Controller to plot the spectrum."""
@@ -176,7 +182,10 @@ class FirstOrderBar(ToolBar):
         _c = self.vars['#C']
         _Jdx = self.vars['JDX']
         _d = self.vars['#D']
-        _Vcentr = self.vars['Vcentr']
+        _Vcentr = self.vars['Vcentr'] * self.spec_freq
+        print('Frequency ', self.vars['Vcentr'], ' converted to',
+              _Vcentr)
+
         _integration = self.vars['# of nuclei']
         singlet = (_Vcentr, _integration)
         allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]

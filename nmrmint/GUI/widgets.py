@@ -574,13 +574,14 @@ class SimpleVariableBox(BaseEntryFrame):
     rewrites it with the Entry's contents when changes are committed.
     """
 
-    def __init__(self, parent=None, value=0.5, **options):
+    def __init__(self, parent=None, value=0.5, min=0, **options):
         self.initial_value = value
+        self.minimum_value = min
         BaseEntryFrame.__init__(self, parent, **options)
 
     def save_entry(self):
         if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(0.01)  # fill it with 0.01
+            self.value_var.set(self.minimum_value)
         value = float(self.value_var.get())
         self.current_value = value
 

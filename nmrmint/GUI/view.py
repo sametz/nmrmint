@@ -19,7 +19,7 @@ from matplotlib.figure import Figure
 
 from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
-from nmrmint.GUI.toolbars import (MultipletBar, FirstOrderBar,
+from nmrmint.GUI.toolbars import (FirstOrderBar,
                                   SecondOrderSpinBar)
 from nmrmint.GUI.widgets import SimpleVariableBox
 from nmrmint.GUI.mixintest import HorizontalEntryFrame
@@ -139,7 +139,7 @@ class View(Frame):
         Frame.__init__(self, parent, **options)
         self.controller = controller
         self.nuclei_number = 2
-
+        self.spectrometer_frequency = 300  # MHz
         # sys.settrace(trace_calls)
 
         # currently for debugging purposes, initial/blank spectra will have a
@@ -158,7 +158,7 @@ class View(Frame):
         self.initialize_spinbars()
         self.add_calc_type_frame()
         self.add_nuclei_number_entry()
-        # self.add_model_frames()
+        self.add_spec_freq_entry()
         self.add_width_entry()
         self.add_clear_buttons()
         self.add_plots()
@@ -167,7 +167,8 @@ class View(Frame):
     def initialize_first_order_bar(self):
         """Instantiate the toolbar for first-order model."""
         bar_kwargs = {'parent': self.TopFrame,
-                      'controller': self.request_refresh_current_plot}
+                      'controller': self.request_refresh_current_plot,
+                      'spec_freq': self.spectrometer_frequency}
         self.first_order_bar = FirstOrderBar(**bar_kwargs)
 
     def initialize_spinbars(self):
@@ -208,10 +209,14 @@ class View(Frame):
     def select_first_order(self):
         self.calc_type = 'first-order'
         self.select_toolbar(self.first_order_bar)
+        for child in self.nuc_number_frame.winfo_children():
+            child.configure(state='disable')
 
     def select_second_order(self):
         self.calc_type = 'second-order'
         self.select_toolbar(self.spinbars[self.nuclei_number - 2])
+        for child in self.nuc_number_frame.winfo_children():
+            child.configure(state='normal')
 
     def select_toolbar(self, toolbar):
         """Replaces the old toolbar with the new toolbar.
@@ -246,6 +251,8 @@ class View(Frame):
             value=self.nuclei_number,
             controller=self.set_nuc_number)
         self.nuc_number_frame.pack(side=TOP)
+        for child in self.nuc_number_frame.winfo_children():
+            child.configure(state='disable')
 
     def set_nuc_number(self):
         print('# nuclei was: ', self.nuclei_number)
@@ -320,6 +327,21 @@ class View(Frame):
     #                                   buttons=abc_buttons,
     #                                   title='Number of Spins')
 
+    def add_spec_freq_entry(self):
+        """Add a labeled widget for entering spectrometer frequency.
+        """
+        self.spec_freq_widget = SimpleVariableBox(
+            self.SideFrame,
+            name='Spectrometer Frequency',
+            controller=self.set_spec_freq,
+            value=self.spectrometer_frequency,
+            min=1)
+        self.spec_freq_widget.pack(side=TOP)
+
+    def set_spec_freq(self):
+        """Set the spectrometer frequency."""
+        self.spectrometer_frequency = self.spec_freq_widget.current_value
+        self.currentbar.set_freq(self.spectrometer_frequency)
 
     def add_width_entry(self):
         """Add a labeled widget for entering desired peak width.
@@ -330,7 +352,9 @@ class View(Frame):
         self.peak_width_widget = SimpleVariableBox(
             self.SideFrame,
             name='Peak Width',
-            controller=self.set_peak_width)
+            controller=self.set_peak_width,
+            value=self.peak_width,
+            min=0.01)
         self.peak_width_widget.pack(side=TOP)
 
     def set_peak_width(self):

@@ -86,8 +86,14 @@ class Controller:
             print('model not recognized')
             return
 
+        plotdata = self.convert_to_ppm(plotdata)
         self.view.clear_current()
         self.view.plot_current(*plotdata)
+
+    def convert_to_ppm(self, plotdata):
+        x, y = plotdata
+        x = x / self.view.spectrometer_frequency
+        return x, y
 
     def update_total_plot(self, spectrum, *w):
         """Call model to calculate plot data from the provided spectrum,
