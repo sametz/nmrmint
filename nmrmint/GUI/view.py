@@ -228,6 +228,7 @@ class View(Frame):
         self.currentbar.grid(sticky=W)
         # record current bar of currentframe:
         self.active_bar_dict[self.calc_type] = toolbar
+        self.currentbar.set_freq(self.spectrometer_frequency)
         try:
             self.currentbar.request_plot()
         except ValueError:

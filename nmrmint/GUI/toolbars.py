@@ -233,7 +233,8 @@ class SecondOrderBar(Frame):
         in w[0, 0]
     """
 
-    def __init__(self, parent=None, controller=None, n=4, **options):
+    def __init__(self, parent=None, controller=None, n=4, spec_freq=300,
+                 **options):
         """Initialize the frame with necessary widgets and attributes.
 
         Keyword arguments:
@@ -245,6 +246,8 @@ class SecondOrderBar(Frame):
         Frame.__init__(self, parent, **options)
         self.controller = controller
         self.v, self.j = getWINDNMRdefault(n)
+        self.spec_freq = spec_freq
+        self.v_ppm = self.v / self.spec_freq
         self.w_array = np.array([[0.5]])
 
         self.add_frequency_widgets(n)
@@ -254,7 +257,7 @@ class SecondOrderBar(Frame):
 
     def add_frequency_widgets(self, n):
         for freq in range(n):
-            vbox = ArrayBox(self, array=self.v, coord=(0, freq),
+            vbox = ArrayBox(self, array=self.v_ppm, coord=(0, freq),
                             name='V' + str(freq + 1),
                             controller=self.request_plot)
             vbox.pack(side=LEFT)
@@ -298,7 +301,7 @@ class SecondOrderBar(Frame):
 
         for row in range(1, n + 1):
             vtext = "V" + str(row)
-            v = ArrayBox(datagrid, array=self.v,
+            v = ArrayBox(datagrid, array=self.v_ppm,
                          coord=(0, row - 1),  # V1 stored in v[0, 0], etc.
                          name=vtext, color='gray90',
                          controller=self.request_plot)
@@ -317,8 +320,17 @@ class SecondOrderBar(Frame):
 
         datagrid.pack()
 
+    def set_freq(self, freq):
+        self.spec_freq = freq
+        print('2nd-order toolbar freq set to: ', self.spec_freq)
+        self.request_plot()
+
+    def update_v(self):
+        self.v = self.v_ppm * self.spec_freq
+
     def request_plot(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""
+        self.update_v()
         kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
                   'j': self.j,
                   'w': self.w_array[0, 0]}  # controller takes float for w
@@ -327,6 +339,7 @@ class SecondOrderBar(Frame):
 
     def add_spectra(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""
+        self.update_v()
         kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
                   'j': self.j,
                   'w': self.w_array[0, 0]}  # controller takes float for w
@@ -363,7 +376,7 @@ class SecondOrderSpinBar(SecondOrderBar):
 
     def add_frequency_widgets(self, n):
         for freq in range(n):
-            vbox = ArraySpinBox(self, array=self.v, coord=(0, freq),
+            vbox = ArraySpinBox(self, array=self.v_ppm, coord=(0, freq),
                                 name='V' + str(freq + 1),
                                 controller=self.request_plot,
                                 **self.spinbox_kwargs)
