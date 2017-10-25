@@ -22,8 +22,7 @@ Known issues, and desirable features, include:
 * setting the spectral width
 * proper implementation of peak width: the ability to control the peak width of individual signals (e.g. include a broad singlet for a hydroxyl proton).
 * the ability to export the total spectrum as a PDF or .png suitable for use in a quiz, exam, powerpoint slides, etc.
-* the ability to change the spectrometer frequency in the middle of creating a simulation (currently, coupling constants don't stay 'constant' in the
-total spectrum if the spectrometer frequency is changed)
+* the ability to change the spectrometer frequency in the middle of creating a simulation (currently, coupling constants don't stay 'constant' in the total spectrum if the spectrometer frequency is changed)
 
 and in the longer term:
 
