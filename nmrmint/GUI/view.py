@@ -392,6 +392,7 @@ class View(Frame):
     #########################################################################
 
     # Interface from View to Controller:
+    # TODO: rename these
     def request_refresh_current_plot(self, model, **data):
         """Intercept the toolbar's plot request, include the total spectrum,
         and request an update from the Controller
@@ -440,12 +441,14 @@ class View(Frame):
         self.controller.update_total_plot(self.total_spectrum)
         self.history_past.append(self.total_spectrum[:])
 
+    # TODO: rename, e.g. update_history
     def update_total_spectrum(self, new_total_spectrum):
         """Set the current total spectrum, adding it to the history list of
         changes, and deleting the forward history.
 
         :param new_total_spectrum: ([(float, float)...] A list of (frequency,
-        intensity) tuples."""
+        intensity) tuples.
+        """
         self.total_spectrum = new_total_spectrum
         self.history_past.append(self.total_spectrum[:])
         self.history_future = []

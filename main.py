@@ -1,4 +1,4 @@
-"""The main routine for the UW-DNMR app, to be run from the command line."""
+"""The main routine for the nmrmint app, to be run from the command line."""
 
 
 import tkinter as tk

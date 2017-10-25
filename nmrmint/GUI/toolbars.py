@@ -170,9 +170,6 @@ class FirstOrderBar(ToolBar):
         _Jdx = self.vars['JDX']
         _d = self.vars['#D']
         _Vcentr = self.vars['Vcentr'] * self.spec_freq
-        print('Frequency ', self.vars['Vcentr'], ' converted to',
-              _Vcentr)
-
         _integration = self.vars['# of nuclei']
         singlet = (_Vcentr, _integration)
         allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
@@ -339,7 +336,6 @@ class SecondOrderBar(Frame):
         :param freq: (float) the frequency of the spectrometer to simulate.
         """
         self.spec_freq = freq
-        print('2nd-order toolbar freq set to: ', self.spec_freq)
         self.request_plot()
 
     def update_v(self):
