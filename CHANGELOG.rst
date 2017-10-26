@@ -20,8 +20,12 @@ The format is inspired by `Keep a Changelog <http://keepachangelog.com/en/0.3.0/
 
 * **Version 1.0.0 release**: a minimal app suitable for educational use and not requiring execution from the command line interface.
 
+0.2.0 - 2017-10-25 (alpha release)
+----------------------------------
 
-0.1.0 - 2017-10-14 (alpha release)
+Commit of actual nmrmint application with basic functionality in place.
+
+0.1.0 - 2017-10-14 (pre-alpha release)
 --------------------------------------
 
 Initial Commit
