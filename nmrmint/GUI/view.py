@@ -21,7 +21,9 @@ from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.toolbars import (FirstOrderBar,
                                   SecondOrderSpinBar)
-from nmrmint.GUI.widgets import HorizontalEntryFrame, SimpleVariableBox
+from nmrmint.GUI.widgets import (HorizontalRangeEntryFrame,
+                                 HorizontalEntryFrame,
+                                 SimpleVariableBox)
 
 
 class MPLplot(FigureCanvasTkAgg):
@@ -273,7 +275,7 @@ class View(Frame):
         """Add the "number of nuclei" entry to the GUI, and instantiate it as
         "disabled".
         """
-        self.nuc_number_frame = HorizontalEntryFrame(
+        self.nuc_number_frame = HorizontalRangeEntryFrame(
             parent=self.SideFrame,
             name='Number of nuclei:',
             value=self.nuclei_number,
@@ -310,8 +312,8 @@ class View(Frame):
     def add_minmax_entries(self):
         """Add entries for minimum and maximum frequency to display"""
         # set View.v_min and .v_max to initial default values
-        self.v_min = self.spectrometer_frequency * -1  # ppm
-        self.v_max = self.spectrometer_frequency * 12  # ppm
+        self.v_min = -1  # ppm
+        self.v_max = 12  # ppm
         self.v_min_frame = HorizontalEntryFrame(
             parent=self.SideFrame,
             name='v min',

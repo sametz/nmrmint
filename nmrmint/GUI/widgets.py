@@ -664,14 +664,21 @@ class HorizontalIntBox(MixinHorizontal, IntBox):
         super(HorizontalIntBox, self).__init__(**kwargs)
 
 
-class HorizontalEntryFrame(MixinHorizontal, MixinIntRange,
-                           SimpleVariableBox):
+class HorizontalEntryFrame(MixinHorizontal, MixinInt, SimpleVariableBox):
+    """A SimpleVariableBox with a horizontal layout, and with Entry values
+    limited to integers."""
+    def __init__(self, **kwargs):
+        super(HorizontalEntryFrame, self).__init__(**kwargs)
+
+
+class HorizontalRangeEntryFrame(MixinHorizontal, MixinIntRange,
+                                SimpleVariableBox):
     """A SimpleVariableBox with a horizontal layout, and with Entry values
     limited to integers in the 2-8 range (currently hardcoded in
     MixinIntRange).
     """
     def __init__(self, **kwargs):
-        super(HorizontalEntryFrame, self).__init__(**kwargs)
+        super(HorizontalRangeEntryFrame, self).__init__(**kwargs)
 
 
 if __name__ == '__main__':
@@ -712,9 +719,9 @@ if __name__ == '__main__':
                                             name='SimpleVariableBox example',
                                             value=20.0)
     widget_list.append(simple_variable_box)
-    horizontal_test = HorizontalEntryFrame(parent=mainwindow,
-                                           name='horizontal test',
-                                           value=18)
+    horizontal_test = HorizontalRangeEntryFrame(parent=mainwindow,
+                                                name='horizontal test',
+                                                value=18)
     widget_list.append(horizontal_test)
 
     for widget in widget_list:
