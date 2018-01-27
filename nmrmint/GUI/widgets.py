@@ -623,6 +623,8 @@ class MixinInt:
         """
         if not entry:
             return True  # Empty string: OK if entire entry deleted
+        if entry == '-':
+            return True  # OK to try and enter a negative value
         try:
             int(entry)
             return True

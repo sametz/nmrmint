@@ -57,6 +57,8 @@ class MPLplot(FigureCanvasTkAgg):
         self.current_plot.invert_xaxis()
         self.total_plot = figure.add_subplot(212)
         self.total_plot.invert_xaxis()
+        self.x_min = -1  # ppm
+        self.x_max = 12  # ppm
         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.toolbar = NavigationToolbar2TkAgg(self, master)
         self.toolbar.update()
@@ -70,7 +72,8 @@ class MPLplot(FigureCanvasTkAgg):
         # for some reason axes were getting flipped after adding, so:
         self.current_plot.invert_xaxis()
         self.current_plot.plot(x, y, linewidth=1)
-        self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
+        # self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
+        self.draw_idle()
 
     def plot_total(self, x, y):
         """Plot x, y data to the total_plot axis.
@@ -79,9 +82,28 @@ class MPLplot(FigureCanvasTkAgg):
         :param y: (numpy linspace)
         """
         # for some reason total_plot axis gets flipped, so:
-        self.total_plot.invert_xaxis()
+        # self.total_plot.invert_xaxis()
         self.total_plot.plot(x, y, linewidth=1)
-        self.f.canvas.draw_idle()
+        # self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
+        # # self.f.canvas.draw_idle()
+        # self.draw_idle()
+        self.update_total_plot_window()
+
+    def update_total_plot_window(self, *x_limits):
+
+        # TODO: initially tried x_min, x_max = *x_limits, but get
+        # error "can't use starred expression here"--learn how this
+        # should work.
+        if x_limits:
+            if len(x_limits) == 2:
+                self.x_min = x_limits[0]
+                self.x_max = x_limits[1]
+            else:
+                print('update_total_plot_window called with bad args')
+        # self.x_min = x_min
+        # self.x_max = x_max
+        self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
+        self.draw_idle()
 
     def clear_all(self):
         """Clear all spectra plots."""
@@ -169,6 +191,8 @@ class View(Frame):
         self.controller = controller
         self.nuclei_number = 2
         self.spectrometer_frequency = 300  # MHz
+        self.v_min = -1  # ppm
+        self.v_max = 12  # ppm
 
         # Currently, for debugging purposes, initial/blank spectra will have a
         # "TMS" peak at 0 that integrates to 1H.
@@ -312,13 +336,11 @@ class View(Frame):
     def add_minmax_entries(self):
         """Add entries for minimum and maximum frequency to display"""
         # set View.v_min and .v_max to initial default values
-        self.v_min = -1  # ppm
-        self.v_max = 12  # ppm
         self.v_min_frame = HorizontalEntryFrame(
             parent=self.SideFrame,
             name='v min',
             value=self.v_min,
-            controller = self.set_v_min)
+            controller=self.set_v_min)
         self.v_max_frame = HorizontalEntryFrame(
             parent=self.SideFrame,
             name='v max',
@@ -333,7 +355,8 @@ class View(Frame):
         print('v_min now: ', self.v_min)
         print('v_max is: ', self.v_max)
         # TODO: add refresh of spectrum
-        self.update_spec_window()
+        # self.update_spec_window()
+        self.canvas.update_total_plot_window(self.v_min, self.v_max)
 
     def set_v_max(self):
         print('vmax change detected')
@@ -341,10 +364,17 @@ class View(Frame):
         print('v_min is: ', self.v_min)
         print('v_max is now: ', self.v_max)
         # TODO: add refresh of spectrum
-        self.update_spec_window()
+        # self.update_spec_window()
+        self.canvas.update_total_plot_window(self.v_min, self.v_max)
 
-    def update_spec_window(self):
-        self.canvas.total_plot.set_xlim(self.v_max, self.v_min)
+    # def update_spec_window(self):
+    #     """Changes the range of the x axis (frequency) on the total spectrum.
+    #
+    #     This should probably be a canvas method, not a view method.
+    #     Which one should "own" the v_min/v_max variables?
+    #     """
+    #     self.canvas.total_plot.set_xlim(self.v_max, self.v_min)
+    #     self.canvas.draw_idle()
 
     def add_width_entry(self):
         """Add a labeled widget for entering desired peak width.
@@ -379,6 +409,9 @@ class View(Frame):
         """Add a MPLplot canvas to the GUI"""
         self.figure = Figure(figsize=(7, 5.6), dpi=100)  # original figsize 5, 4
         self.canvas = MPLplot(self.figure, self)
+        # View should override Canvas' default xlim
+        self.canvas.x_min = self.v_min
+        self.canvas.x_max = self.v_max
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
     def add_history_buttons(self):
