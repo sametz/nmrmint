@@ -185,6 +185,7 @@ class View(Frame):
         self.add_calc_type_frame()
         self.add_nuclei_number_entry()
         self.add_spec_freq_entry()
+        self.add_minmax_entries()
         # Width sidebar setting currently has no effect
         # self.add_width_entry()
         self.add_clear_buttons()
@@ -195,6 +196,8 @@ class View(Frame):
         """Instantiate the toolbar for first-order model."""
         bar_kwargs = {'parent': self.TopFrame,
                       'controller': self.request_refresh_current_plot,
+                      # Bad to set spec_freq here? Will it change if
+                      # self.spectrometer_frequency changes?
                       'spec_freq': self.spectrometer_frequency}
         self.first_order_bar = FirstOrderBar(**bar_kwargs)
 
@@ -303,6 +306,43 @@ class View(Frame):
         self.spectrometer_frequency = self.spec_freq_widget.current_value
         self.currentbar.set_freq(self.spectrometer_frequency)
         self.request_refresh_total_plot(self.total_spectrum)
+
+    def add_minmax_entries(self):
+        """Add entries for minimum and maximum frequency to display"""
+        # set View.v_min and .v_max to initial default values
+        self.v_min = self.spectrometer_frequency * -1  # ppm
+        self.v_max = self.spectrometer_frequency * 12  # ppm
+        self.v_min_frame = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='v min',
+            value=self.v_min,
+            controller = self.set_v_min)
+        self.v_max_frame = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='v max',
+            value=self.v_max,
+            controller=self.set_v_max)
+        self.v_min_frame.pack(side=TOP)
+        self.v_max_frame.pack(side=TOP)
+
+    def set_v_min(self):
+        print('vmin change detected')
+        self.v_min = self.v_min_frame.current_value
+        print('v_min now: ', self.v_min)
+        print('v_max is: ', self.v_max)
+        # TODO: add refresh of spectrum
+        self.update_spec_window()
+
+    def set_v_max(self):
+        print('vmax change detected')
+        self.v_max = self.v_max_frame.current_value
+        print('v_min is: ', self.v_min)
+        print('v_max is now: ', self.v_max)
+        # TODO: add refresh of spectrum
+        self.update_spec_window()
+
+    def update_spec_window(self):
+        self.canvas.total_plot.set_xlim(self.v_max, self.v_min)
 
     def add_width_entry(self):
         """Add a labeled widget for entering desired peak width.
