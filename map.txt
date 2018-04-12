@@ -27,3 +27,8 @@ linshape is part of the object, can re-compute linshapes only as needed.
 
 6. Moving backwards/forwards in history: also change and re-configure toolbars?
 
+Alternatives:
+4. In lieu of current total spectrum history, be able to flip between
+subspectra, and toggle them active/inactive (add to/delete from total spectrum).
+6. Advanced modification: have undo/redo for subspectra instead of spectrum.
+
