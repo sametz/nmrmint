@@ -221,6 +221,13 @@ class BaseEntryFrame(Frame):
         except ValueError:
             return False
 
+    def get_value(self):
+        return self.value_var.get()
+
+    def set_value(self, val):
+        self.value_var.set(val)
+        self.refresh()
+
 
 class ArrayBox(BaseEntryFrame):
     """

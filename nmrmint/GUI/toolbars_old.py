@@ -70,7 +70,6 @@ class ToolBar(Frame):
         self.model = 'model'  # must be overwritten by subclasses
         self.vars = {}
         self.add_spectra_button = Button(self,
-                                         name='addbutton',
                                          text='Add To Total',
                                          command=lambda: self.add_spectra())
         self.add_spectra_button.pack(side=RIGHT)
@@ -125,47 +124,16 @@ class FirstOrderBar(ToolBar):
                      'JDX': 7,
                      '#D': 0,
                      'Vcentr': 150 / self.spec_freq,
-                     '# of nuclei': 1,
-                     'width': 0.5}
-        self.fields = {}
+                     '# of nuclei': 1}
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
         for key in ['# of nuclei', 'JAX', '#A', 'JBX', '#B', 'JCX', '#C',
-                    'JDX', '#D', 'Vcentr', 'width']:
+                    'JDX', '#D', 'Vcentr']:
             if '#' not in key:
                 widget = VarBox(self, name=key, **kwargs)
             else:
                 widget = IntBox(self, name=key, **kwargs)
-            self.fields[key] = widget
             widget.pack(side=LEFT)
-
-        # self.test_reset(self.vars)
-
-    def test_reset(self, vars):
-        for key, val in vars.items():
-            self.vars[key] = val
-            widget = self.fields[key]
-            print('found ', key, 'with value ',
-                  widget.get_value())
-            widget.set_value(val)
-            print('changed it to: ', widget.get_value())
-
-        # self.request_plot()
-        # res = self.nametowidget("width")
-        # print(res, res.value_var.get())
-        # widgets = self.children
-        # for widget in widgets:
-        #     print(widget)
-        #     try:
-        #         print(self.nametowidget('addbutton'))
-        #     except:
-        #         print('FAIL')
-        # for key, val in vars.items():
-        #     name = ".!view.!frame2.!firstorderbar." + key
-        #     try:
-        #         print(self.nametowidget(name))
-        #     except:
-        #         print('FAIL')
 
     def set_freq(self, freq):
         """Set the simulated spectrometer frequency and update the current
@@ -179,7 +147,6 @@ class FirstOrderBar(ToolBar):
     def request_plot(self):
         """Request the Controller to plot the spectrum."""
         kwargs = self.make_kwargs()
-        print('request: ', kwargs)
         self.controller(self.model, **kwargs)
 
     def make_kwargs(self):

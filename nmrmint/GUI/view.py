@@ -19,11 +19,14 @@ from matplotlib.figure import Figure
 
 from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
+from nmrmint.GUI.history import Subspectrum, History
 from nmrmint.GUI.toolbars import (FirstOrderBar,
                                   SecondOrderSpinBar)
 from nmrmint.GUI.widgets import (HorizontalRangeEntryFrame,
                                  HorizontalEntryFrame,
                                  SimpleVariableBox)
+
+history = History()
 
 
 class MPLplot(FigureCanvasTkAgg):
@@ -44,6 +47,7 @@ class MPLplot(FigureCanvasTkAgg):
         clear_total: clears the bottom plot
 
     """
+
     def __init__(self, figure, master=None, **options):
         """Extend FigureCanvasTkAgg with a Matplotlib Figure object, then add
         and pack itself plus a toolbar into the parent.
@@ -206,6 +210,9 @@ class View(Frame):
         self.TopFrame = Frame(self, relief=RIDGE, borderwidth=1)
         self.TopFrame.pack(side=TOP, expand=NO, fill=X)
 
+        self.SubSpectrumButtonFrame = Frame(self, relief=RIDGE, borderwidth=1)
+        self.SubSpectrumButtonFrame.pack(side=TOP, expand=NO, fill=X)
+
         self.initialize_first_order_bar()
         self.initialize_spinbars()
         self.add_calc_type_frame()
@@ -215,6 +222,7 @@ class View(Frame):
         # Width sidebar setting currently has no effect
         # self.add_width_entry()
         self.add_clear_buttons()
+        self.add_subspectrum_buttons()
         self.add_plots()
         self.add_history_buttons()
 
@@ -405,6 +413,46 @@ class View(Frame):
         top_clear.pack()
         bottom_clear.pack()
 
+    def add_subspectrum_buttons(self):
+        """Add buttons for requesting: Add to Spectrum; Remove from Spectrum;
+        New Subspectrum; Delete Subspectrum.
+        """
+        self.add_subspectrum_button = Button(self.SubSpectrumButtonFrame,
+                                        text="Add to Spectrum",
+                                        highlightbackground='red',
+                                        command=lambda: self.add_subspectrum())
+        # remove_subspectrum_button = Button(self.SubSpectrumButtonFrame,
+        #                                    text="Remove from Spectrum",
+        #                                    command=lambda:
+        #                                    self.remove_subspectrum())
+
+        new_subspectrum_button = Button(self.SubSpectrumButtonFrame,
+                                        text="New Subspectrum",
+                                        command=lambda: self.new_subspectrum())
+        delete_subspectrum_button = Button(self.SubSpectrumButtonFrame,
+                                           text="Delete Subspectrum",
+                                           command=lambda: self.delete_subspectrum())
+        self.add_subspectrum_button.pack(side=LEFT)
+        # remove_subspectrum_button.pack(side=LEFT)
+        new_subspectrum_button.pack(side=LEFT)
+        delete_subspectrum_button.pack(side=LEFT)
+
+    def add_subspectrum(self):
+        # print(self.add_subspectrum_button['bg'])
+        if self.add_subspectrum_button['highlightbackground'] == 'red':
+            self.add_subspectrum_button['highlightbackground'] = 'green'
+        else:
+            self.add_subspectrum_button['highlightbackground'] = 'red'
+
+    def remove_subspectrum(self):
+        pass
+
+    def new_subspectrum(self):
+        pass
+
+    def delete_subspectrum(self):
+        pass
+
     def add_plots(self):
         """Add a MPLplot canvas to the GUI"""
         self.figure = Figure(figsize=(7, 5.6), dpi=100)  # original figsize 5, 4
@@ -512,9 +560,23 @@ class View(Frame):
         self.active_bar_dict = {'first-order': self.first_order_bar,
                                 'second-order': self.spinbars[0]}
         self.total_spectrum = self.blank_spectrum
+        self.start_history()
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
         self.history_past.append(self.total_spectrum[:])
+        self.currentbar.test_reset({'Vcentr': 5.0})
+
+    def start_history(self):
+        # self.history = History()
+        ss = self.record_subspectrum()
+        history.add_subspectrum(ss)
+        print('history initiated with subspectrum ', history.current,
+              " containing vars ", history.subspectra[history.current].vars)
+
+    def record_subspectrum(self):
+        subspectrum = Subspectrum(vars=self.currentbar.vars)
+        return subspectrum
+
 
     # TODO: rename, e.g. update_history
     def update_total_spectrum(self, new_total_spectrum):

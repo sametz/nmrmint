@@ -32,3 +32,10 @@ Alternatives:
 subspectra, and toggle them active/inactive (add to/delete from total spectrum).
 6. Advanced modification: have undo/redo for subspectra instead of spectrum.
 
+4/14/2018: The program will become more simple if an adapter is created to be
+the interface between view and controller. Toolbars can send and receive
+parameters (dict, JSON, ...). Data sent by toolbar is converted into the type
+needed by the model and then passed to controller. Data received by toolbar is
+used to set it to another state, allowing possible undo/redo functionality or
+toolbar switching.
+
