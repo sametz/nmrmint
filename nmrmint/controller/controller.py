@@ -13,7 +13,7 @@ import tkinter as tk
 from nmrmint.GUI.view import View
 from nmrmint.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
                                    first_order, add_spectra)
-from nmrmint.model.nmrplot import tkplot
+from nmrmint.model.nmrplot import tkplot_current, tkplot_total
 
 
 class Controller:
@@ -151,10 +151,10 @@ class Controller:
 
         if model in multiplet_models:
             spectrum = self.models[model](**data)
-            plotdata = tkplot(spectrum)
+            plotdata = tkplot_current(spectrum)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
-            plotdata = tkplot(spectrum, w)
+            plotdata = tkplot_current(spectrum, w)
         else:
             print('model not recognized')
             return
@@ -172,7 +172,7 @@ class Controller:
         :param w: optional peak width at half height.
         """
         spectrum = self.spectrum_from_ppm(spectrum)
-        plotdata = tkplot(spectrum, *w)
+        plotdata = tkplot_total(spectrum, *w)
         plotdata = self.lineshape_to_ppm(plotdata)
         # self.view.canvas.clear_total()
         self.view.clear_total()
@@ -201,13 +201,13 @@ class Controller:
         if model in multiplet_models:
             spectrum = self.models[model](**data)
             add_spectra(total_spectrum_Hz, spectrum)
-            plotdata = tkplot(spectrum)
-            total_plotdata = tkplot(total_spectrum_Hz)
+            plotdata = tkplot_total(spectrum)
+            total_plotdata = tkplot_total(total_spectrum_Hz)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
             add_spectra(total_spectrum_Hz, spectrum)
-            plotdata = tkplot(spectrum, w)
-            total_plotdata = tkplot(total_spectrum_Hz, w)
+            plotdata = tkplot_total(spectrum, w)
+            total_plotdata = tkplot_total(total_spectrum_Hz, w)
         else:
             print('model not recognized')
             return
