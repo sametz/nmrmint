@@ -178,38 +178,39 @@ class FirstOrderBar(ToolBar):
 
     def request_plot(self):
         """Request the Controller to plot the spectrum."""
-        kwargs = self.make_kwargs()
-        print('request: ', kwargs)
-        self.controller(self.model, **kwargs)
+        # kwargs = self.make_kwargs()
+        # print('request: ', kwargs)
+        # self.controller(self.model, **kwargs)
+        self.controller(self.model, self.vars)
 
-    def make_kwargs(self):
-        """Convert the dictionary of widget entries (self.vars) to a dict
-        that is compliant with the controller interface.
-
-        The controller needs to pass a (signal, couplings) tuple to the model.
-        - signal is a (frequency, intensity) tuple representing the frequency
-        and intensity of the signal in the absence of coupling. Intensity is
-        1 by default.
-        - couplings is a list of (J, n) tuples, where J is the coupling
-        constant and n is the number of nuclei coupled to the nucleus of
-        interest with that same J value.
-        """
-        _Jax = self.vars['JAX']
-        _a = self.vars['#A']
-        _Jbx = self.vars['JBX']
-        _b = self.vars['#B']
-        _Jcx = self.vars['JCX']
-        _c = self.vars['#C']
-        _Jdx = self.vars['JDX']
-        _d = self.vars['#D']
-        _Vcentr = self.vars['Vcentr'] * self.spec_freq
-        _integration = self.vars['# of nuclei']
-        singlet = (_Vcentr, _integration)
-        allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
-        couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
-        data = {'signal': singlet,
-                'couplings': couplings}
-        return data
+    # def make_kwargs(self):
+    #     """Convert the dictionary of widget entries (self.vars) to a dict
+    #     that is compliant with the controller interface.
+    #
+    #     The controller needs to pass a (signal, couplings) tuple to the model.
+    #     - signal is a (frequency, intensity) tuple representing the frequency
+    #     and intensity of the signal in the absence of coupling. Intensity is
+    #     1 by default.
+    #     - couplings is a list of (J, n) tuples, where J is the coupling
+    #     constant and n is the number of nuclei coupled to the nucleus of
+    #     interest with that same J value.
+    #     """
+    #     _Jax = self.vars['JAX']
+    #     _a = self.vars['#A']
+    #     _Jbx = self.vars['JBX']
+    #     _b = self.vars['#B']
+    #     _Jcx = self.vars['JCX']
+    #     _c = self.vars['#C']
+    #     _Jdx = self.vars['JDX']
+    #     _d = self.vars['#D']
+    #     _Vcentr = self.vars['Vcentr'] * self.spec_freq
+    #     _integration = self.vars['# of nuclei']
+    #     singlet = (_Vcentr, _integration)
+    #     allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
+    #     couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
+    #     data = {'signal': singlet,
+    #             'couplings': couplings}
+    #     return data
 
     def add_spectra(self):
         """Add the (top) current spectrum simulation to the (bottom) total

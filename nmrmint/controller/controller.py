@@ -136,7 +136,7 @@ class Controller:
 
     # The methods below provide the interface to the View.
 
-    def update_current_plot(self, model, **data):
+    def update_current_plot(self, model, data):
         """
         Pass the View's current (top) plot data to the appropriate
         model; simulate spectral data; and tell the view to plot the data.
@@ -146,10 +146,12 @@ class Controller:
 
         :return: None (including when model is not recognized)
         """
-        multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
-                            'first_order']
+        # multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
+        #                     'first_order']
 
-        if model in multiplet_models:
+        # if model in multiplet_models:
+        print('controller received ', model)
+        if model == 'first_order':
             spectrum = self.models[model](**data)
             plotdata = tkplot_current(spectrum)
         elif model == 'nspin':

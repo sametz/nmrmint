@@ -17,6 +17,7 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2TkAgg)
 from matplotlib.figure import Figure
 
+from nmrmint.GUI.adapter import Adapter
 from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.history import Subspectrum, History
@@ -193,6 +194,7 @@ class View(Frame):
         # sys.settrace(trace_calls)
 
         self.controller = controller
+        self.adapter = Adapter(view=self)
         self.nuclei_number = 2
         self.spectrometer_frequency = 300  # MHz
         self.v_min = -1  # ppm
@@ -229,7 +231,8 @@ class View(Frame):
     def initialize_first_order_bar(self):
         """Instantiate the toolbar for first-order model."""
         bar_kwargs = {'parent': self.TopFrame,
-                      'controller': self.request_refresh_current_plot,
+                      # 'controller': self.request_refresh_current_plot,
+                      'controller': self.adapter.from_toolbar,
                       # Bad to set spec_freq here? Will it change if
                       # self.spectrometer_frequency changes?
                       'spec_freq': self.spectrometer_frequency}
@@ -523,7 +526,8 @@ class View(Frame):
         :param model: (str) Name of the model to use for calculation.
         :param data: (dict) kwargs for the requested model calculation.
         """
-        self.controller.update_current_plot(model, **data)
+        print('request_refresh_current_plot received ', model, data)
+        self.controller.update_current_plot(model, data)
 
     def request_add_plot(self, model, **data):
         """Add the current (top) spectrum to the sum (bottom) spectrum.
@@ -564,7 +568,7 @@ class View(Frame):
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
         self.history_past.append(self.total_spectrum[:])
-        self.currentbar.test_reset({'Vcentr': 5.0})
+        # self.currentbar.test_reset({'Vcentr': 5.0})  # for test purposes
 
     def start_history(self):
         # self.history = History()

@@ -39,3 +39,7 @@ needed by the model and then passed to controller. Data received by toolbar is
 used to set it to another state, allowing possible undo/redo functionality or
 toolbar switching.
 
+4/15/2018 The Controller really is just an adapter, so this program was really
+using Model-View-Adapter throughout, not MVC. At some point, Adapter can
+probably be merged with Controller to cut out the middleman.
+
