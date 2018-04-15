@@ -22,6 +22,7 @@ from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.history import Subspectrum, History
 from nmrmint.GUI.toolbars import (FirstOrderBar,
+                                  SecondOrderBar,
                                   SecondOrderSpinBar)
 from nmrmint.GUI.widgets import (HorizontalRangeEntryFrame,
                                  HorizontalEntryFrame,
@@ -216,7 +217,8 @@ class View(Frame):
         self.SubSpectrumButtonFrame.pack(side=TOP, expand=NO, fill=X)
 
         self.initialize_first_order_bar()
-        self.initialize_spinbars()
+        # self.initialize_spinbars()
+        self.initialize_nospinbars()
         self.add_calc_type_frame()
         self.add_nuclei_number_entry()
         self.add_spec_freq_entry()
@@ -251,6 +253,16 @@ class View(Frame):
                   'realtime': True}
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
+                         for spins in self.spin_range]
+
+    def initialize_nospinbars(self):
+        """Used to test parent SecondOrderBar instead of child
+        SecondOrderSpinBar. Change view initialization to call this method
+        instead of initialize_spinbars.
+        """
+        kwargs = {'controller': self.request_refresh_current_plot}
+        self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
+        self.spinbars = [SecondOrderBar(self.TopFrame, n=spins, **kwargs)
                          for spins in self.spin_range]
 
     def add_calc_type_frame(self):
@@ -568,7 +580,15 @@ class View(Frame):
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
         self.history_past.append(self.total_spectrum[:])
+
+        # test routines below (normally hashed out)
+
         # self.currentbar.test_reset({'Vcentr': 5.0})  # for test purposes
+
+        # self.select_second_order()
+        # testbar = self.currentbar
+        # v, j, w = testbar.v, testbar.j, testbar.w_array
+        # testbar.test_reset(v, j, w)
 
     def start_history(self):
         # self.history = History()

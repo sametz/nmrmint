@@ -279,9 +279,13 @@ class SecondOrderBar(Frame):
         self.v, self.j = getWINDNMRdefault(n)
         self.spec_freq = spec_freq
         self.v_ppm = self.v / self.spec_freq
+        # following seems to be a hack to get a spinbox for w, when currently
+        # only spinbox uses arrays and not single numbers. Change in future?
         self.w_array = np.array([[0.5]])
-
+        self.fields = {}
+        # print('start creation of spinbar ', n)
         self.add_frequency_widgets(n)
+        # print('called add_frequency_widgets')
         self.add_peakwidth_widget()
         self.add_J_button(n)
         self.add_addspectra_button()
@@ -291,16 +295,24 @@ class SecondOrderBar(Frame):
 
         :param n: (int) The number of nuclei being simulated.
         """
+        # print('entered add_frequency widgets ', n)
         for freq in range(n):
+            name = 'V' + str(freq + 1)
+            print('add_frequency_units working with name ', name)
             vbox = ArrayBox(self, array=self.v_ppm, coord=(0, freq),
-                            name='V' + str(freq + 1),
+                            name=name,
                             controller=self.request_plot)
+            self.fields[name] = vbox
             vbox.pack(side=LEFT)
+        # print('spinbar ', n, ' fields:')
+        # for key, val in self.fields.items():
+        #     print(key, val)
 
     def add_peakwidth_widget(self):
         """Add peak width-entry widget to the toolbar."""
         wbox = ArrayBox(self, array=self.w_array, coord=(0, 0), name="W",
                         controller=self.request_plot)
+        self.fields['W'] = wbox
         wbox.pack(side=LEFT)
 
     def add_J_button(self, n):
@@ -396,6 +408,33 @@ class SecondOrderBar(Frame):
 
         # self.controller.update_current_plot('nspin', **kwargs)
         self.master.master.request_add_plot('nspin', **kwargs)
+
+    def test_reset(self, v, j, w):
+        self.v = v
+        print('start of test: v = ', self.v)
+        self.v += 300
+        print('v changed to: ', self.v)
+        self.v_ppm = v / self.spec_freq
+        self.j = j
+        self.w_array = w
+
+        # for freq in range(1, len(self.v_ppm[0]) + 1):
+        #     name = 'V' + str(freq)
+        #     print('n = ', len(self.v) + 1, ' name: ', name)
+        #     widget = self.fields[name]
+        #     print('found widget: ', widget)
+
+        for i, freq in enumerate(self.v_ppm[0]):
+            print(i, freq)
+            name = 'V' + str(i + 1)
+            print(name)
+            widget = self.fields[name]
+            if float(widget.get_value()) != freq:
+                print('CHANGE DETECTED: ',
+                      float(widget.get_value()),
+                      freq)
+                widget.set_value(freq)
+                print('value is now ', widget.get_value())
 
 
 class SecondOrderSpinBar(SecondOrderBar):
