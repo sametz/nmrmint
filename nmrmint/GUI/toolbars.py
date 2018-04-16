@@ -26,6 +26,8 @@ a single class, with the exact widget layouts specified by a dict argument.
 * DNMR bar code can be simplified
 """
 
+import copy
+
 from tkinter import *
 
 import numpy as np
@@ -68,12 +70,19 @@ class ToolBar(Frame):
         Frame.__init__(self, parent, **options)
         self.controller = controller
         self.model = 'model'  # must be overwritten by subclasses
+        self.defaults = {}  # overwrite for subclasses
         self.vars = {}
         self.add_spectra_button = Button(self,
                                          name='addbutton',
                                          text='Add To Total',
                                          command=lambda: self.add_spectra())
         self.add_spectra_button.pack(side=RIGHT)
+        # for testing:
+        self.reset_button = Button(self,
+                                   name='reset_button',
+                                   text='Reset',
+                                   command=lambda: self.restore_defaults())
+        self.reset_button.pack(side=RIGHT)
 
     def request_plot(self):
         """Send request to controller to recalculate and refresh the view's
@@ -87,6 +96,12 @@ class ToolBar(Frame):
         total spectrum.
         """
         self.master.master.request_add_plot(self.model, **self.vars)
+
+    def restore_defaults(self):
+        self.reset(self.defaults)
+
+    def reset(self, vars):
+        pass
 
 
 class FirstOrderBar(ToolBar):
@@ -116,17 +131,18 @@ class FirstOrderBar(ToolBar):
         ToolBar.__init__(self, parent, **options)
         self.spec_freq = spec_freq
         self.model = 'first_order'
-        self.vars = {'JAX': 7.00,
-                     '#A': 2,
-                     'JBX': 3.00,
-                     '#B': 1,
-                     'JCX': 2.00,
-                     '#C': 0,
-                     'JDX': 7,
-                     '#D': 0,
-                     'Vcentr': 150 / self.spec_freq,
-                     '# of nuclei': 1,
-                     'width': 0.5}
+        self.defaults = {'JAX': 7.00,
+                         '#A': 2,
+                         'JBX': 3.00,
+                         '#B': 1,
+                         'JCX': 2.00,
+                         '#C': 0,
+                         'JDX': 7,
+                         '#D': 0,
+                         'Vcentr': 150 / self.spec_freq,
+                         '# of nuclei': 1,
+                         'width': 0.5}
+        self.vars = self.defaults.copy()
         self.fields = {}
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
@@ -140,6 +156,17 @@ class FirstOrderBar(ToolBar):
             widget.pack(side=LEFT)
 
         # self.test_reset(self.vars)
+
+    def reset(self, vars):
+        # for key, val in vars.items():
+        #     self.vars[key] = val
+        #     widget = self.fields[key]
+        #     widget.set_value(val)
+
+        self.vars = vars.copy()
+        for key, val in self.vars.items():
+            widget = self.fields[key]
+            widget.set_value(val)
 
     def test_reset(self, vars):
         for key, val in vars.items():
@@ -277,11 +304,17 @@ class SecondOrderBar(Frame):
         Frame.__init__(self, parent, **options)
         self.controller = controller
         self.v, self.j = getWINDNMRdefault(n)
+        self.w_array = np.array([[0.5]])
+        self.defaults = {'v': self.v,
+                         'j': self.j,
+                         'w': self.w_array}
+        self.vars = copy.deepcopy(self.defaults)
         self.spec_freq = spec_freq
         self.v_ppm = self.v / self.spec_freq
         # following seems to be a hack to get a spinbox for w, when currently
         # only spinbox uses arrays and not single numbers. Change in future?
-        self.w_array = np.array([[0.5]])
+
+        # self.vars = (self.v, self.j, self.w_array)
         self.fields = {}
         # print('start creation of spinbar ', n)
         self.add_frequency_widgets(n)
@@ -298,7 +331,7 @@ class SecondOrderBar(Frame):
         # print('entered add_frequency widgets ', n)
         for freq in range(n):
             name = 'V' + str(freq + 1)
-            print('add_frequency_units working with name ', name)
+            # print('add_frequency_units working with name ', name)
             vbox = ArrayBox(self, array=self.v_ppm, coord=(0, freq),
                             name=name,
                             controller=self.request_plot)
@@ -393,11 +426,16 @@ class SecondOrderBar(Frame):
     def request_plot(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""
         self.update_v()
-        kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
-                  'j': self.j,
-                  'w': self.w_array[0, 0]}  # controller takes float for w
+        # kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
+        #           'j': self.j,
+        #           'w': self.w_array[0, 0]}  # controller takes float for w
 
-        self.controller('nspin', **kwargs)
+        # kwargs = {'v': self.v,  # controller takes 1D array of freqs
+        #           'j': self.j,
+        #           'w': self.w_array}  # controller takes float for w
+
+        # self.controller('nspin', kwargs)
+        self.controller('nspin', self.vars)
 
     def add_spectra(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""
@@ -409,14 +447,27 @@ class SecondOrderBar(Frame):
         # self.controller.update_current_plot('nspin', **kwargs)
         self.master.master.request_add_plot('nspin', **kwargs)
 
-    def test_reset(self, v, j, w):
-        self.v = v
-        print('start of test: v = ', self.v)
-        self.v += 300
-        print('v changed to: ', self.v)
+    def reset(self, vars):
+        self.vars = copy.deepcopy(vars)
+        self.v = self.vars['v']
+        self.j = self.vars['j']
+        self.w = self.vars['w']
         self.v_ppm = v / self.spec_freq
-        self.j = j
-        self.w_array = w
+
+        for i, freq in enumerate(self.v_ppm[0]):
+            name = 'V' + str(i + 1)
+            widget = self.fields[name]
+            widget.set_value(freq)
+
+    def test_reset(self, v, j, w):
+        pass
+        # self.v = v
+        # print('start of test: v = ', self.v)
+        # self.v += 300
+        # print('v changed to: ', self.v)
+        # self.v_ppm = v / self.spec_freq
+        # self.j = j
+        # self.w_array = w
 
         # for freq in range(1, len(self.v_ppm[0]) + 1):
         #     name = 'V' + str(freq)
@@ -424,17 +475,17 @@ class SecondOrderBar(Frame):
         #     widget = self.fields[name]
         #     print('found widget: ', widget)
 
-        for i, freq in enumerate(self.v_ppm[0]):
-            print(i, freq)
-            name = 'V' + str(i + 1)
-            print(name)
-            widget = self.fields[name]
-            if float(widget.get_value()) != freq:
-                print('CHANGE DETECTED: ',
-                      float(widget.get_value()),
-                      freq)
-                widget.set_value(freq)
-                print('value is now ', widget.get_value())
+        # for i, freq in enumerate(self.v_ppm[0]):
+        #     print(i, freq)
+        #     name = 'V' + str(i + 1)
+        #     print(name)
+        #     widget = self.fields[name]
+        #     if float(widget.get_value()) != freq:
+        #         print('CHANGE DETECTED: ',
+        #               float(widget.get_value()),
+        #               freq)
+        #         widget.set_value(freq)
+        #         print('value is now ', widget.get_value())
 
 
 class SecondOrderSpinBar(SecondOrderBar):

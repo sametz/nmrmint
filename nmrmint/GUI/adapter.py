@@ -18,7 +18,11 @@ class Adapter:
             #     print(i, request[i])
             # # print(*request)
             # self.controller.update_current_plot(*request)
-
+        elif model == 'nspin':
+            data = self.convert_second_order(vars)
+            self.controller.update_current_plot(model, data)
+        else:
+            print('model not recognized')
 
     def to_toolbar(self):
         pass
@@ -49,3 +53,9 @@ class Adapter:
         allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
         couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
         return {'signal': singlet, 'couplings': couplings}
+
+    def convert_second_order(self, vars):
+        return {
+        'v': vars['v'][0, :],
+        'j': vars['j'],
+        'w': vars['w'][0, 0]}

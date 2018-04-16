@@ -234,7 +234,7 @@ class View(Frame):
         """Instantiate the toolbar for first-order model."""
         bar_kwargs = {'parent': self.TopFrame,
                       # 'controller': self.request_refresh_current_plot,
-                      'controller': self.adapter.from_toolbar,
+                      'controller': self.update_current_plot,
                       # Bad to set spec_freq here? Will it change if
                       # self.spectrometer_frequency changes?
                       'spec_freq': self.spectrometer_frequency}
@@ -249,7 +249,7 @@ class View(Frame):
             spinbars: a list of SecondOrderSpinBar objects, one for each
             number of spins to simulate.
         """
-        kwargs = {'controller': self.request_refresh_current_plot,
+        kwargs = {'controller': self.update_current_plot,
                   'realtime': True}
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
@@ -260,7 +260,7 @@ class View(Frame):
         SecondOrderSpinBar. Change view initialization to call this method
         instead of initialize_spinbars.
         """
-        kwargs = {'controller': self.request_refresh_current_plot}
+        kwargs = {'controller': self.update_current_plot}
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self.spinbars = [SecondOrderBar(self.TopFrame, n=spins, **kwargs)
                          for spins in self.spin_range]
@@ -541,6 +541,12 @@ class View(Frame):
         print('request_refresh_current_plot received ', model, data)
         self.controller.update_current_plot(model, data)
 
+    def update_current_plot(self, model, vars):
+        """Will become replacement for request_refresh_current_plot"""
+        print('update_current_plot received ', model, vars)
+        history.update_vars(model, vars)
+        self.adapter.from_toolbar(model, vars)
+
     def request_add_plot(self, model, **data):
         """Add the current (top) spectrum to the sum (bottom) spectrum.
 
@@ -576,10 +582,10 @@ class View(Frame):
         self.active_bar_dict = {'first-order': self.first_order_bar,
                                 'second-order': self.spinbars[0]}
         self.total_spectrum = self.blank_spectrum
-        self.start_history()
+        # self.start_history()
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
-        self.history_past.append(self.total_spectrum[:])
+        # self.history_past.append(self.total_spectrum[:])
 
         # test routines below (normally hashed out)
 
@@ -590,16 +596,16 @@ class View(Frame):
         # v, j, w = testbar.v, testbar.j, testbar.w_array
         # testbar.test_reset(v, j, w)
 
-    def start_history(self):
-        # self.history = History()
-        ss = self.record_subspectrum()
-        history.add_subspectrum(ss)
-        print('history initiated with subspectrum ', history.current,
-              " containing vars ", history.subspectra[history.current].vars)
+    # def start_history(self):
+    #     # self.history = History()
+    #     ss = self.record_subspectrum()
+    #     history.add_subspectrum(ss)
+    #     print('history initiated with subspectrum ', history.current,
+    #           " containing vars ", history.subspectra[history.current].vars)
 
-    def record_subspectrum(self):
-        subspectrum = Subspectrum(vars=self.currentbar.vars)
-        return subspectrum
+    # def record_subspectrum(self):
+    #     subspectrum = Subspectrum(vars=self.currentbar.vars)
+    #     return subspectrum
 
 
     # TODO: rename, e.g. update_history
