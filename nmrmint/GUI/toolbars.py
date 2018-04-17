@@ -158,15 +158,15 @@ class FirstOrderBar(ToolBar):
         # self.test_reset(self.vars)
 
     def reset(self, vars):
-        # for key, val in vars.items():
-        #     self.vars[key] = val
-        #     widget = self.fields[key]
-        #     widget.set_value(val)
-
-        self.vars = vars.copy()
-        for key, val in self.vars.items():
+        for key, val in vars.items():
+            self.vars[key] = val
             widget = self.fields[key]
             widget.set_value(val)
+
+        # self.vars = copy.deepcopy(vars)
+        # for key, val in self.vars.items():
+        #     widget = self.fields[key]
+        #     widget.set_value(val)
 
     def test_reset(self, vars):
         for key, val in vars.items():
