@@ -247,7 +247,7 @@ class FirstOrderBar(ToolBar):
         self.master.master.request_add_plot(self.model, **kwargs)
 
 
-class SecondOrderBar(Frame):
+class SecondOrderBar(ToolBar):
     """
     Extends Frame to hold n frequency entry boxes, an entry box for peak
     width (default 0.5 Hz), a 2-D numpy array for frequencies (see below),
@@ -301,13 +301,15 @@ class SecondOrderBar(Frame):
         :param spec_freq: (float) the frequency of the simulated spectrometer.
         :param options: standard optional kwargs for a tkinter Frame
         """
-        Frame.__init__(self, parent, **options)
+        ToolBar.__init__(self, parent, **options)
         self.controller = controller
         self.v, self.j = getWINDNMRdefault(n)
         self.w_array = np.array([[0.5]])
-        self.defaults = {'v': self.v,
-                         'j': self.j,
-                         'w': self.w_array}
+        # self.defaults = {'v': self.v,
+        #                  'j': self.j,
+        #                  'w': self.w_array}
+        self.defaults = self.create_var_dict()
+        # TODO: see if deepcopy is needed here
         self.vars = copy.deepcopy(self.defaults)
         self.spec_freq = spec_freq
         self.v_ppm = self.v / self.spec_freq
@@ -322,6 +324,16 @@ class SecondOrderBar(Frame):
         self.add_peakwidth_widget()
         self.add_J_button(n)
         self.add_addspectra_button()
+        self.reset_button = Button(self,
+                                   name='reset_button',
+                                   text='Reset',
+                                   command=lambda: self.restore_defaults())
+        self.reset_button.pack(side=RIGHT)
+
+    def create_var_dict(self):
+        return {'v': self.v,
+                'j': self.j,
+                'w': self.w_array}
 
     def add_frequency_widgets(self, n):
         """Add frequency-entry widgets to the toolbar.
@@ -422,6 +434,7 @@ class SecondOrderBar(Frame):
         with the result.
         """
         self.v = self.v_ppm * self.spec_freq
+        self.vars = self.create_var_dict()
 
     def request_plot(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""
@@ -452,7 +465,7 @@ class SecondOrderBar(Frame):
         self.v = self.vars['v']
         self.j = self.vars['j']
         self.w = self.vars['w']
-        self.v_ppm = v / self.spec_freq
+        self.v_ppm = self.v / self.spec_freq
 
         for i, freq in enumerate(self.v_ppm[0]):
             name = 'V' + str(i + 1)
