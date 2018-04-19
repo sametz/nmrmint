@@ -116,9 +116,28 @@ class MPLplot(FigureCanvasTkAgg):
     def set_current_window(self, x, y):
         left = False
         right = False
+        print('x, y', type(x), len(x), type(y), len(y))
+        print('checking x order')
+        ordered = True
+        for i, x_ in enumerate(x[:-2]):
+            if x[i+1] < x_:
+                print('x stopped increasing at: ', i)
+                ordered = False
+                break
+        if ordered:
+            print('x always increased, from ', x[0], 'to ', x[-1])
+
+        start = True
+        for i, y_ in enumerate(y[:-2]):
+
+            if y[i + 1] < y_ and start is True:
+                print('y max found at: ', i, y_)
+                start = False
+            if y[i + 1] > y_:
+                start = True
 
         for i, intensity in enumerate(y):
-            if intensity > 0.1:
+            if intensity > 0.01:
                 left = i
                 print('found left = ', left)
                 print('intensity: ', intensity)
@@ -126,15 +145,15 @@ class MPLplot(FigureCanvasTkAgg):
         if not left:
             print('no left found')
         for j, intensity in enumerate(reversed(y)):
-            if intensity > 0.1:
+            if intensity > 0.01:
                 right = j
                 print('found right = ', right)
                 print('intensity: ', intensity)
                 break
         if not right:
             print('no right found')
-        x_min = x[left]
-        x_max = x[right]
+        x_min = x[left] - 0.2
+        x_max = x[-right] + 0.2
         print('x window ', x_min, x_max)
         self.current_plot.set_xlim(x_max, x_min)  # should flip x axis
         self.draw_idle()
