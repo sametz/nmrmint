@@ -472,6 +472,8 @@ class SecondOrderBar(ToolBar):
             widget = self.fields[name]
             widget.set_value(freq)
 
+        self.controller('nspin', self.vars)
+
     def test_reset(self, v, j, w):
         pass
         # self.v = v

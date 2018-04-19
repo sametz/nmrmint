@@ -75,8 +75,10 @@ class MPLplot(FigureCanvasTkAgg):
         :param x: (numpy linspace)
         :param y: (numpy linspace)
         """
+        print('view.plot_current received x ', x.size, ' y ', y.size)
         # for some reason axes were getting flipped after adding, so:
         self.current_plot.invert_xaxis()
+        self.set_current_window(x, y)
         self.current_plot.plot(x, y, linewidth=1)
         # self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
         self.draw_idle()
@@ -109,6 +111,32 @@ class MPLplot(FigureCanvasTkAgg):
         # self.x_min = x_min
         # self.x_max = x_max
         self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
+        self.draw_idle()
+
+    def set_current_window(self, x, y):
+        left = False
+        right = False
+
+        for i, intensity in enumerate(y):
+            if intensity > 0.1:
+                left = i
+                print('found left = ', left)
+                print('intensity: ', intensity)
+                break
+        if not left:
+            print('no left found')
+        for j, intensity in enumerate(reversed(y)):
+            if intensity > 0.1:
+                right = j
+                print('found right = ', right)
+                print('intensity: ', intensity)
+                break
+        if not right:
+            print('no right found')
+        x_min = x[left]
+        x_max = x[right]
+        print('x window ', x_min, x_max)
+        self.current_plot.set_xlim(x_max, x_min)  # should flip x axis
         self.draw_idle()
 
     def clear_all(self):
@@ -195,7 +223,7 @@ class View(Frame):
         # sys.settrace(trace_calls)
 
         self.controller = controller
-        self.adapter = Adapter(view=self)
+        self.adapter = Adapter(view=self)  # could this be defined outside View?
         self.nuclei_number = 2
         self.spectrometer_frequency = 300  # MHz
         self.v_min = -1  # ppm
@@ -454,10 +482,16 @@ class View(Frame):
 
     def add_subspectrum(self):
         # print(self.add_subspectrum_button['bg'])
-        if self.add_subspectrum_button['highlightbackground'] == 'red':
+        subspectrum_active = history.current_subspectrum().toggle_active()
+        if subspectrum_active is True:
             self.add_subspectrum_button['highlightbackground'] = 'green'
+            history.add_current_to_total()
         else:
             self.add_subspectrum_button['highlightbackground'] = 'red'
+            history.remove_current_from_total()
+        self.clear_total()
+        self.plot_total(history.total_x, history.total_y)
+
 
     def remove_subspectrum(self):
         pass
@@ -545,7 +579,8 @@ class View(Frame):
         """Will become replacement for request_refresh_current_plot"""
         print('update_current_plot received ', model, vars)
         history.update_vars(model, vars)
-        self.adapter.from_toolbar(model, vars)
+        data = self.adapter.convert_toolabar_data(model, vars)
+        self.controller.update_current_plot(model, data)
 
     def request_add_plot(self, model, **data):
         """Add the current (top) spectrum to the sum (bottom) spectrum.
@@ -640,6 +675,7 @@ class View(Frame):
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
+        history.save_current_linshape(x, y)
         self.canvas.plot_current(x, y)
 
     def plot_total(self, x, y):
@@ -648,6 +684,7 @@ class View(Frame):
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
+        history.save_total_linshape(x, y)
         self.canvas.plot_total(x, y)
 
     # debugging below

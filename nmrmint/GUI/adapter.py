@@ -8,19 +8,27 @@ class Adapter:
         self.view = view
         self.controller = view.controller
 
-    def from_toolbar(self, model, vars):
-        # self.view.request_refresh_current_plot(model, **kwargs)
+    # def from_toolbar(self, model, vars):
+    #     # self.view.request_refresh_current_plot(model, **kwargs)
+    #     if model == 'first_order':
+    #         data = self.convert_first_order(vars)
+    #         self.controller.update_current_plot(model, data)
+    #         # request = (model, self.convert_first_order(vars))
+    #         # for i in range(2):
+    #         #     print(i, request[i])
+    #         # # print(*request)
+    #         # self.controller.update_current_plot(*request)
+    #     elif model == 'nspin':
+    #         data = self.convert_second_order(vars)
+    #         self.controller.update_current_plot(model, data)
+    #     else:
+    #         print('model not recognized')
+
+    def convert_toolabar_data(self, model, vars):
         if model == 'first_order':
-            data = self.convert_first_order(vars)
-            self.controller.update_current_plot(model, data)
-            # request = (model, self.convert_first_order(vars))
-            # for i in range(2):
-            #     print(i, request[i])
-            # # print(*request)
-            # self.controller.update_current_plot(*request)
+            return self.convert_first_order(vars)
         elif model == 'nspin':
-            data = self.convert_second_order(vars)
-            self.controller.update_current_plot(model, data)
+            return self.convert_second_order(vars)
         else:
             print('model not recognized')
 

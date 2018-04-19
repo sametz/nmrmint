@@ -63,7 +63,7 @@ def nmrplot(spectrum, y=1):
     return
 
 
-def tkplot_current(spectrum, w=0.5):
+def tkplot_current(spectrum, w=0.5, spectrometer_frequency=300):
     # TODO: delete when no longer needed
     """Generate linspaces of x and y coordinates suitable for plotting on a
     matplotlib tkinter current_canvas. An x-range suitable for a "current
@@ -74,11 +74,15 @@ def tkplot_current(spectrum, w=0.5):
     :return: a tuple of x and y coordinate linspaces
     """
     spectrum.sort()
-    r_limit = spectrum[-1][0] + 50
-    l_limit = spectrum[0][0] - 50
-    # testing indicated the following was a sweetspot resolution
-    x = np.linspace(l_limit, r_limit,  # 2400)
-                    40 * (r_limit - l_limit))
+    # r_limit = spectrum[-1][0] + 50
+    # l_limit = spectrum[0][0] - 50
+    # # testing indicated the following was a sweetspot resolution
+    # x = np.linspace(l_limit, r_limit,  # 2400)
+    #                 40 * (r_limit - l_limit))
+    x = np.linspace(-1 * spectrometer_frequency,
+                    15 * spectrometer_frequency,
+                    16000)  # 0.1 Hz resolution on 1 GHz spectrometer
+
     y = add_signals(x, spectrum, w)
     return x, y
 
