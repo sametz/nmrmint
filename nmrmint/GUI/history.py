@@ -4,30 +4,53 @@ undo/redo/add spectrum/subtract spectrum functionality).
 """
 
 class Subspectrum:
+    """A memento for storing the current state of a subspectrum.
 
+    The subspectrum is a simulation of a spin system, plus the
+    calculation type, variables used, and the toolbar required in the
+    GUI.
+    """
     def __init__(self, model=None, vars=None, x=None, y=None,
-                 # linshape_total=None,
+                 toolbar=None,
                  activity=False):
+        """
+
+        :param model: str They type of calculation, either first order
+        ("first_order") or second_order ("nspins"), matching strings used by
+        toolbar widget. TODO: adopt better name, e.g. latter = "second_order"
+        :param vars: {} a dict of toolbar variables used to simulate the
+        subspectrum.
+        :param x: numpy.linspace of x coordinates for the simulation result
+        :param y: numpy.linspace of y coordinates for the simulation result
+        :param toolbar: GUI.toolbar.ToolBar subclass
+        :param activity: bool Indicates if the subspectrum has been selected
+        for addition to the total spectrum. Used as a toggle.
+        """
         self.model = model
         self.vars = vars
         self.x = x
         self.y = y
-        # self.linshape = linshape
-        # self.linshape_total = linshape_total
+        self.toolbar = toolbar
         self.active = activity
 
+    def toggle_active(self):
+        """Toggle the subspectrum between active and inactive states.
+
+        :returns: current subspectrum activity (bool)"""
+        self.active = not self.active
+        return self.active
+
     def activate(self):
+        """Currently not implemented"""
         self.active = True
         self.call_model
 
     def deactivate(self):
+        """Currently not implemented"""
         self.active = False
 
-    def toggle_active(self):
-        self.active = not self.active
-        return self.active
-
     def call_model(self):
+        """Currently not implemented"""
         pass
 
 
@@ -43,12 +66,63 @@ class History:
 
     def add_subspectrum(self):
         subspectrum = Subspectrum()
+        if self.current >= 0:
+            ss_current = self.current_subspectrum()
+            toolbar_current = self.current_toolbar()
+            print('Departing a ', ss_current.model,
+                  'with vars: ', ss_current.vars)
+            print('and with a ', toolbar_current.model,
+                  'with vars: ', toolbar_current.vars)
+
         self.subspectra.append(subspectrum)
-        self.current += 1
+        self.current = len(self.subspectra) - 1
+        assert subspectrum is self.subspectra[self.current]
         # self.total_spectrum += subspectrum.linshape
+        print('added subspectrum to history; counter is: ', self.current)
 
     def current_subspectrum(self):
         return self.subspectra[self.current]
+
+    def subspectrum_data(self):
+        return current.subspectrum().model, current.subspectrum().vars
+
+    def current_toolbar(self):
+        return self.current_subspectrum().toolbar
+
+    def change_toolbar(self, toolbar):
+        ss_current = self.current_subspectrum()
+        print('CHANGING TOOLBAR')
+        print('subspectrum was a ', ss_current.model,
+              'that had vars: ', ss_current.vars)
+        if ss_current.toolbar:
+            print('subspectrum toolbar was recorded as a ',
+                  ss_current.toolbar.model,
+                  ' with vars: ', ss_current.toolbar.vars)
+        else:
+            print('No toolbar recorded for this subspectrum yet.')
+        print('updating subspectrum toolbar to a ', toolbar.model,
+              ' with vars:', toolbar.vars)
+        model = toolbar.model
+        vars = toolbar.vars
+        self.current_subspectrum().toolbar = toolbar
+        self.update_vars(model, vars)
+
+    def back(self):
+        history.dump('BACK')
+        if self.current > 0:
+            print('back!')
+            self.current -= 1
+            print('history.current now: ', self.current)
+        else:
+            print('at beginning')
+
+    def forward(self):
+        if self.current_subspectrum() is not self.subspectra[-1]:
+            print('forward!')
+            self.current += 1
+        else:
+            print('at end')
+
 
     def add_current_to_total(self):
         """probably have controller call pre-buld model routine for this"""
@@ -87,3 +161,16 @@ class History:
             if subspectrum.active:
                 self.total_spectrum += subspectrum.linshape  # NOT FUNCTIONAL
 
+    def dump(self, txt):
+        """for debugging"""
+        print('=') * 10
+        print('HISTORY DUMP ON: ', txt)
+        ss_current = self.current_subspectrum()
+        ss_prev = self.subspectra[self.current - 1]
+        print('Current subspectrum dump:')
+        print('model: ', ss_current.model)
+        print('vars: ', ss_current.vars)
+        print('toolbar model: ', ss_current.toolbar.model)
+        print('toolbar vars: ', ss_current.toolbar.vars)
+        print()
+        print('Previous subspectrum dump')
