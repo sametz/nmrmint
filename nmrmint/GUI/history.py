@@ -66,13 +66,13 @@ class History:
 
     def add_subspectrum(self):
         subspectrum = Subspectrum()
-        if self.current >= 0:
-            ss_current = self.current_subspectrum()
-            toolbar_current = self.current_toolbar()
-            print('Departing a ', ss_current.model,
-                  'with vars: ', ss_current.vars)
-            print('and with a ', toolbar_current.model,
-                  'with vars: ', toolbar_current.vars)
+        # if self.current >= 0:
+        #     ss_current = self.current_subspectrum()
+        #     toolbar_current = self.current_toolbar()
+        #     print('Departing a ', ss_current.model,
+        #           'with vars: ', ss_current.vars)
+        #     print('and with a ', toolbar_current.model,
+        #           'with vars: ', toolbar_current.vars)
 
         self.subspectra.append(subspectrum)
         self.current = len(self.subspectra) - 1
@@ -84,7 +84,7 @@ class History:
         return self.subspectra[self.current]
 
     def subspectrum_data(self):
-        return current.subspectrum().model, current.subspectrum().vars
+        return self.current_subspectrum().model, self.current_subspectrum().vars
 
     def current_toolbar(self):
         return self.current_subspectrum().toolbar
@@ -108,7 +108,7 @@ class History:
         self.update_vars(model, vars)
 
     def back(self):
-        history.dump('BACK')
+        # self.dump('BACK')
         if self.current > 0:
             print('back!')
             self.current -= 1
@@ -123,14 +123,6 @@ class History:
         else:
             print('at end')
 
-
-    def add_current_to_total(self):
-        """probably have controller call pre-buld model routine for this"""
-        self.total_y += self.current_subspectrum().y
-
-    def remove_current_from_total(self):
-        self.total_y -= self.current_subspectrum().y
-
     def save_current_linshape(self, x, y):
         subspectrum = self.current_subspectrum()
         subspectrum.x, subspectrum.y = x, y
@@ -140,6 +132,16 @@ class History:
     def save_total_linshape(self, x, y):
         self.total_x, self.total_y = x, y
         print('saved total linshape for subspectrum ', self.current)
+
+    def add_current_to_total(self):
+        """probably have controller call pre-buld model routine for this"""
+        self.total_y += self.current_subspectrum().y
+
+    def remove_current_from_total(self):
+        self.total_y -= self.current_subspectrum().y
+
+    # below are functions that might not be currently called
+    # TODO: check for cruft
 
     def update_vars(self, model, vars):
         subspectrum = self.subspectra[self.current]
@@ -163,7 +165,7 @@ class History:
 
     def dump(self, txt):
         """for debugging"""
-        print('=') * 10
+        print('=' * 10)
         print('HISTORY DUMP ON: ', txt)
         ss_current = self.current_subspectrum()
         ss_prev = self.subspectra[self.current - 1]

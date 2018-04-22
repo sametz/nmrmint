@@ -303,6 +303,7 @@ class SecondOrderBar(ToolBar):
         """
         ToolBar.__init__(self, parent, **options)
         self.controller = controller
+        self.model = 'nspin'
         self.v, self.j = getWINDNMRdefault(n)
         self.w_array = np.array([[0.5]])
         # self.defaults = {'v': self.v,
