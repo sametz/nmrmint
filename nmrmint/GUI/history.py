@@ -91,17 +91,17 @@ class History:
 
     def change_toolbar(self, toolbar):
         ss_current = self.current_subspectrum()
-        print('CHANGING TOOLBAR')
-        print('subspectrum was a ', ss_current.model,
-              'that had vars: ', ss_current.vars)
-        if ss_current.toolbar:
-            print('subspectrum toolbar was recorded as a ',
-                  ss_current.toolbar.model,
-                  ' with vars: ', ss_current.toolbar.vars)
-        else:
-            print('No toolbar recorded for this subspectrum yet.')
-        print('updating subspectrum toolbar to a ', toolbar.model,
-              ' with vars:', toolbar.vars)
+        # print('CHANGING TOOLBAR')
+        # print('subspectrum was a ', ss_current.model,
+        #       'that had vars: ', ss_current.vars)
+        # if ss_current.toolbar:
+        #     print('subspectrum toolbar was recorded as a ',
+        #           ss_current.toolbar.model,
+        #           ' with vars: ', ss_current.toolbar.vars)
+        # else:
+        #     print('No toolbar recorded for this subspectrum yet.')
+        # print('updating subspectrum toolbar to a ', toolbar.model,
+        #       ' with vars:', toolbar.vars)
         model = toolbar.model
         vars = toolbar.vars
         self.current_subspectrum().toolbar = toolbar
@@ -134,20 +134,20 @@ class History:
         print('saved total linshape for subspectrum ', self.current)
 
     def add_current_to_total(self):
-        """probably have controller call pre-buld model routine for this"""
+        """probably have controller call pre-built model routine for this"""
         self.total_y += self.current_subspectrum().y
 
     def remove_current_from_total(self):
         self.total_y -= self.current_subspectrum().y
-
-    # below are functions that might not be currently called
-    # TODO: check for cruft
 
     def update_vars(self, model, vars):
         subspectrum = self.subspectra[self.current]
         subspectrum.model = model
         subspectrum.vars = vars
         print('Subspectrum ', self.current, model, ' updated with vars: ', vars)
+
+    # below are functions that might not be currently called
+    # TODO: check for cruft
 
     def remove_subspectrum(self, subspectrum):
         self.total_spectrum -= subspectrum_linshape  # NOT FUNCTIONAL

@@ -4,38 +4,90 @@ import pytest
 from nmrmint.GUI.history import Subspectrum, History
 from nmrmint.GUI.toolbars import FirstOrderBar, SecondOrderBar
 
-VARS_DEFAULT = {'JAX': 7.0,
-                '#A': 2,
-                'JBX': 3.0,
-                '#B': 1,
-                'JCX': 2.0,
-                '#C': 0,
-                'JDX': 7,
-                '#D': 0,
-                'Vcentr': 0.5,
-                '# of nuclei': 1,
-                'width': 0.5}
+# Before writing these tests, the program was being manually debugged (with
+# first-order simulations) .
+# First #C was changed to 2, and the current plot was added to the total.
+# Then, a new plot was created with #B changed to 0 and Vcentr changed to 1.0.
+# The test suites adopt this arbitrary approach.
 
-# Before writing this test, the program was being manually debugged by first
-# changing #C to 2, adding the current to the total plot, then creating a new
-# plot with #B changed to 0 and Vcentr changed to 1.0. The test suites adopt
-# this arbitrary approach.
 
-VARS_1 = VARS_DEFAULT.copy()
-assert VARS_1 == VARS_DEFAULT  # sanity check that .copy() works as expected
-assert VARS_1 is not VARS_DEFAULT  # sanity check that they don't refer to same
-VARS_1['#C'] = 2
-assert VARS_1 != VARS_DEFAULT  # another sanity check
+@pytest.fixture()
+def vars_default():
+    """Return the default vars for a first-order bar."""
+    return {'JAX': 7.0,
+            '#A': 2,
+            'JBX': 3.0,
+            '#B': 1,
+            'JCX': 2.0,
+            '#C': 0,
+            'JDX': 7,
+            '#D': 0,
+            'Vcentr': 0.5,
+            '# of nuclei': 1,
+            'width': 0.5}
 
-VARS_2 = VARS_DEFAULT.copy()
-VARS_2['#B'] = 0
-VARS_2['Vcentr'] = 1.0
 
-x1 = np.linspace(1.0, 10.0, 10)
-y1 = np.linspace(0.1, 1.0, 10)
-x2 = np.linspace(1.0, 10.0, 10)
-y2 = np.linspace(100.0, 1000.0, 10)
-y_total = np.array([100.1, 200.2, 300.3, 400.4, 500.5, 600.6, 700.7, 800.8,
+@ pytest.fixture()
+def vars_1():
+    """Return the modified vars for the first custom subspectrum, where
+    #C has been changed to 2."""
+    _vars = vars_default()
+    _vars['#C'] = 2
+    return _vars
+
+
+@pytest.fixture()
+def vars_2():
+    """Return the modified vars for the first custom subspectrum, where
+    #B has been changed to 0, and Vcentr to 1.0."""
+    _vars = vars_default()
+    _vars['#B'] = 0
+    _vars['Vcentr'] = 1.0
+    return _vars
+
+
+@pytest.fixture()
+def x1():
+    """Return a np.linspace to represent the x coordinates for a lineshape."""
+    return np.linspace(1.0, 10.0, 10)
+
+
+@pytest.fixture()
+def y1():
+    """Return an array, with length matching x1, suitable for testing
+    history/subspectra lineshapes.
+    """
+    # If this is refactored, y_total() must also be refactored!
+    return np.linspace(0.1, 1.0, 10)
+
+
+@pytest.fixture()
+def x2():
+    """Return a np.linspace to represent the x coordinates for a lineshape.
+
+    Currently redundant with x1(). nmrmint currently uses the same
+    np.linspace for all lineshapes.
+    """
+    return np.linspace(1.0, 10.0, 10)
+
+
+@pytest.fixture()
+def y2():
+    """Return an array, with length matching x1, and differing from y1()
+    suitable for testing history/subspectra lineshapes.
+    """
+    # If this is refactored, y_total() must also be refactored!
+    return np.linspace(100.0, 1000.0, 10)
+
+
+@pytest.fixture()
+def y_total():
+    """Return the hard-coded sum of y1() and y2().
+
+    Used to check math used in lineshape additions/subtractions.
+    """
+    # If this is refactored, y1() and y2() must be as well!
+    return np.array([100.1, 200.2, 300.3, 400.4, 500.5, 600.6, 700.7, 800.8,
                     900.9, 1001.0])
 
 
@@ -58,149 +110,200 @@ def create_ss(bar):
     return ss
 
 
-def create_ss1():
+@pytest.fixture()
+def ss1(vars_1):
     """Create a subspectrum for our first test case.
     :return: Subspectrum,
         with .toolbar FirstorderBar,
         with .vars VARS_1
     """
     bar1 = FirstOrderBar(controller=fake_controller)
-    bar1.reset(VARS_1)
+    bar1.reset(vars_1)
     ss1 = create_ss(bar1)
     return ss1
 
 
-def create_ss2():
+@pytest.fixture()
+def ss2(vars_2):
     """Create a subspectrum for our first test case.
     :return: Subspectrum,
         with .toolbar FirstorderBar,
         with .vars VARS_2
     """
     bar2 = FirstOrderBar(controller=fake_controller)
-    bar2.reset(VARS_2)
+    bar2.reset(vars_2)
     ss2 = create_ss(bar2)
     return ss2
 
 
-def test_initialization():
+def test_vars_default_matches_FirstOrderBar_default(vars_default):
+    """Check that the test's default toolbar data matches FirstOrderBar's
+    default data.
+    """
+    # GIVEN an instance of FirstOrderBar
+    testbar = FirstOrderBar()
+
+    # THEN its default data matches test_history.vars_default
+    assert testbar.model == 'first_order'  # assumed in tests below
+    assert testbar.vars == vars_default
+
+
+def test_initialization(vars_default, vars_1, vars_2):
     """A sanity test to check that the test vars were set up correctly."""
-    assert VARS_1 != VARS_2
-    assert VARS_1['#C'] == 2
-    assert VARS_2['#B'] == 0
-    assert VARS_2['Vcentr'] == 1.0
+    assert vars_1 is not vars_default
+    assert vars_1 is not vars_2
+    assert vars_1['#C'] == 2
+    assert vars_2['#B'] == 0
+    assert vars_2['Vcentr'] == 1.0
 
 
-def test_create_ss1():
+def test_xy(x1, y1, x2, y2, y_total):
+    """A sanity test to check that routines returning x/y lineshape data
+    are set up correctly."""
+    assert np.array_equal(x1, x2)
+    assert not np.array_equal(y1, y2)
+    y_sum = y1 + y2
+    assert np.allclose(y_sum, y_total)
+
+
+def test_create_ss1(ss1):
     """A sanity test to check that ss1 is working correctly."""
-    ss = create_ss1()
-    assert ss.model == ss.toolbar.model
-    assert ss.vars == ss.toolbar.vars
-    assert ss.vars['#C'] == 2
+    assert ss1.model == ss1.toolbar.model
+    assert ss1.vars == ss1.toolbar.vars
+    assert ss1.vars['#C'] == 2
 
 
-def test_create_ss2():
+def test_create_ss2(ss2):
     """A sanity test to check that ss2 is working correctly."""
-    ss = create_ss2()
-    assert ss.model == ss.toolbar.model
-    assert ss.vars == ss.toolbar.vars
-    assert ss.vars['#B'] == 0
-    assert ss.vars['#C'] == 0
-    assert ss.vars['Vcentr'] == 1.0
+    assert ss2.model == ss2.toolbar.model
+    assert ss2.vars == ss2.toolbar.vars
+    assert ss2.vars['#B'] == 0
+    assert ss2.vars['#C'] == 0
+    assert ss2.vars['Vcentr'] == 1.0
 
 
 def test_history_instantiates_with_blank_subspectrum():
-    """Tests that when history instantiates it has no assigned subspectra."""
+    """Test that when history instantiates it has no assigned subspectra."""
+    # WHEN a History object is newly instantiated
     history = History()
+
+    # THEN its subspectrum is instantiated as inactive
     assert not history.current_subspectrum().active
 
 
 def test_add_subspectrum():
-    """Tests that a new, different subspectrum is added to the
+    """Test that a new, different subspectrum is added to the
     history.subspectra list."""
+    # GIVEN a newly instantiated History object
     history = History()
+
+    # WHEN a new subspectrum is added to it
     initial_counter = history.current
     history.add_subspectrum()
     final_counter = history.current
-    assert final_counter - initial_counter == 1
     assert history.subspectra[final_counter] is not history.subspectra[
         initial_counter]
 
+    # THEN its counter is incremented by 1
+    assert final_counter - initial_counter == 1
 
-def test_current_subspectrum():
-    """Tests that history.current_subspectrum returns
-    history.subspectra[self.current].
-    This is a bad test, since it's testing basic functionality like "check a
-    + b == a + b", but is here for now as a sanity check.
+
+def test_current_subspectrum_returns_Subspectrum_object():
+    """Test whether history.current_subspectrum returns a Subspectrum instance.
+
+    Whether it returns the *correct* subspectrum is determined by other tests,
+    such as test_back and test_forward.
     """
+    # GIVEN a history object
     history = History()
-    history.add_subspectrum()
-    assert history.current_subspectrum is not history.subspectra[
-        history.current - 1]
+
+    # WHEN asked for the current subspectrum
+    # THEN a Subspectrum object is returned
+    assert isinstance(history.current_subspectrum(), Subspectrum)
 
 
-def test_subspectrum_data():
-    """Tests that subspectrum_data returns a tuple of the current
+def test_subspectrum_data(ss1, vars_1):
+    """Test that subspectrum_data returns a tuple of the current
     subspectrum's (model, vars)
     """
+    # GIVEN a history with a non-default subspectrum
     history = History()
-    history.subspectra[0] = create_ss1()
-    assert history.subspectrum_data() == ('first_order', VARS_1)
-    history.add_subspectrum()
-    history.subspectra[1] = create_ss2()
-    assert history.subspectrum_data() == ('first_order', VARS_2)
+    history.subspectra[0] = ss1
+
+    # WHEN history is asked for subspectrum model data
+    # THEN the subspectrum's (model, vars) data are returned as a tuple
+    assert history.subspectrum_data() == ('first_order', vars_1)
 
 
 def test_current_toolbar():
-    """Tests that current_bar returns the bar for the current subspectrum."""
+    """Test that current_bar returns the bar for the current subspectrum."""
+    # GIVEN a history with a toolbar assigned to its subspectrum
     history = History()
     bar = FirstOrderBar()
     history.subspectra[history.current].toolbar = bar
+
+    # WHEN history is asked for its current toolbar
+    # THEN the current subspectrum's bar is returned
     assert history.current_toolbar() is bar
 
 
-def test_change_toolbar():
-    """Tests to see if the current subspectrum's toolbar can be replaced."""
+def test_change_toolbar(vars_2):
+    """Test to see if the current subspectrum's toolbar can be replaced."""
+    # GIVEN an initialized history with default toolbar
     history = History()
     bar_1 = FirstOrderBar(controller=fake_controller)
     history.current_subspectrum().toolbar = bar_1
-    _, vars = history.subspectrum_data()
-    assert bar_1.vars == VARS_DEFAULT
+
+    # WHEN a new toolbar is added
     bar_2 = FirstOrderBar(controller=fake_controller)
-    bar_2.reset(VARS_1)
+    bar_2.reset(vars_2)
     history.change_toolbar(bar_2)
+
+    # THEN the current_toolbar and current_subspectrum() are updated
     assert history.current_toolbar() is bar_2
-    assert history.current_subspectrum().vars == VARS_1
+    assert history.current_subspectrum().vars == vars_2
 
 
 def test_change_toolbar_to_second_order_bar():
-    """Tests to see if change_toolbar works with SecondOrderBar."""
+    """Test to see if change_toolbar works with SecondOrderBar."""
+    # GIVEN an initialized history with default first-order toolbar
     history = History()
     bar_1 = FirstOrderBar(controller=fake_controller)
     history.current_subspectrum().toolbar = bar_1
+
+    # WHEN a SecondOrderBar is added
     bar_2 = SecondOrderBar(controller=fake_controller)
-    assert bar_2.model == 'nspin'
     history.change_toolbar(bar_2)
-    _, vars = history.subspectrum_data()
+
+    # THEN the subspectrum has been updated with the new toolbar's info
+    _, _vars = history.subspectrum_data()
     assert _ == 'nspin'
-    assert vars['w'][0][0] == 0.5
+    assert _vars['w'][0][0] == 0.5
 
 
 def test_back():
-    """Tests to see if history.back moves back 1 subspectrum in subspectra
+    """Test to see if history.back moves back 1 subspectrum in subspectra
     list.
     """
+    # GIVEN a history with two subspectra, set to the more recent subspectrum
     history = History()
     ss1 = history.current_subspectrum()
     history.add_subspectrum()
     ss2 = history.current_subspectrum()
     assert ss1 is not ss2
+
+    # WHEN the history is told to move back one step
     history.back()
+
+    # THEN the current_subspectrum now points to the previous subspectrum
     ss3 = history.current_subspectrum()
     assert ss1 is ss3
 
 
 def test_back_stops_at_beginning():
-    """Tests that if at beginning of history, don't keep moving backwards."""
+    """Test that if at beginning of history, don't keep moving backwards."""
+
+    # GIVEN a history that is currently on the last of three subspectra
     history = History()
     subspectra = [history.current_subspectrum()]
     for i in range(2):
@@ -208,33 +311,45 @@ def test_back_stops_at_beginning():
         assert history.current == i + 1
         subspectra.append(history.current_subspectrum())
         assert history.current_subspectrum() is not history.subspectra[i]
+
+    # WHILE the history is told to move backwards
     history.back()
+
+    # THEN the current history points to the previous subspectrum
     assert history.current == 1
     assert history.current_subspectrum() is subspectra[1]
     history.back()
     assert history.current == 0
     assert history.current_subspectrum() is subspectra[0]
+
+    # UNTIL it reaches the beginning of the history, in which case there
+    # is no change.
     history.back()
     assert history.current == 0
     assert history.current_subspectrum() is subspectra[0]
 
 
 def test_forward():
-    """Tests to see if history.forward moves forward 1 subspectrum in subspectra
+    """Test to see if history.forward moves forward 1 subspectrum in subspectra
     list.
     """
+    # GIVEN a history with two subspectra, set to the first subspectrum
     history = History()
     history.add_subspectrum()
     ss_1 = history.current_subspectrum()
     history.back()
+
+    # WHEN the history is advanced forward
     history.forward()
+
+    # THEN the history points to the second subspectrum
     assert history.current_subspectrum() is ss_1
     assert history.current == 1
 
 
 def test_forward_stops_at_end():
-    """Tests that if at end of history, don't keep moving forwards."""
-
+    """Test that if at end of history, don't keep moving forwards."""
+    # GIVEN a history containing three subspectra, set at the first subspectrum
     history = History()
     subspectra = [history.current_subspectrum()]
     for i in range(2):
@@ -243,73 +358,120 @@ def test_forward_stops_at_end():
     for i in range(2):
         history.back()
     assert history.current_subspectrum() is subspectra[0]
+
+    # WHILE the history is told to advance
     for i in range(2):
         history.forward()
+        # THEN the history points to the next subspectrum
         assert history.current_subspectrum() is subspectra[i + 1]
     assert history.current == 2
+
+    # UNTIL it reaches the end of the history, in which case there is no change
     ss_2 = history.current_subspectrum()
     history.forward()
     assert history.current == 2
     assert history.current_subspectrum() is ss_2
 
 
-def test_save_current_linshape():
-    """Tests that two linespaces are saved as subspectrum.x, subspectrum.y"""
-
+def test_save_current_linshape(x1, y1):
+    """Test that two linespaces are saved as subspectrum.x, subspectrum.y"""
+    # GIVEN a history with a single subspectrum
     history = History()
+
+    # WHEN history is told to save lineshape data
     history.save_current_linshape(x1, y1)
+
+    # THEN this data is added to the subspectrum object
     x, y = history.current_subspectrum().x, history.current_subspectrum().y
-    np.testing.assert_array_equal(x, x1)
-    np.testing.assert_array_equal(y, y1)
+    assert np.array_equal(x, x1)
+    assert np.array_equal(y, y1)
 
 
 def test_save_total_linshape():
-    """Tests that two linspaces are saved as history.total_x, history.total_y.
+    """Test that two linspaces are saved as history.total_x, history.total_y.
     """
-
+    # GIVEN a history with a single subspectrum
     history = History()
+
+    # WHEN history is told to save lineshape data for the total spectrum
     history.save_total_linshape(x2, y2)
+
+    # THEN the lineshape x and y data are stored by the history object
     x, y = history.total_x, history.total_y
-    np.testing.assert_array_equal(x, x2)
-    np.testing.assert_array_equal(y, y2)
+    assert np.array_equal(x, x2)
+    assert np.array_equal(y, y2)
 
 
-def test_add_current_to_total():
-    """Tests that history.current_subspectrum().y is correctly added to
+def test_add_current_to_total(x1, x2, y1, y2, y_total):
+    """Test that history.current_subspectrum().y is correctly added to
     history.total_y.
     """
+    # GIVEN a history with total spectrum lineshape data, and a subspectrum
+    # with current lineshape data
     history = History()
     history.save_current_linshape(x1, y1)
     history.save_total_linshape(x2, y2)
+    old_y1 = np.copy(history.current_subspectrum().y)
     old_y2 = np.copy(history.total_y)
+    print('old_y1', old_y1)
     print('old_y2 ', old_y2)
-    assert old_y2 is not history.total_y
-    # np.testing.assert_raises(np.testing.assert_array_equal,
-    #                          y_total, history.total_y)
-    # print(np.allclose(old_y2, history.total_y))
-    assert np.allclose(y_total, history.total_y) is not True
-    # np.testing.assert_array_equal(old_y2, history.total_y)
-    # assert np.not_equal(old_y2, history.total_y)
-    # np.testing.assert_array_equal(y_total, history.total_y)
+
+    # WHEN history told to add the current subspectrum to the total
     history.add_current_to_total()
+
+    # THEN the subspectrum's y data is added to history's total y data, but
+    # x data and subspectrum data is unchanged.
     print('after adding:')
     print('old_y2: ', old_y2)
     print('history.total_y', history.total_y)
-    # np.testing.assert_array_equal(history.total_y, y2)
-    # np.testing.assert_array_equal(history.total_y, old_y2)
-    # np.testing.assert_array_equal(history.total_x, x2)
+    assert np.array_equal(history.total_y, y_total)
+    assert not np.array_equal(history.total_y, old_y2)
+    assert np.array_equal(history.current_subspectrum().y, old_y1)
+    assert np.array_equal(history.total_x, x2)
+    assert np.array_equal(history.current_subspectrum().x, x1)
 
 
-def test_mutables_not_mutated():
-    """Tests to make sure that arrays not changed by previous tests."""
-    _x1 = np.linspace(1.0, 10.0, 10)
-    _y1 = np.linspace(0.1, 1.0, 10)
-    _x2 = np.linspace(1.0, 10.0, 10)
-    _y2 = np.linspace(100.0, 1000.0, 10)
-    _y_total = np.array([100.1, 200.2, 300.3, 400.4, 500.5, 600.6, 700.7, 800.8,
-                        900.9, 1001.0])
-    for old, new in zip([_x1, _x2, _y1, _y2, _y_total],
-                        [x1, x2, y1, y2, y_total]):
-        print(old)
-        print(new)
-        np.testing.assert_array_equal(old, new)
+def test_remove_current_from_total(x1, y1, x2, y2, y_total):
+    """Test that history.current_subspectrum().y is correctly subtracted from
+    history.total_y.
+    """
+    # GIVEN a history with total spectrum lineshape data,
+    # and a subspectrum with current lineshape data
+    history = History()
+    history.save_current_linshape(x1, y1)
+    history.save_total_linshape(x2, y_total)
+    old_y1 = np.copy(history.current_subspectrum().y)
+    old_total_y = np.copy(history.total_y)
+    print('old_y1', old_y1)
+    print('old_total_y ', old_total_y)
+
+    # WHEN history told to remove the current subspectrum to the total
+    history.remove_current_from_total()
+
+    # THEN the subspectrum's y data is subtracted from history's total y data,
+    #  but x data and subspectrum data is unchanged.
+    print('after removing:')
+    print('old_y1: ', old_y1)
+    print('history.total_y', history.total_y)
+    assert np.array_equal(history.total_y, y2)
+    assert not np.array_equal(history.total_y, old_total_y)
+    assert np.array_equal(history.current_subspectrum().y, old_y1)
+    assert np.array_equal(history.total_x, x2)
+    assert np.array_equal(history.current_subspectrum().x, x1)
+
+
+def test_update_vars(vars_1):
+    """Test that the current subspectrum is correctly updated with supplied
+    model and vars.
+    """
+    # GIVEN a history object with a blank subspectrum
+    history = History()
+    assert history.current_subspectrum().model is None
+    assert history.current_subspectrum().vars is None
+
+    # WHEN history asked to update data with supplied model and vars
+    history.update_vars('first_order', vars_1)
+
+    # THEN the history object has its .model and .vars correctly updated
+    assert history.current_subspectrum().model == 'first_order'
+    assert history.current_subspectrum().vars == vars_1
