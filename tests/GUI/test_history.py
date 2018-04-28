@@ -247,38 +247,89 @@ def test_current_toolbar():
     assert history.current_toolbar() is bar
 
 
-def test_change_toolbar(vars_2):
-    """Test to see if the current subspectrum's toolbar can be replaced."""
-    # GIVEN an initialized history with default toolbar
+# def test_change_toolbar(vars_2):
+#     """Test to see if the current subspectrum's toolbar can be replaced."""
+#     # GIVEN an initialized history with default toolbar
+#     history = History()
+#     bar_1 = FirstOrderBar(controller=fake_controller)
+#     history.current_subspectrum().toolbar = bar_1
+#
+#     # WHEN a new toolbar is added
+#     bar_2 = FirstOrderBar(controller=fake_controller)
+#     bar_2.reset(vars_2)
+#     history.change_toolbar(bar_2)
+#
+#     # THEN the current_toolbar is updated
+#     assert history.current_toolbar() is bar_2
+
+
+def test_change_toolbar():
+    """Test that history.toolbar can be changed via method call.
+
+    This may not be necessary, unless at some point a setter method is
+    actually required instead of direct access to the attribute.
+    """
+    # Given a history instance and a toolbar instance
     history = History()
-    bar_1 = FirstOrderBar(controller=fake_controller)
-    history.current_subspectrum().toolbar = bar_1
+    toolbar = FirstOrderBar(controller=fake_controller)
 
-    # WHEN a new toolbar is added
-    bar_2 = FirstOrderBar(controller=fake_controller)
-    bar_2.reset(vars_2)
-    history.change_toolbar(bar_2)
+    # WHEN given a toolbar and told to change to it
+    history.change_toolbar(toolbar)
 
-    # THEN the current_toolbar and current_subspectrum() are updated
-    assert history.current_toolbar() is bar_2
-    assert history.current_subspectrum().vars == vars_2
+    # THEN history.toolbar now points to that toolbar
+    assert history.toolbar is toolbar
+
+# def test_change_toolbar_to_second_order_bar():
+#     """Test to see if change_toolbar works with SecondOrderBar."""
+#     # GIVEN an initialized history with default first-order toolbar
+#     history = History()
+#     bar_1 = FirstOrderBar(controller=fake_controller)
+#     history.current_subspectrum().toolbar = bar_1
+#
+#     # WHEN a SecondOrderBar is added
+#     bar_2 = SecondOrderBar(controller=fake_controller)
+#     history.change_toolbar(bar_2)
+#
+#     # THEN the current_toolbar is updated
+#     _, _vars = history.subspectrum_data()
+#     assert _ == 'nspin'
+#     assert _vars['w'][0][0] == 0.5
 
 
-def test_change_toolbar_to_second_order_bar():
-    """Test to see if change_toolbar works with SecondOrderBar."""
-    # GIVEN an initialized history with default first-order toolbar
+def test_save(vars_default):
+    """Test that a current subspectrum input state is recorded to the current
+    subspectrum.
+    """
+    # GIVEN a history with a toolbar reference and a blank subspectrum
     history = History()
-    bar_1 = FirstOrderBar(controller=fake_controller)
-    history.current_subspectrum().toolbar = bar_1
+    history.toolbar = FirstOrderBar(controller=fake_controller)
 
-    # WHEN a SecondOrderBar is added
-    bar_2 = SecondOrderBar(controller=fake_controller)
-    history.change_toolbar(bar_2)
+    # WHEN told to save state
+    history.save()
 
-    # THEN the subspectrum has been updated with the new toolbar's info
-    _, _vars = history.subspectrum_data()
-    assert _ == 'nspin'
-    assert _vars['w'][0][0] == 0.5
+    # THEN the subspectrum's model, vars and toolbar are updated
+    ss = history.current_subspectrum()
+    assert ss.model == 'first_order'
+    assert ss.vars == vars_default
+    assert ss.vars is not history.toolbar.vars  # must be a copy to save state
+    assert ss.toolbar is history.toolbar
+
+
+def test_save_alerts_if_no_toolbar(capsys):
+    """Test that history.save gracefully handles having no history.toolbar.
+
+    Only expect this scenario to occur during tests, not in working code.
+    """
+    # GIVEN a History instance with no toolbar recorded
+    history = History()
+    out, err = capsys.readouterr()  # capture any print statements before save
+
+    # WHEN told to save toolbar state
+    history.save()
+
+    # THEN a helpful error message is printed
+    out, err = capsys.readouterr()
+    assert out.startswith("HISTORY TOOLBAR ERROR")
 
 
 def test_back():
@@ -327,6 +378,75 @@ def test_back_stops_at_beginning():
     history.back()
     assert history.current == 0
     assert history.current_subspectrum() is subspectra[0]
+
+
+def test_back_restores_toolbar_state(ss1, vars_1, ss2):
+    """Test that the previous subspectrum is restored."""
+    # GIVEN a history instance with two complete subspectra objects and
+    # pointing to the more recent subspectrum
+    toolbar = FirstOrderBar(controller=fake_controller)
+    history = History()
+    history.toolbar = toolbar
+    history.subspectra[history.current] = ss1
+    history.current = 1
+    history.subspectra.append(ss2)
+    assert history.current_subspectrum() is ss2
+    assert history.subspectra[history.current - 1] is not ss2
+
+    # WHEN history is told to go back
+    history.back()
+
+    # THEN the subspectrum is restored
+    ss = history.current_subspectrum()
+    assert ss is ss1
+    assert ss.vars == vars_1
+
+
+def test_back_saves_toolbar_first(ss1, ss2, vars_2, vars_default):
+    """Test that the current toolbar info is saved to the current subspectrum
+    before moving back.
+    """
+    # GIVEN a history instance with two complete subspectra objects and
+    # pointing to the more recent subspectrum
+    toolbar = FirstOrderBar(controller=fake_controller)
+    history = History()
+    history.toolbar = toolbar
+    history.subspectra[history.current] = ss1
+    history.current = 1
+    history.subspectra.append(ss2)
+    assert history.current_subspectrum().toolbar is not history.toolbar
+    assert history.current_subspectrum().vars == vars_2
+    assert history.toolbar.vars == vars_default
+
+    # WHEN history is told to go back
+    history.back()
+
+    # THEN the subspectrum was updated
+    ss = history.subspectra[history.current + 1]
+    assert ss is ss2
+    assert ss.vars == vars_default
+
+
+def test_back_updates_history_toolbar(ss1, ss2):
+    """Test that, after going back one subspectrum, the history's toolbar
+    reference is updated."""
+    # GIVEN a history instance with two complete subspectra objects and
+    # pointing to the more recent subspectrum
+    toolbar = FirstOrderBar(controller=fake_controller)
+    history = History()
+    history.toolbar = toolbar
+    history.subspectra[history.current] = ss1
+    history.current = 1
+    history.subspectra.append(ss2)
+
+    previous_ss = history.subspectra[history.current - 1]
+    assert previous_ss.toolbar is not history.toolbar
+
+    # WHEN history is told to go back
+    history.back()
+
+    # THEN history.toolbar was updated
+    assert history.toolbar is history.current_subspectrum().toolbar
 
 
 def test_forward():

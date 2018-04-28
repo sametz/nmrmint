@@ -63,11 +63,13 @@ class History:
         self.subspectra = []
         self.total_x = None
         self.total_y = None
-        self.current = -1
-        self.add_subspectrum()
+        self.toolbar = None
+        self.current = 0
+        self.subspectra.append(Subspectrum())
         print('Initialized history with blank subspectrum')
 
     def add_subspectrum(self):
+        self.save()
         subspectrum = Subspectrum()
         # if self.current >= 0:
         #     ss_current = self.current_subspectrum()
@@ -93,7 +95,8 @@ class History:
         return self.current_subspectrum().toolbar
 
     def change_toolbar(self, toolbar):
-        ss_current = self.current_subspectrum()
+        """schedule for removal?"""
+        # ss_current = self.current_subspectrum()
         # print('CHANGING TOOLBAR')
         # print('subspectrum was a ', ss_current.model,
         #       'that had vars: ', ss_current.vars)
@@ -105,16 +108,30 @@ class History:
         #     print('No toolbar recorded for this subspectrum yet.')
         # print('updating subspectrum toolbar to a ', toolbar.model,
         #       ' with vars:', toolbar.vars)
-        model = toolbar.model
-        vars = toolbar.vars
-        self.current_subspectrum().toolbar = toolbar
-        self.update_vars(model, vars)
+
+        # model = toolbar.model
+        # vars = toolbar.vars
+        # self.current_subspectrum().toolbar = toolbar
+        # self.update_vars(model, vars)
+        self.toolbar = toolbar
+
+    def save(self):
+        """Saves the current simulation state"""
+        try:
+            self.current_subspectrum().toolbar = self.toolbar
+            self.update_vars(self.toolbar.model, self.toolbar.vars)
+        except AttributeError:
+            print('HISTORY TOOLBAR ERROR: Tried to save a state for a '
+                  'non-existent toolbar!!!')
+
 
     def back(self):
         # self.dump('BACK')
         if self.current > 0:
             print('back!')
+            self.save()
             self.current -= 1
+            self.toolbar = self.current_subspectrum().toolbar
             print('history.current now: ', self.current)
         else:
             print('at beginning')
@@ -122,6 +139,7 @@ class History:
     def forward(self):
         if self.current_subspectrum() is not self.subspectra[-1]:
             print('forward!')
+            self.save()
             self.current += 1
         else:
             print('at end')
