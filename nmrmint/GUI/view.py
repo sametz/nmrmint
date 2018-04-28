@@ -537,9 +537,17 @@ class View(Frame):
     def new_subspectrum(self):
         print('Create a new subspectrum!')
         history.add_subspectrum()
+        print('initial dump:')
+        history.dump()
         self.select_first_order()
+        print('after select_first_order:')
+        history.dump()
         self.currentbar.restore_defaults()
+        print('after restore_defaults:')
+        history.dump()
         history.change_toolbar(self.currentbar)
+        print('after history.change_toolbar')
+        history.dump()
         self.add_subspectrum_button['highlightbackground'] = 'red'
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
@@ -566,12 +574,16 @@ class View(Frame):
         self.select_toolbar(history.current_toolbar())
 
     def prev_subspectrum(self):
+        history.dump()
         history.back()
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
         self.select_toolbar(history.current_toolbar())
         self.currentbar.reset(history.current_subspectrum().vars)
         history.dump()
+        # assert history.subspectra[history.current] is not history.subspectra[
+        #     history.current - 1]
+        # assert 1 == 2
 
     def add_plots(self):
         """Add a MPLplot canvas to the GUI"""

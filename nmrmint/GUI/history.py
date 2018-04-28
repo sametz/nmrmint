@@ -3,6 +3,9 @@ calculation, and the resulting lineshape data) and History (for providing
 undo/redo/add spectrum/subtract spectrum functionality).
 """
 
+import copy
+
+
 class Subspectrum:
     """A memento for storing the current state of a subspectrum.
 
@@ -141,9 +144,11 @@ class History:
         self.total_y -= self.current_subspectrum().y
 
     def update_vars(self, model, vars):
+        """Replaces current subpectrum's model and vars, using a deep copy
+        of the latter. Deep copy should be required for second order sims."""
         subspectrum = self.subspectra[self.current]
         subspectrum.model = model
-        subspectrum.vars = vars
+        subspectrum.vars = copy.deepcopy(vars)
         print('Subspectrum ', self.current, model, ' updated with vars: ', vars)
 
     # below are functions that might not be currently called
@@ -163,16 +168,38 @@ class History:
             if subspectrum.active:
                 self.total_spectrum += subspectrum.linshape  # NOT FUNCTIONAL
 
-    def dump(self, txt):
+    def dump(self):
         """for debugging"""
-        print('=' * 10)
-        print('HISTORY DUMP ON: ', txt)
         ss_current = self.current_subspectrum()
-        ss_prev = self.subspectra[self.current - 1]
+        if self.current > 0:
+            ss_prev = self.subspectra[self.current - 1]
+        else:
+            ss_prev = None
+        print('=' * 10)
+        print('HISTORY DUMP ON: ', str(self.current))
         print('Current subspectrum dump:')
         print('model: ', ss_current.model)
         print('vars: ', ss_current.vars)
-        print('toolbar model: ', ss_current.toolbar.model)
-        print('toolbar vars: ', ss_current.toolbar.vars)
+        toolbar = ss_current.toolbar
+        if toolbar:
+            print('toolbar model: ', ss_current.toolbar.model)
+            print('toolbar vars: ', ss_current.toolbar.vars)
+        else:
+            print('No current toolbar.')
         print()
-        print('Previous subspectrum dump')
+        if ss_prev:
+            print('Previous subspectrum dump:')
+            print('model: ', ss_prev.model)
+            print('vars: ', ss_prev.vars)
+            print('toolbar model: ', ss_prev.toolbar.model)
+            print('toolbar vars: ', ss_prev.toolbar.vars)
+            if ss_current == ss_prev:
+                print('subspectra are equal???')
+            if ss_current is ss_prev:
+                print('WARNING: SUBSPECTRA ARE THE SAME OBJECT')
+            if ss_current.vars == ss_prev.vars:
+                print('subspectra have same vars')
+            if ss_current.vars is ss_prev.vars:
+                print('WARNING: SUBSPECTRA SHARE THE SAME VARS DICT')
+        else:
+            print('No previous spectrum')
