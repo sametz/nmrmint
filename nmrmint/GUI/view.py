@@ -535,19 +535,19 @@ class View(Frame):
         history.remove_current_from_total()
 
     def new_subspectrum(self):
-        print('Create a new subspectrum!')
+        # print('Create a new subspectrum!')
         history.add_subspectrum()
-        print('initial dump:')
-        history.dump()
+        # print('initial dump:')
+        # history.dump()
         self.select_first_order()
-        print('after select_first_order:')
-        history.dump()
+        # print('after select_first_order:')
+        # history.dump()
         self.currentbar.restore_defaults()
-        print('after restore_defaults:')
-        history.dump()
+        # print('after restore_defaults:')
+        # history.dump()
         history.change_toolbar(self.currentbar)
-        print('after history.change_toolbar')
-        history.dump()
+        # print('after history.change_toolbar')
+        # history.dump()
         self.add_subspectrum_button['highlightbackground'] = 'red'
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
@@ -571,16 +571,19 @@ class View(Frame):
 
     def next_subspectrum(self):
         history.forward()
+        self.subspectrum_label.config(text="Subspectrum "
+                                           + str(history.current + 1))
         self.select_toolbar(history.current_toolbar())
+        self.currentbar.reset(history.current_subspectrum().vars)
 
     def prev_subspectrum(self):
-        history.dump()
+        # history.dump()
         history.back()
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
         self.select_toolbar(history.current_toolbar())
         self.currentbar.reset(history.current_subspectrum().vars)
-        history.dump()
+        # history.dump()
         # assert history.subspectra[history.current] is not history.subspectra[
         #     history.current - 1]
         # assert 1 == 2

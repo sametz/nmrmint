@@ -493,6 +493,28 @@ def test_forward_stops_at_end():
     assert history.current_subspectrum() is ss_2
 
 
+def test_forward_updates_history_toolbar(ss1, ss2):
+    """Test that, after going forward one subspectrum, the history's toolbar
+    reference is updated."""
+    # GIVEN a history instance with two complete subspectra objects and
+    # pointing to the first subspectrum
+    toolbar = FirstOrderBar(controller=fake_controller)
+    history = History()
+    history.toolbar = toolbar
+    history.subspectra[history.current] = ss1
+    # history.current = 1
+    history.subspectra.append(ss2)
+
+    next_ss = history.subspectra[history.current + 1]
+    assert next_ss.toolbar is not history.toolbar
+
+    # WHEN history is told to go forward
+    history.forward()
+
+    # THEN history.toolbar was updated
+    assert history.toolbar is history.current_subspectrum().toolbar
+
+
 def test_save_current_linshape(x1, y1):
     """Test that two linespaces are saved as subspectrum.x, subspectrum.y"""
     # GIVEN a history with a single subspectrum

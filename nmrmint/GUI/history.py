@@ -124,7 +124,6 @@ class History:
             print('HISTORY TOOLBAR ERROR: Tried to save a state for a '
                   'non-existent toolbar!!!')
 
-
     def back(self):
         # self.dump('BACK')
         if self.current > 0:
@@ -141,6 +140,7 @@ class History:
             print('forward!')
             self.save()
             self.current += 1
+            self.toolbar = self.current_subspectrum().toolbar
         else:
             print('at end')
 
