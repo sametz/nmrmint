@@ -360,20 +360,28 @@ class View(Frame):
         for child in self.nuc_number_frame.winfo_children():
             child.configure(state='normal')
 
-    def select_toolbar(self, toolbar):
+    def select_toolbar(self, toolbar, deactivate=True):
         """Replaces the old toolbar with the new toolbar.
 
         :param toolbar: the toolbar to replace currentbar in the GUI.
+        :param toggle: (Bool) should subspectrum activity be toggled?
+        Default behavior is to deactivate ss and delete it from total
+        spectrum when changing toolbars (i.e. when selecting the model for
+        the subspectrum). deactivate=False would be used when switching
+        between subspectra.
         """
-        if history.current_subspectrum().active:
-            self.toggle_subspectrum()
+        if deactivate:
+            if history.current_subspectrum().active:
+                self.toggle_subspectrum()
+        else:
+            self.reset_active_button_color()
         self.currentbar.grid_remove()
         self.currentbar = toolbar
         history.change_toolbar(toolbar)
         self.currentbar.grid(sticky=W)
         # record current bar of currentframe:
         self.active_bar_dict[self.calc_type] = toolbar
-        self.currentbar.set_freq(self.spectrometer_frequency)
+        self.currentbar.set_freq(self.spectrometer_frequency)  # remove?
 
         # try:
         #     self.currentbar.request_plot()
@@ -439,7 +447,7 @@ class View(Frame):
                                for input_ in model_inputs]
         print('subspectra lineshapes: ', subspectra_lineshapes)
         history.update_all_spectra(subspectra_lineshapes)
-        x, y = history.current_linshape()
+        x, y = history.current_lineshape()
         self.clear_current()
         self.plot_current(x, y)
 
@@ -545,17 +553,36 @@ class View(Frame):
         # print(self.add_subspectrum_button['bg'])
         subspectrum_active = history.current_subspectrum().toggle_active()
         if subspectrum_active:
-            self.add_subspectrum_button['highlightbackground'] = 'green'
+            # self.add_subspectrum_button['highlightbackground'] = 'green'
+            self.set_active_button_color('green')
             history.add_current_to_total()
         else:
+            # self.add_subspectrum_button['highlightbackground'] = 'red'
             self.add_subspectrum_button['highlightbackground'] = 'red'
             history.remove_current_from_total()
         self.clear_total()
         self.plot_total(history.total_x, history.total_y)
 
+    def reset_active_button_color(self):
+        subspectrum = history.current_subspectrum()
+        if subspectrum.active:
+            self.set_active_button_color('green')
+        else:
+            self.set_active_button_color('red')
+
+    def set_active_button_color(self, color):
+        """Set the 'Add to Spectrum' button's color.
+
+        :param color: (str) the color to change the button's background to.
+        """
+        try:
+            self.add_subspectrum_button['highlightbackground'] = color
+        except Exception:
+            print('color not recognized')
+
     def add_subspectrum(self):
         history.save_current_linshape(self.current_x, self.current_y)
-        print('current_linshape', self.current_x, self.current_y)
+        print('current_lineshape', self.current_x, self.current_y)
         history.add_current_to_total()
 
     def remove_subspectrum(self):
@@ -566,7 +593,8 @@ class View(Frame):
         history.add_subspectrum()
         # print('initial dump:')
         # history.dump()
-        self.select_first_order()
+        self.CalcTypeFrame.click(0)
+        # self.select_first_order()
         # print('after select_first_order:')
         # history.dump()
         self.currentbar.restore_defaults()
@@ -575,7 +603,8 @@ class View(Frame):
         history.change_toolbar(self.currentbar)
         # print('after history.change_toolbar')
         # history.dump()
-        self.add_subspectrum_button['highlightbackground'] = 'red'
+        # self.add_subspectrum_button['highlightbackground'] = 'red'
+        self.reset_active_button_color()
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
 
@@ -586,7 +615,8 @@ class View(Frame):
         history.delete()
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
-        self.select_toolbar(history.current_toolbar())
+        self.select_toolbar(history.current_toolbar(),
+                            deactivate=False)
         self.currentbar.reset(history.current_subspectrum().vars)
 
     def add_subspectrum_navigation(self):
@@ -607,7 +637,7 @@ class View(Frame):
         history.forward()
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
-        self.select_toolbar(history.current_toolbar())
+        self.select_toolbar(history.current_toolbar(), deactivate=False)
         self.currentbar.reset(history.current_subspectrum().vars)
 
     def prev_subspectrum(self):
@@ -615,7 +645,7 @@ class View(Frame):
         history.back()
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
-        self.select_toolbar(history.current_toolbar())
+        self.select_toolbar(history.current_toolbar(), deactivate=False)
         self.currentbar.reset(history.current_subspectrum().vars)
         # history.dump()
         # assert history.subspectra[history.current] is not history.subspectra[

@@ -175,7 +175,7 @@ class History:
         else:
             print('at end')
 
-    def current_linshape(self):
+    def current_lineshape(self):
         ss = self.current_subspectrum()
         return ss.x, ss.y
 
