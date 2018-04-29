@@ -235,6 +235,32 @@ def test_subspectrum_data(ss1, vars_1):
     assert history.subspectrum_data() == ('first_order', vars_1)
 
 
+def test_all_spec_data(ss1, ss2, vars_1, vars_2):
+    """Test that all_spec_data is iterable and yields spec data for each
+    subspectrum in order.
+    """
+    # Given a history with two subspectra, each with references to toolbars
+    # and lineshape data
+    # toolbar = FirstOrderBar(controller=fake_controller)
+    history = History()
+    # history.toolbar = toolbar
+    history.subspectra[history.current] = ss1
+    history.restore()
+    history.subspectra.append(ss2)
+    assert history.toolbar is history.current_subspectrum().toolbar
+    assert history.current_subspectrum() is ss1
+    assert history.subspectra[history.current + 1] is ss2
+    assert ss1 is not ss2
+
+    # WHEN asked for subspectra data
+    all_spec_data = [data for data in history.all_spec_data()]
+    expected_data = [('first_order', vars_1),
+                     ('first_order', vars_2)]
+
+    # THEN the correct data is yielded
+    assert all_spec_data == expected_data
+
+
 def test_current_toolbar():
     """Test that current_bar returns the bar for the current subspectrum."""
     # GIVEN a history with a toolbar assigned to its subspectrum
@@ -513,6 +539,49 @@ def test_forward_updates_history_toolbar(ss1, ss2):
 
     # THEN history.toolbar was updated
     assert history.toolbar is history.current_subspectrum().toolbar
+
+
+def test_delete(ss1, ss2):
+    """Test that, when a non-last subspectrum is deleted, it is removed from
+    history.subspectra."""
+    # GIVEN a history instance with two complete subspectra objects and
+    # pointing to the first subspectrum
+    toolbar = FirstOrderBar(controller=fake_controller)
+    history = History()
+    history.toolbar = toolbar
+    history.subspectra[history.current] = ss1
+    # history.current = 1
+    history.subspectra.append(ss2)
+    assert history.current_subspectrum() is ss1
+
+    # WHEN history is told to delete the subspectrum
+    history.delete()
+
+    # THEN current subspectrum set to next subspectrum
+    assert history.subspectra == [ss2]
+    assert history.current_subspectrum() is ss2
+
+
+def test_delete_last_subspectrum(ss1, ss2):
+    """Test that, when a last subspectrum is deleted, it is removed from
+    history.subspectra and history is reset to the previous subspectrum.
+    """
+    # GIVEN a history instance with two complete subspectra objects and
+    # pointing to the second subspectrum
+    toolbar = FirstOrderBar(controller=fake_controller)
+    history = History()
+    history.toolbar = toolbar
+    history.subspectra[history.current] = ss1
+    history.current = 1
+    history.subspectra.append(ss2)
+    assert history.current_subspectrum() is ss2
+
+    # WHEN history is told to delete the subspectrum
+    history.delete()
+
+    # THEN current subspectrum set to previous subspectrum
+    assert history.subspectra == [ss1]
+    assert history.current_subspectrum() is ss1
 
 
 def test_save_current_linshape(x1, y1):

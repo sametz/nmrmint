@@ -24,7 +24,7 @@ class Adapter:
     #     else:
     #         print('model not recognized')
 
-    def convert_toolabar_data(self, model, vars):
+    def convert_toolbar_data(self, model, vars):
         if model == 'first_order':
             return self.convert_first_order(vars)
         elif model == 'nspin':

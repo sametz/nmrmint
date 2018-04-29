@@ -365,8 +365,8 @@ class View(Frame):
 
         :param toolbar: the toolbar to replace currentbar in the GUI.
         """
-        # if history.current_subspectrum().active:
-        #     self.toggle_subspectrum()
+        if history.current_subspectrum().active:
+            self.toggle_subspectrum()
         self.currentbar.grid_remove()
         self.currentbar = toolbar
         history.change_toolbar(toolbar)
@@ -415,8 +415,33 @@ class View(Frame):
     def set_spec_freq(self):
         """Set the spectrometer frequency."""
         self.spectrometer_frequency = self.spec_freq_widget.current_value
-        self.currentbar.set_freq(self.spectrometer_frequency)
-        self.request_refresh_total_plot(self.total_spectrum)
+        # self.currentbar.set_freq(self.spectrometer_frequency)
+        # self.request_refresh_total_plot(self.total_spectrum)
+        self.update_all_spectra()
+
+    def update_all_spectra(self):
+        """Recompute all lineshape data, store in history, and refresh."""
+        history.save()
+        history.total_x, history.total_y = self.controller.create_lineshape(
+            self.blank_spectrum)
+        converter = self.adapter.convert_toolbar_data
+        # subspectra_data = [data for data in history.all_spec_data()]
+        subspectra_data = history.all_spec_data()
+        print('view received: ', subspectra_data)
+        # print('subspectra data: ', subspectra_data)
+        print('testing all_spec_data')
+        for model, vars in history.all_spec_data():
+            print(model, vars)
+        model_inputs = [(model, converter(model, vars_))
+                        for model, vars_ in history.all_spec_data()]
+        print('model inputs', model_inputs)
+        subspectra_lineshapes = [self.controller.lineshape_data(*input_)
+                               for input_ in model_inputs]
+        print('subspectra lineshapes: ', subspectra_lineshapes)
+        history.update_all_spectra(subspectra_lineshapes)
+        x, y = history.current_linshape()
+        self.clear_current()
+        self.plot_current(x, y)
 
     def add_minmax_entries(self):
         """Add entries for minimum and maximum frequency to display"""
@@ -529,6 +554,8 @@ class View(Frame):
         self.plot_total(history.total_x, history.total_y)
 
     def add_subspectrum(self):
+        history.save_current_linshape(self.current_x, self.current_y)
+        print('current_linshape', self.current_x, self.current_y)
         history.add_current_to_total()
 
     def remove_subspectrum(self):
@@ -554,6 +581,13 @@ class View(Frame):
 
     def delete_subspectrum(self):
         print('Delete the current subspectrum!')
+        if history.current_subspectrum().active:
+            history.remove_current_from_total()
+        history.delete()
+        self.subspectrum_label.config(text="Subspectrum "
+                                           + str(history.current + 1))
+        self.select_toolbar(history.current_toolbar())
+        self.currentbar.reset(history.current_subspectrum().vars)
 
     def add_subspectrum_navigation(self):
         subspectrum_back = Button(self.SubSpectrumSelectionFrame,
@@ -666,7 +700,7 @@ class View(Frame):
         print('update_current_plot received ', model, vars)
         # history.update_vars(model, vars)
         history.change_toolbar(self.currentbar)
-        data = self.adapter.convert_toolabar_data(model, vars)
+        data = self.adapter.convert_toolbar_data(model, vars)
         self.controller.update_current_plot(model, data)
 
     def request_add_plot(self, model, **data):
@@ -703,7 +737,7 @@ class View(Frame):
         self.currentbar.grid(sticky=W)
         self.active_bar_dict = {'first-order': self.first_order_bar,
                                 'second-order': self.spinbars[0]}
-        self.total_spectrum = self.blank_spectrum
+        self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
         # self.history_past.append(self.total_spectrum[:])
@@ -760,6 +794,9 @@ class View(Frame):
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
+        print('x, y: ', x, y)
+        self.current_x, self.current_y = x, y
+        print('current_x, current_y: ', self.current_x, self.current_y)
         history.save_current_linshape(x, y)
         self.canvas.plot_current(x, y)
 

@@ -43,6 +43,12 @@ class Subspectrum:
         self.active = not self.active
         return self.active
 
+    # def update_plot_data(self):
+    #     """Request new lineshape data and store it.
+    #     """
+    #     model, _vars = self.toolbar.model, self.toolbar.vars
+
+
     def activate(self):
         """Currently not implemented"""
         self.active = True
@@ -69,6 +75,7 @@ class History:
         print('Initialized history with blank subspectrum')
 
     def add_subspectrum(self):
+        """Add a new subspectrum object to the list of stored subspectra."""
         self.save()
         subspectrum = Subspectrum()
         # if self.current >= 0:
@@ -81,7 +88,7 @@ class History:
 
         self.subspectra.append(subspectrum)
         self.current = len(self.subspectra) - 1
-        assert subspectrum is self.subspectra[self.current]
+        assert subspectrum is self.current_subspectrum()
         # self.total_spectrum += subspectrum.linshape
         print('added subspectrum to history; counter is: ', self.current)
 
@@ -90,6 +97,15 @@ class History:
 
     def subspectrum_data(self):
         return self.current_subspectrum().model, self.current_subspectrum().vars
+
+    def all_spec_data(self):
+        """Yield model, vars for all subspectra."""
+        # for subspectrum in self.subspectra:
+        #     yield subspectrum.model, subspectrum.vars
+        # return ((subspectrum.model, subspectrum.vars)
+        #         for subspectrum in self.subspectra)
+        return [(subspectrum.model, subspectrum.vars)
+                for subspectrum in self.subspectra]
 
     def current_toolbar(self):
         return self.current_subspectrum().toolbar
@@ -115,6 +131,17 @@ class History:
         # self.update_vars(model, vars)
         self.toolbar = toolbar
 
+    def delete(self):
+        """Deletes the current subspectrum. History will reset to the next
+        more recent subspectrum, or the previous subspectrum if it was the
+        last subspectrum that was deleted.
+        """
+        # print('told to delete ss ', self.current)
+        del self.subspectra[self.current]
+        if self.current >= len(self.subspectra):
+            self.current = len(self.subspectra) - 1
+        self.restore()
+
     def save(self):
         """Saves the current simulation state"""
         try:
@@ -123,6 +150,10 @@ class History:
         except AttributeError:
             print('HISTORY TOOLBAR ERROR: Tried to save a state for a '
                   'non-existent toolbar!!!')
+
+    def restore(self):
+        """restores the history.toolbar to that recorded in the subspectrum"""
+        self.toolbar = self.current_subspectrum().toolbar
 
     def back(self):
         # self.dump('BACK')
@@ -144,6 +175,10 @@ class History:
         else:
             print('at end')
 
+    def current_linshape(self):
+        ss = self.current_subspectrum()
+        return ss.x, ss.y
+
     def save_current_linshape(self, x, y):
         subspectrum = self.current_subspectrum()
         subspectrum.x, subspectrum.y = x, y
@@ -156,6 +191,7 @@ class History:
 
     def add_current_to_total(self):
         """probably have controller call pre-built model routine for this"""
+        print(type(self.total_y), type(self.current_subspectrum().y))
         self.total_y += self.current_subspectrum().y
 
     def remove_current_from_total(self):
@@ -171,6 +207,11 @@ class History:
 
     # below are functions that might not be currently called
     # TODO: check for cruft
+    def update_frequency(self, freq):
+        """Updates all subspectra to use a different spectrometer frequency;
+        updates all subspectra; and updates total plot"""
+        for subspectrum in self.subspectra:
+            pass
 
     def remove_subspectrum(self, subspectrum):
         self.total_spectrum -= subspectrum_linshape  # NOT FUNCTIONAL
@@ -180,11 +221,21 @@ class History:
     def clear_total_spectrum(self):
         self.total_spectrum = []  # CHANGE TO NUMPY LINSPACE
 
-    def update_spectrum(self):
-        self.clear_total_spectrum()
-        for subspectrum in subspectra:
+    def update_all_spectra(self, lineshapes):
+        """Recompute all subspectra lineshape data, and total spectrum."""
+
+        if len(self.subspectra) != len(lineshapes):
+            print('MISMATCH IN NUMBER OF SUBSPECTRA AND OF LINESHAPES')
+            return
+        # rezero total spectrum and then
+        for subspectrum, lineshape in zip(self.subspectra, lineshapes):
+
+            print(type(lineshape))
+            x, y = lineshape
+            # print(type(x), type(y))
+            subspectrum.x, subspectrum.y = x, y
             if subspectrum.active:
-                self.total_spectrum += subspectrum.linshape  # NOT FUNCTIONAL
+                self.total_y += y
 
     def dump(self):
         """for debugging"""

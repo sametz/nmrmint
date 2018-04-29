@@ -165,6 +165,31 @@ class Controller:
         self.view.clear_current()
         self.view.plot_current(*plotdata)
 
+    def lineshape_data(self, model, data):
+        if model == 'first_order':
+            spectrum = self.models[model](**data)
+            plotdata = tkplot_current(spectrum)
+        elif model == 'nspin':
+            spectrum, w = self.models[model](**data)
+            plotdata = tkplot_current(spectrum, w)
+        else:
+            print('model not recognized')
+            return None
+        return self.lineshape_to_ppm(plotdata)
+
+    def create_lineshape(self, spectrum, *w):
+        """Currently used to create blank spectra for history, but in future
+        many of the Controller methods will be refactored for reuse and
+        clarity.
+        """
+        print('controller.create_lineshape received ', spectrum)
+        spectrum = self.spectrum_from_ppm(spectrum)
+        plotdata = tkplot_total(spectrum, *w)
+        plotdata = self.lineshape_to_ppm(plotdata)
+        print('create_lineshape created plotdata: ', plotdata)
+
+        return plotdata
+
     def update_total_plot(self, spectrum, *w):
         """Call model to calculate plot data from the provided spectrum,
         then call View to plot the result.
