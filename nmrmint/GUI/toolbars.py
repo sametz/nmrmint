@@ -309,11 +309,13 @@ class SecondOrderBar(ToolBar):
         # self.defaults = {'v': self.v,
         #                  'j': self.j,
         #                  'w': self.w_array}
-        self.defaults = self.create_var_dict()
-        # TODO: see if deepcopy is needed here
         self.vars = copy.deepcopy(self.defaults)
         self.spec_freq = spec_freq
         self.v_ppm = self.v / self.spec_freq
+
+        self.defaults = self.create_var_dict()
+        # TODO: see if deepcopy is needed here
+
         # following seems to be a hack to get a spinbox for w, when currently
         # only spinbox uses arrays and not single numbers. Change in future?
 
@@ -332,7 +334,7 @@ class SecondOrderBar(ToolBar):
         self.reset_button.pack(side=RIGHT)
 
     def create_var_dict(self):
-        return {'v': self.v,
+        return {'v': self.v_ppm,
                 'j': self.j,
                 'w': self.w_array}
 

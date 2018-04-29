@@ -111,7 +111,7 @@ class History:
         return self.current_subspectrum().toolbar
 
     def change_toolbar(self, toolbar):
-        """schedule for removal?"""
+        """schedule for removal? Still used atm"""
         # ss_current = self.current_subspectrum()
         # print('CHANGING TOOLBAR')
         # print('subspectrum was a ', ss_current.model,
@@ -130,6 +130,7 @@ class History:
         # self.current_subspectrum().toolbar = toolbar
         # self.update_vars(model, vars)
         self.toolbar = toolbar
+        self.save()
 
     def delete(self):
         """Deletes the current subspectrum. History will reset to the next
@@ -156,6 +157,11 @@ class History:
         self.toolbar = self.current_subspectrum().toolbar
 
     def back(self):
+        """Point history towards the previous subspectrum and return True if it
+        exists, or else return False.
+
+        :return: (bool) whether action was taken or not.
+        """
         # self.dump('BACK')
         if self.current > 0:
             print('back!')
@@ -163,17 +169,26 @@ class History:
             self.current -= 1
             self.toolbar = self.current_subspectrum().toolbar
             print('history.current now: ', self.current)
+            return True
         else:
             print('at beginning')
+            return False
 
     def forward(self):
+        """Point history towards the next subspectrum and return True if it
+        exists, or else return False.
+
+        :return: (bool) whether action was taken or not.
+        """
         if self.current_subspectrum() is not self.subspectra[-1]:
             print('forward!')
             self.save()
             self.current += 1
             self.toolbar = self.current_subspectrum().toolbar
+            return True
         else:
             print('at end')
+            return False
 
     def current_lineshape(self):
         ss = self.current_subspectrum()
@@ -205,13 +220,14 @@ class History:
         subspectrum.vars = copy.deepcopy(vars)
         print('Subspectrum ', self.current, model, ' updated with vars: ', vars)
 
-    # below are functions that might not be currently called
-    # TODO: check for cruft
     def update_frequency(self, freq):
         """Updates all subspectra to use a different spectrometer frequency;
         updates all subspectra; and updates total plot"""
         for subspectrum in self.subspectra:
-            pass
+            subspectrum.toolbar.spec_freq = freq
+
+    # below are functions that might not be currently called
+    # TODO: check for cruft
 
     def remove_subspectrum(self, subspectrum):
         self.total_spectrum -= subspectrum_linshape  # NOT FUNCTIONAL

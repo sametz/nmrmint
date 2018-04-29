@@ -434,11 +434,12 @@ def test_back():
     assert ss1 is not ss2
 
     # WHEN the history is told to move back one step
-    history.back()
+    action = history.back()
 
     # THEN the current_subspectrum now points to the previous subspectrum
     ss3 = history.current_subspectrum()
     assert ss1 is ss3
+    assert action
 
 
 def test_back_stops_at_beginning():
@@ -465,9 +466,10 @@ def test_back_stops_at_beginning():
 
     # UNTIL it reaches the beginning of the history, in which case there
     # is no change.
-    history.back()
+    action = history.back()
     assert history.current == 0
     assert history.current_subspectrum() is subspectra[0]
+    assert not action
 
 
 def test_back_restores_toolbar_state(ss1, vars_1, ss2):
@@ -550,11 +552,12 @@ def test_forward():
     history.back()
 
     # WHEN the history is advanced forward
-    history.forward()
+    action = history.forward()
 
     # THEN the history points to the second subspectrum
     assert history.current_subspectrum() is ss_1
     assert history.current == 1
+    assert action
 
 
 def test_forward_stops_at_end():
@@ -578,9 +581,10 @@ def test_forward_stops_at_end():
 
     # UNTIL it reaches the end of the history, in which case there is no change
     ss_2 = history.current_subspectrum()
-    history.forward()
+    action = history.forward()
     assert history.current == 2
     assert history.current_subspectrum() is ss_2
+    assert not action
 
 
 def test_forward_updates_history_toolbar(ss1, ss2):

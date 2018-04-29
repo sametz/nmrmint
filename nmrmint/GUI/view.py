@@ -425,6 +425,7 @@ class View(Frame):
         self.spectrometer_frequency = self.spec_freq_widget.current_value
         # self.currentbar.set_freq(self.spectrometer_frequency)
         # self.request_refresh_total_plot(self.total_spectrum)
+        history.update_frequency(self.spectrometer_frequency)
         self.update_all_spectra()
 
     def update_all_spectra(self):
@@ -634,19 +635,19 @@ class View(Frame):
         subspectrum_forward.pack(side=LEFT)
 
     def next_subspectrum(self):
-        history.forward()
-        self.subspectrum_label.config(text="Subspectrum "
-                                           + str(history.current + 1))
-        self.select_toolbar(history.current_toolbar(), deactivate=False)
-        self.currentbar.reset(history.current_subspectrum().vars)
+        if history.forward():
+            self.subspectrum_label.config(text="Subspectrum "
+                                               + str(history.current + 1))
+            self.select_toolbar(history.current_toolbar(), deactivate=False)
+            self.currentbar.reset(history.current_subspectrum().vars)
 
     def prev_subspectrum(self):
         # history.dump()
-        history.back()
-        self.subspectrum_label.config(text="Subspectrum "
-                                           + str(history.current + 1))
-        self.select_toolbar(history.current_toolbar(), deactivate=False)
-        self.currentbar.reset(history.current_subspectrum().vars)
+        if history.back():
+            self.subspectrum_label.config(text="Subspectrum "
+                                               + str(history.current + 1))
+            self.select_toolbar(history.current_toolbar(), deactivate=False)
+            self.currentbar.reset(history.current_subspectrum().vars)
         # history.dump()
         # assert history.subspectra[history.current] is not history.subspectra[
         #     history.current - 1]

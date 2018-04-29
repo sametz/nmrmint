@@ -63,7 +63,13 @@ class Adapter:
         return {'signal': singlet, 'couplings': couplings}
 
     def convert_second_order(self, vars):
+        # return {
+        # 'v': vars['v'][0, :],
+        # 'j': vars['j'],
+        # 'w': vars['w'][0, 0]}
+        v_ppm = vars['v'][0, :]
+        v_Hz = v_ppm * self.view.spectrometer_frequency
         return {
-        'v': vars['v'][0, :],
-        'j': vars['j'],
-        'w': vars['w'][0, 0]}
+            'v': v_Hz,
+            'j': vars['j'],
+            'w': vars['w'][0, 0]}
