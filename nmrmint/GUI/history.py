@@ -112,23 +112,6 @@ class History:
 
     def change_toolbar(self, toolbar):
         """schedule for removal? Still used atm"""
-        # ss_current = self.current_subspectrum()
-        # print('CHANGING TOOLBAR')
-        # print('subspectrum was a ', ss_current.model,
-        #       'that had vars: ', ss_current.vars)
-        # if ss_current.toolbar:
-        #     print('subspectrum toolbar was recorded as a ',
-        #           ss_current.toolbar.model,
-        #           ' with vars: ', ss_current.toolbar.vars)
-        # else:
-        #     print('No toolbar recorded for this subspectrum yet.')
-        # print('updating subspectrum toolbar to a ', toolbar.model,
-        #       ' with vars:', toolbar.vars)
-
-        # model = toolbar.model
-        # vars = toolbar.vars
-        # self.current_subspectrum().toolbar = toolbar
-        # self.update_vars(model, vars)
         self.toolbar = toolbar
         self.save()
 
@@ -226,17 +209,6 @@ class History:
         for subspectrum in self.subspectra:
             subspectrum.toolbar.spec_freq = freq
 
-    # below are functions that might not be currently called
-    # TODO: check for cruft
-
-    def remove_subspectrum(self, subspectrum):
-        self.total_spectrum -= subspectrum_linshape  # NOT FUNCTIONAL
-        del subspectra[current]
-        self.current -= 1
-
-    def clear_total_spectrum(self):
-        self.total_spectrum = []  # CHANGE TO NUMPY LINSPACE
-
     def update_all_spectra(self, lineshapes):
         """Recompute all subspectra lineshape data, and total spectrum."""
 
@@ -252,6 +224,18 @@ class History:
             subspectrum.x, subspectrum.y = x, y
             if subspectrum.active:
                 self.total_y += y
+    # below are functions that might not be currently called
+    # TODO: check for cruft
+
+    def remove_subspectrum(self, subspectrum):
+        self.total_spectrum -= subspectrum_linshape  # NOT FUNCTIONAL
+        del subspectra[current]
+        self.current -= 1
+
+    def clear_total_spectrum(self):
+        self.total_spectrum = []  # CHANGE TO NUMPY LINSPACE
+
+
 
     def dump(self):
         """for debugging"""

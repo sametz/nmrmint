@@ -208,7 +208,8 @@ class FirstOrderBar(ToolBar):
         # kwargs = self.make_kwargs()
         # print('request: ', kwargs)
         # self.controller(self.model, **kwargs)
-        self.controller(self.model, self.vars)
+        vars_copy = copy.deepcopy(self.vars)
+        self.controller(self.model, vars_copy)
 
     # def make_kwargs(self):
     #     """Convert the dictionary of widget entries (self.vars) to a dict
@@ -301,6 +302,20 @@ class SecondOrderBar(ToolBar):
         :param spec_freq: (float) the frequency of the simulated spectrometer.
         :param options: standard optional kwargs for a tkinter Frame
         """
+        # Debugging note: seems to be a problem with ppm frequencies at some
+        # point being divided by spec freq causing them to lump as a singlet
+        # at 0. This is first detected when a second-order subspectrum is
+        # reloaded.
+        # Need to be clear about what the "official record" for subspectra
+        # saves and controller calls should be--vars with v in ppm. v in Hz
+        # should really just be an artefact carried over from previous uses.
+        # Once default vars are translated into v_ppm, v in Hz should no
+        # longer be needed by toolbar.
+        # Abstracting out further: if toolbar status is stored in Subspectrum
+        # object, then data structures could be entirely stripped from
+        # toolbars and held in Subspectrum. For now, concentrate on fixing
+        # data corruption issue.
+
         ToolBar.__init__(self, parent, **options)
         self.controller = controller
         self.model = 'nspin'
@@ -309,11 +324,12 @@ class SecondOrderBar(ToolBar):
         # self.defaults = {'v': self.v,
         #                  'j': self.j,
         #                  'w': self.w_array}
-        self.vars = copy.deepcopy(self.defaults)
+        # self.vars = copy.deepcopy(self.defaults)
         self.spec_freq = spec_freq
         self.v_ppm = self.v / self.spec_freq
 
-        self.defaults = self.create_var_dict()
+        self.vars = self.create_var_dict()
+        self.defaults = copy.deepcopy(self.vars)  # for resetting toolbar
         # TODO: see if deepcopy is needed here
 
         # following seems to be a hack to get a spinbox for w, when currently
@@ -430,7 +446,7 @@ class SecondOrderBar(ToolBar):
         :param freq: (float) the frequency of the spectrometer to simulate.
         """
         self.spec_freq = freq
-        self.request_plot()
+        # self.request_plot()  # refreshing will be handled externally
 
     def update_v(self):
         """Translate the ppm frequencies in v_ppm to Hz, and overwrite v
@@ -451,7 +467,8 @@ class SecondOrderBar(ToolBar):
         #           'w': self.w_array}  # controller takes float for w
 
         # self.controller('nspin', kwargs)
-        self.controller('nspin', self.vars)
+        vars_copy = copy.deepcopy(self.vars)
+        self.controller('nspin', vars_copy)
 
     def add_spectra(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""

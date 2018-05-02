@@ -431,8 +431,7 @@ class View(Frame):
     def update_all_spectra(self):
         """Recompute all lineshape data, store in history, and refresh."""
         history.save()
-        history.total_x, history.total_y = self.controller.create_lineshape(
-            self.blank_spectrum)
+        history.total_x, history.total_y = self.blank_total_spectrum()
         converter = self.adapter.convert_toolbar_data
         # subspectra_data = [data for data in history.all_spec_data()]
         subspectra_data = history.all_spec_data()
@@ -451,6 +450,9 @@ class View(Frame):
         x, y = history.current_lineshape()
         self.clear_current()
         self.plot_current(x, y)
+        x_total, y_total = history.total_x, history.total_y
+        self.clear_total()
+        self.plot_total(x_total, y_total)
 
     def add_minmax_entries(self):
         """Add entries for minimum and maximum frequency to display"""
@@ -716,6 +718,14 @@ class View(Frame):
 
     # Interface from View to Controller:
     # TODO: rename these
+
+    def blank_total_spectrum(self):
+        """Request and return a new blank total spectrum.
+
+        :return: (np.linspace, np.array) tuple of x, y- lineshape data
+        """
+        return self.controller.total_plot(self.blank_spectrum)
+
     def request_refresh_current_plot(self, model, **data):
         """Intercept the toolbar's plot request, include the total spectrum,
         and request an update from the Controller

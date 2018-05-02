@@ -46,6 +46,7 @@ class Controller:
 
 
     """
+
     # TODO: refactor to reduce code redundancy
 
     def __init__(self, root):
@@ -86,7 +87,7 @@ class Controller:
         :param spectrum: [(frequency, intensity)...] A list of frequency,
         intensity tuples with the frequency in ppm."""
         freq, int_ = ([x * self.view.spectrometer_frequency
-                      for x, y in spectrum],
+                       for x, y in spectrum],
                       [y for x, y in spectrum])
         return list(zip(freq, int_))
 
@@ -150,7 +151,7 @@ class Controller:
         #                     'first_order']
 
         # if model in multiplet_models:
-        print('controller received ', model)
+        # print('controller received ', model)
         if model == 'first_order':
             spectrum = self.models[model](**data)
             plotdata = tkplot_current(spectrum)
@@ -199,11 +200,31 @@ class Controller:
         :param w: optional peak width at half height.
         """
         spectrum = self.spectrum_from_ppm(spectrum)
-        plotdata = tkplot_total(spectrum, *w)
+        plotdata = tkplot_total(
+            spectrum,
+            *w,
+            spectrometer_frequency=self.view.spectrometer_frequency)
         plotdata = self.lineshape_to_ppm(plotdata)
         # self.view.canvas.clear_total()
         self.view.clear_total()
         self.view.plot_total(*plotdata)
+
+    def total_plot(self, spectrum, *w):
+        """Call model to calculate lineshape from provided spectrum,
+        and return it.
+
+        :param spectrum: [(float, float)...] The lineshape data for a total
+        spectrum plot.
+        :param w: optional peak width at half height.
+        :return: (np.linspace, np.array) of x, y- lineshape data.
+        """
+        spectrum = self.spectrum_from_ppm(spectrum)
+        plotdata = tkplot_total(
+            spectrum,
+            *w,
+            spectrometer_frequency=self.view.spectrometer_frequency)
+        plotdata = self.lineshape_to_ppm(plotdata)
+        return plotdata
 
     def add_view_plots(self, model, total_spectrum, **data):
         """Compute a spectrum from model, **data, add it to another spectrum,
