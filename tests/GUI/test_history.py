@@ -336,11 +336,27 @@ def test_delete(ss1, ss2):
     assert history.current_subspectrum() is ss1
 
     # WHEN history is told to delete the subspectrum
-    history.delete()
+    action = history.delete()
 
     # THEN current subspectrum set to next subspectrum
     assert history.subspectra == [ss2]
     assert history.current_subspectrum() is ss2
+    assert action
+
+
+def test_delete_stops_at_one_subspectrum():
+    """Test that no delete occurs if there is only one subspectrum left."""
+    # GIVEN a history instance with only one subspectrum
+    history = History()
+    current_ss = history.current_subspectrum()
+    # WHEN asked to delete the current subspectrum
+    action = history.delete()
+
+    # THEN no change occurs
+    assert history.length() == 1
+    assert history.current == 0
+    assert history.current_subspectrum() is current_ss
+    assert not action
 
 
 def test_delete_last_subspectrum(ss1, ss2):
@@ -421,16 +437,20 @@ def test_restore(ss1):
     assert history.toolbar is ss1.toolbar
 
 
-
 def test_back():
     """Test to see if history.back moves back 1 subspectrum in subspectra
     list.
     """
     # GIVEN a history with two subspectra, set to the more recent subspectrum
     history = History()
+    testbar = FirstOrderBar()
+    history.change_toolbar(testbar)
     ss1 = history.current_subspectrum()
+    assert ss1.toolbar is history.toolbar
     history.add_subspectrum()
     ss2 = history.current_subspectrum()
+    history.save()
+    assert ss2.toolbar is history.toolbar
     assert ss1 is not ss2
 
     # WHEN the history is told to move back one step
@@ -447,26 +467,33 @@ def test_back_stops_at_beginning():
 
     # GIVEN a history that is currently on the last of three subspectra
     history = History()
+    testbar = FirstOrderBar()
+    history.change_toolbar(testbar)
     subspectra = [history.current_subspectrum()]
     for i in range(2):
         history.add_subspectrum()
+        history.save()
         assert history.current == i + 1
         subspectra.append(history.current_subspectrum())
         assert history.current_subspectrum() is not history.subspectra[i]
 
     # WHILE the history is told to move backwards
-    history.back()
+    action = history.back()
 
     # THEN the current history points to the previous subspectrum
     assert history.current == 1
     assert history.current_subspectrum() is subspectra[1]
-    history.back()
+    assert action
+
+    action = history.back()
     assert history.current == 0
     assert history.current_subspectrum() is subspectra[0]
+    assert action
 
     # UNTIL it reaches the beginning of the history, in which case there
     # is no change.
     action = history.back()
+    assert history.at_beginning()
     assert history.current == 0
     assert history.current_subspectrum() is subspectra[0]
     assert not action
@@ -547,7 +574,10 @@ def test_forward():
     """
     # GIVEN a history with two subspectra, set to the first subspectrum
     history = History()
+    testbar = FirstOrderBar()
+    history.change_toolbar(testbar)
     history.add_subspectrum()
+    history.save()
     ss_1 = history.current_subspectrum()
     history.back()
 
@@ -564,9 +594,12 @@ def test_forward_stops_at_end():
     """Test that if at end of history, don't keep moving forwards."""
     # GIVEN a history containing three subspectra, set at the first subspectrum
     history = History()
+    testbar = FirstOrderBar()
+    history.change_toolbar(testbar)
     subspectra = [history.current_subspectrum()]
     for i in range(2):
         history.add_subspectrum()
+        history.save()
         subspectra.append(history.current_subspectrum())
     for i in range(2):
         history.back()
@@ -574,15 +607,17 @@ def test_forward_stops_at_end():
 
     # WHILE the history is told to advance
     for i in range(2):
-        history.forward()
+        action = history.forward()
         # THEN the history points to the next subspectrum
         assert history.current_subspectrum() is subspectra[i + 1]
+        assert action
     assert history.current == 2
 
     # UNTIL it reaches the end of the history, in which case there is no change
     ss_2 = history.current_subspectrum()
     action = history.forward()
     assert history.current == 2
+    assert history.at_end()
     assert history.current_subspectrum() is ss_2
     assert not action
 

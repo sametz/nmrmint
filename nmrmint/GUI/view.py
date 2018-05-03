@@ -118,12 +118,12 @@ class MPLplot(FigureCanvasTkAgg):
         right = False
         # print('x, y', type(x), len(x), type(y), len(y))
         # print('checking x order')
-        ordered = True
-        for i, x_ in enumerate(x[:-2]):
-            if x[i + 1] < x_:
-                # print('x stopped increasing at: ', i)
-                ordered = False
-                break
+        # ordered = True
+        # for i, x_ in enumerate(x[:-2]):
+        #     if x[i + 1] < x_:
+        #         # print('x stopped increasing at: ', i)
+        #         ordered = False
+        #         break
         # if ordered:
         #     print('x always increased, from ', x[0], 'to ', x[-1])
 
@@ -143,7 +143,7 @@ class MPLplot(FigureCanvasTkAgg):
                 # print('intensity: ', intensity)
                 break
         # if not left:
-            # print('no left found')
+        # print('no left found')
         for j, intensity in enumerate(reversed(y)):
             if intensity > 0.01:
                 right = j
@@ -151,7 +151,7 @@ class MPLplot(FigureCanvasTkAgg):
                 # print('intensity: ', intensity)
                 break
         # if not right:
-            # print('no right found')
+        # print('no right found')
         x_min = x[left] - 0.2
         x_max = x[-right] + 0.2
         # print('x window ', x_min, x_max)
@@ -364,7 +364,7 @@ class View(Frame):
         """Replaces the old toolbar with the new toolbar.
 
         :param toolbar: the toolbar to replace currentbar in the GUI.
-        :param toggle: (Bool) should subspectrum activity be toggled?
+        :param deactivate: (Bool) should subspectrum activity be toggled?
         Default behavior is to deactivate ss and delete it from total
         spectrum when changing toolbars (i.e. when selecting the model for
         the subspectrum). deactivate=False would be used when switching
@@ -438,13 +438,13 @@ class View(Frame):
         print('view received: ', subspectra_data)
         # print('subspectra data: ', subspectra_data)
         print('testing all_spec_data')
-        for model, vars in history.all_spec_data():
-            print(model, vars)
+        for model, vars_ in history.all_spec_data():
+            print(model, vars_)
         model_inputs = [(model, converter(model, vars_))
                         for model, vars_ in history.all_spec_data()]
         print('model inputs', model_inputs)
         subspectra_lineshapes = [self.controller.lineshape_data(*input_)
-                               for input_ in model_inputs]
+                                 for input_ in model_inputs]
         print('subspectra lineshapes: ', subspectra_lineshapes)
         history.update_all_spectra(subspectra_lineshapes)
         x, y = history.current_lineshape()
@@ -544,9 +544,10 @@ class View(Frame):
         new_subspectrum_button = Button(self.SubSpectrumButtonFrame,
                                         text="New Subspectrum",
                                         command=lambda: self.new_subspectrum())
-        delete_subspectrum_button = Button(self.SubSpectrumButtonFrame,
-                                           text="Delete Subspectrum",
-                                           command=lambda: self.delete_subspectrum())
+        delete_subspectrum_button = Button(
+            self.SubSpectrumButtonFrame,
+            text="Delete Subspectrum",
+            command=lambda: self.delete_subspectrum())
         self.add_subspectrum_button.pack(side=LEFT)
         # remove_subspectrum_button.pack(side=LEFT)
         new_subspectrum_button.pack(side=LEFT)
@@ -623,6 +624,9 @@ class View(Frame):
 
     def delete_subspectrum(self):
         print('Delete the current subspectrum!')
+        if history.length() < 2:
+            print('Not deleting...only 1 subspectrum left')
+            return
         if history.current_subspectrum().active:
             history.remove_current_from_total()
         history.delete()
@@ -630,15 +634,18 @@ class View(Frame):
                                            + str(history.current + 1))
         self.select_toolbar(history.current_toolbar(),
                             deactivate=False)
-        self.currentbar.reset(history.current_subspectrum().vars)
+        # self.currentbar.reset(history.current_subspectrum().vars)
+        self.update_current_plot()
+        self.clear_total()
+        self.plot_total(history.total_x, history.total_y)
 
     def add_subspectrum_navigation(self):
         subspectrum_back = Button(self.SubSpectrumSelectionFrame,
                                   text="<-",
                                   command=lambda: self.prev_subspectrum())
-        self.subspectrum_label = Label(self.SubSpectrumSelectionFrame,
-                                  text="Subspectrum "
-                                       + str(history.current + 1))
+        self.subspectrum_label = Label(
+            self.SubSpectrumSelectionFrame,
+            text="Subspectrum " + str(history.current + 1))
         subspectrum_forward = Button(self.SubSpectrumSelectionFrame,
                                      text="->",
                                      command=lambda: self.next_subspectrum())
@@ -652,6 +659,7 @@ class View(Frame):
                                                + str(history.current + 1))
             self.select_toolbar(history.current_toolbar(), deactivate=False)
             self.currentbar.reset(history.current_subspectrum().vars)
+            self.update_current_plot()
 
     def prev_subspectrum(self):
         # history.dump()
@@ -660,6 +668,7 @@ class View(Frame):
                                                + str(history.current + 1))
             self.select_toolbar(history.current_toolbar(), deactivate=False)
             self.currentbar.reset(history.current_subspectrum().vars)
+            self.update_current_plot()
         # history.dump()
         # assert history.subspectra[history.current] is not history.subspectra[
         #     history.current - 1]
@@ -757,11 +766,19 @@ class View(Frame):
     def update_current_plot(self):
         """Testing a refactor where plots get needed data directly from
         history."""
+        active = history.current_subspectrum().active
+        if active:
+            history.remove_current_from_total()
         history.save()
-        model, vars = history.subspectrum_data()
-        print('update_current_plot received ', model, vars)
-        data = self.adapter.convert_toolbar_data(model, vars)
+        model, vars_ = history.subspectrum_data()
+        print('update_current_plot received ', model, vars_)
+        data = self.adapter.convert_toolbar_data(model, vars_)
         self.controller.update_current_plot(model, data)
+        if active:
+            history.add_current_to_total()
+            self.clear_total()
+            self.plot_total(history.total_x, history.total_y)
+
 
     def request_add_plot(self, model, **data):
         """Add the current (top) spectrum to the sum (bottom) spectrum.

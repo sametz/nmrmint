@@ -74,6 +74,8 @@ class History:
         self.subspectra.append(Subspectrum())
         print('Initialized history with blank subspectrum')
 
+    # TODO: use self.length() instead of len(self.subspectra)
+
     def add_subspectrum(self):
         """Add a new subspectrum object to the list of stored subspectra."""
         self.save()
@@ -122,11 +124,23 @@ class History:
         more recent subspectrum, or the previous subspectrum if it was the
         last subspectrum that was deleted.
         """
-        # print('told to delete ss ', self.current)
+        if len(self.subspectra) == 1:
+            print("Can't delete subspectrum: only one left!")
+            return False
         del self.subspectra[self.current]
         if self.current >= len(self.subspectra):
             self.current = len(self.subspectra) - 1
         self.restore()
+        return True
+
+    def at_beginning(self):
+        return self.current == 0
+
+    def at_end(self):
+        return self.current == len(self.subspectra) - 1
+
+    def length(self):
+        return len(self.subspectra)
 
     def save(self):
         """Saves the current simulation state"""
@@ -231,18 +245,17 @@ class History:
             subspectrum.x, subspectrum.y = x, y
             if subspectrum.active:
                 self.total_y += y
+
+
+
     # below are functions that might not be currently called
     # TODO: check for cruft
 
     def remove_subspectrum(self, subspectrum):
-        self.total_spectrum -= subspectrum_linshape  # NOT FUNCTIONAL
-        del subspectra[current]
-        self.current -= 1
+        self.remove_current_from_total()
 
     def clear_total_spectrum(self):
         self.total_spectrum = []  # CHANGE TO NUMPY LINSPACE
-
-
 
     def dump(self):
         """for debugging"""
