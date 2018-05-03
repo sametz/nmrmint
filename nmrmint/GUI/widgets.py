@@ -226,7 +226,7 @@ class BaseEntryFrame(Frame):
 
     def set_value(self, val):
         self.value_var.set(val)
-        self.refresh()
+        # self.refresh()
 
 
 class ArrayBox(BaseEntryFrame):

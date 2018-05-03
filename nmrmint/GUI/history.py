@@ -88,7 +88,7 @@ class History:
 
         self.subspectra.append(subspectrum)
         self.current = len(self.subspectra) - 1
-        assert subspectrum is self.current_subspectrum()
+        # assert subspectrum is self.current_subspectrum()  #Remove once confident
         # self.total_spectrum += subspectrum.linshape
         print('added subspectrum to history; counter is: ', self.current)
 
@@ -108,6 +108,8 @@ class History:
                 for subspectrum in self.subspectra]
 
     def current_toolbar(self):
+        # if history.toolbar is being set elsewhere--.back(), .forward() etc--
+        # then this should not be needed.
         return self.current_subspectrum().toolbar
 
     def change_toolbar(self, toolbar):
@@ -138,6 +140,8 @@ class History:
     def restore(self):
         """restores the history.toolbar to that recorded in the subspectrum"""
         self.toolbar = self.current_subspectrum().toolbar
+        self.toolbar.reset(self.current_subspectrum().vars)
+        print('toolbar reset with vars: ', self.toolbar.vars)
 
     def back(self):
         """Point history towards the previous subspectrum and return True if it
@@ -150,8 +154,9 @@ class History:
             print('back!')
             self.save()
             self.current -= 1
-            self.toolbar = self.current_subspectrum().toolbar
+            # self.toolbar = self.current_subspectrum().toolbar
             print('history.current now: ', self.current)
+            self.restore()
             return True
         else:
             print('at beginning')
@@ -167,7 +172,9 @@ class History:
             print('forward!')
             self.save()
             self.current += 1
-            self.toolbar = self.current_subspectrum().toolbar
+            # self.toolbar = self.current_subspectrum().toolbar
+            print('history.current is now: ', self.current)
+            self.restore()
             return True
         else:
             print('at end')
@@ -180,16 +187,16 @@ class History:
     def save_current_linshape(self, x, y):
         subspectrum = self.current_subspectrum()
         subspectrum.x, subspectrum.y = x, y
-        print('saved current linshape for subspectrum ', self.current,
-              ' of size: x ', subspectrum.x.size, ' y ', subspectrum.y.size)
+        # print('saved current linshape for subspectrum ', self.current,
+        #       ' of size: x ', subspectrum.x.size, ' y ', subspectrum.y.size)
 
     def save_total_linshape(self, x, y):
         self.total_x, self.total_y = x, y
-        print('saved total linshape for subspectrum ', self.current)
+        # print('saved total linshape for subspectrum ', self.current)
 
     def add_current_to_total(self):
         """probably have controller call pre-built model routine for this"""
-        print(type(self.total_y), type(self.current_subspectrum().y))
+        # print(type(self.total_y), type(self.current_subspectrum().y))
         self.total_y += self.current_subspectrum().y
 
     def remove_current_from_total(self):
@@ -218,7 +225,7 @@ class History:
         # rezero total spectrum and then
         for subspectrum, lineshape in zip(self.subspectra, lineshapes):
 
-            print(type(lineshape))
+            # print(type(lineshape))
             x, y = lineshape
             # print(type(x), type(y))
             subspectrum.x, subspectrum.y = x, y

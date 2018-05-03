@@ -205,11 +205,12 @@ class FirstOrderBar(ToolBar):
 
     def request_plot(self):
         """Request the Controller to plot the spectrum."""
-        # kwargs = self.make_kwargs()
-        # print('request: ', kwargs)
-        # self.controller(self.model, **kwargs)
-        vars_copy = copy.deepcopy(self.vars)
-        self.controller(self.model, vars_copy)
+
+        # vars_copy = copy.deepcopy(self.vars)
+        # self.controller(self.model, vars_copy)
+
+        # If subspectrum is holding deepcopy of vars, and new controller used:
+        self.controller()
 
     # def make_kwargs(self):
     #     """Convert the dictionary of widget entries (self.vars) to a dict
@@ -451,24 +452,20 @@ class SecondOrderBar(ToolBar):
     def update_v(self):
         """Translate the ppm frequencies in v_ppm to Hz, and overwrite v
         with the result.
+
+        No longer needed?
         """
         self.v = self.v_ppm * self.spec_freq
         self.vars = self.create_var_dict()
 
     def request_plot(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""
-        self.update_v()
-        # kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
-        #           'j': self.j,
-        #           'w': self.w_array[0, 0]}  # controller takes float for w
-
-        # kwargs = {'v': self.v,  # controller takes 1D array of freqs
-        #           'j': self.j,
-        #           'w': self.w_array}  # controller takes float for w
-
-        # self.controller('nspin', kwargs)
-        vars_copy = copy.deepcopy(self.vars)
-        self.controller('nspin', vars_copy)
+        # self.update_v()  # no longer needed?
+        self.vars = self.create_var_dict()
+        # vars_copy = copy.deepcopy(self.vars)  # should now be handled by
+        # history
+        # self.controller('nspin', vars_copy)
+        self.controller()
 
     def add_spectra(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""

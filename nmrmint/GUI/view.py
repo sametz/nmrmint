@@ -376,12 +376,12 @@ class View(Frame):
         else:
             self.reset_active_button_color()
         self.currentbar.grid_remove()
-        self.currentbar = toolbar
-        history.change_toolbar(toolbar)
+        self.currentbar = toolbar  # redundant with history.toolbar?
+        # history.change_toolbar(toolbar)  # postpone?
         self.currentbar.grid(sticky=W)
         # record current bar of currentframe:
         self.active_bar_dict[self.calc_type] = toolbar
-        self.currentbar.set_freq(self.spectrometer_frequency)  # remove?
+        # self.currentbar.set_freq(self.spectrometer_frequency)  # remove?
 
         # try:
         #     self.currentbar.request_plot()
@@ -592,24 +592,34 @@ class View(Frame):
         history.remove_current_from_total()
 
     def new_subspectrum(self):
-        # print('Create a new subspectrum!')
+        # Refactored. Adding story comments to try to make process clear
+
+        # Slightly hacky: here, we don't want the old toolbar to deactivate
+        # regardless of its activate status. CalcTypeFrame.click() will
+        # normally deactiate an active bar. Adding the new subspectrum first
+        # will point the .click() to it, see it as default deactive, and not
+        # take action.
         history.add_subspectrum()
-        # print('initial dump:')
-        # history.dump()
+
+        # Want to switch to default 1st order bar, and to change radio
+        # button, so easy way is to:
         self.CalcTypeFrame.click(0)
-        # self.select_first_order()
-        # print('after select_first_order:')
-        # history.dump()
+
+        # Restore default toolbar values
         self.currentbar.restore_defaults()
-        # print('after restore_defaults:')
-        # history.dump()
+
+        # update history and subspectrum with its status
         history.change_toolbar(self.currentbar)
-        # print('after history.change_toolbar')
-        # history.dump()
-        # self.add_subspectrum_button['highlightbackground'] = 'red'
+
+        # Necessary? make sure active button is correct
         self.reset_active_button_color()
+
+        # update label with subspectrum number
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
+
+        # refresh current subspectrum plot
+        self.update_current_plot()
 
     def delete_subspectrum(self):
         print('Delete the current subspectrum!')
@@ -736,11 +746,20 @@ class View(Frame):
         print('request_refresh_current_plot received ', model, data)
         self.controller.update_current_plot(model, data)
 
-    def update_current_plot(self, model, vars):
-        """Will become replacement for request_refresh_current_plot"""
+    # def update_current_plot(self, model, vars):
+    #     """Will become replacement for request_refresh_current_plot"""
+    #     print('update_current_plot received ', model, vars)
+    #     # history.update_vars(model, vars)
+    #     history.change_toolbar(self.currentbar)
+    #     data = self.adapter.convert_toolbar_data(model, vars)
+    #     self.controller.update_current_plot(model, data)
+
+    def update_current_plot(self):
+        """Testing a refactor where plots get needed data directly from
+        history."""
+        history.save()
+        model, vars = history.subspectrum_data()
         print('update_current_plot received ', model, vars)
-        # history.update_vars(model, vars)
-        history.change_toolbar(self.currentbar)
         data = self.adapter.convert_toolbar_data(model, vars)
         self.controller.update_current_plot(model, data)
 
@@ -779,6 +798,7 @@ class View(Frame):
         self.active_bar_dict = {'first-order': self.first_order_bar,
                                 'second-order': self.spinbars[0]}
         self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
+        history.change_toolbar(self.currentbar)
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
         # self.history_past.append(self.total_spectrum[:])
@@ -835,9 +855,9 @@ class View(Frame):
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
-        print('x, y: ', x, y)
+        # print('x, y: ', x, y)
         self.current_x, self.current_y = x, y
-        print('current_x, current_y: ', self.current_x, self.current_y)
+        # print('current_x, current_y: ', self.current_x, self.current_y)
         history.save_current_linshape(x, y)
         self.canvas.plot_current(x, y)
 

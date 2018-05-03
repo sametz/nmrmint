@@ -183,11 +183,11 @@ class Controller:
         many of the Controller methods will be refactored for reuse and
         clarity.
         """
-        print('controller.create_lineshape received ', spectrum)
+        # print('controller.create_lineshape received ', spectrum)
         spectrum = self.spectrum_from_ppm(spectrum)
         plotdata = tkplot_total(spectrum, *w)
         plotdata = self.lineshape_to_ppm(plotdata)
-        print('create_lineshape created plotdata: ', plotdata)
+        # print('create_lineshape created plotdata: ', plotdata)
 
         return plotdata
 
