@@ -154,10 +154,14 @@ class Controller:
         # print('controller received ', model)
         if model == 'first_order':
             spectrum = self.models[model](**data)
-            plotdata = tkplot_current(spectrum)
+            plotdata = tkplot_current(
+                spectrum,
+                spectrometer_frequency=self.view.spectrometer_frequency)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
-            plotdata = tkplot_current(spectrum, w)
+            plotdata = tkplot_current(
+                spectrum, w,
+                spectrometer_frequency=self.view.spectrometer_frequency)
         else:
             print('model not recognized')
             return
@@ -169,10 +173,14 @@ class Controller:
     def lineshape_data(self, model, data):
         if model == 'first_order':
             spectrum = self.models[model](**data)
-            plotdata = tkplot_current(spectrum)
+            plotdata = tkplot_current(
+                spectrum,
+                spectrometer_frequency=self.view.spectrometer_frequency)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
-            plotdata = tkplot_current(spectrum, w)
+            plotdata = tkplot_current(
+                spectrum, w,
+                spectrometer_frequency=self.view.spectrometer_frequency)
         else:
             print('model not recognized')
             return None
@@ -185,7 +193,9 @@ class Controller:
         """
         # print('controller.create_lineshape received ', spectrum)
         spectrum = self.spectrum_from_ppm(spectrum)
-        plotdata = tkplot_total(spectrum, *w)
+        plotdata = tkplot_total(
+            spectrum, *w,
+            spectrometer_frequency=self.view.spectrometer_frequency)
         plotdata = self.lineshape_to_ppm(plotdata)
         # print('create_lineshape created plotdata: ', plotdata)
 
