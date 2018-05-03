@@ -369,12 +369,12 @@ class View(Frame):
         spectrum when changing toolbars (i.e. when selecting the model for
         the subspectrum). deactivate=False would be used when switching
         between subspectra.
+
+        Rethink: maybe default should be to maintain activity, and refresh
+        total if active.
         """
-        if deactivate:
-            if history.current_subspectrum().active:
-                self.toggle_subspectrum()
-        else:
-            self.reset_active_button_color()
+        #
+
         self.currentbar.grid_remove()
         self.currentbar = toolbar  # redundant with history.toolbar?
         # history.change_toolbar(toolbar)  # postpone?
@@ -387,6 +387,9 @@ class View(Frame):
         #     self.currentbar.request_plot()
         # except ValueError:
         #     print('No model yet for this bar')
+        history.change_toolbar(self.currentbar)
+        self.update_current_plot()
+
 
     def add_nuclei_number_entry(self):
         """Add the "number of nuclei" entry to the GUI, and instantiate it as
@@ -601,6 +604,9 @@ class View(Frame):
         # will point the .click() to it, see it as default deactive, and not
         # take action.
         history.add_subspectrum()
+
+        # Possible refactor: reset ***all*** toolbars? or just allow their
+        # last state to remain?
 
         # Want to switch to default 1st order bar, and to change radio
         # button, so easy way is to:
