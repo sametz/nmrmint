@@ -673,11 +673,17 @@ class HorizontalIntBox(MixinHorizontal, IntBox):
         super(HorizontalIntBox, self).__init__(**kwargs)
 
 
-class HorizontalEntryFrame(MixinHorizontal, MixinInt, SimpleVariableBox):
+class HorizontalEntryFrame(MixinHorizontal, SimpleVariableBox):
+    """A SimpleVariableBox with a horizontal layout."""
+    def __init__(self, **kwargs):
+        super(HorizontalEntryFrame, self).__init__(**kwargs)
+
+
+class HorizontalIntEntryFrame(MixinHorizontal, MixinInt, SimpleVariableBox):
     """A SimpleVariableBox with a horizontal layout, and with Entry values
     limited to integers."""
     def __init__(self, **kwargs):
-        super(HorizontalEntryFrame, self).__init__(**kwargs)
+        super(HorizontalIntEntryFrame, self).__init__(**kwargs)
 
 
 class HorizontalRangeEntryFrame(MixinHorizontal, MixinIntRange,

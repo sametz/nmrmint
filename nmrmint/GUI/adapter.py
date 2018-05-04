@@ -60,7 +60,8 @@ class Adapter:
         singlet = (_Vcentr, _integration)
         allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
         couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
-        return {'signal': singlet, 'couplings': couplings}
+        width = vars['width']
+        return {'signal': singlet, 'couplings': couplings, 'w': width}
 
     def convert_second_order(self, vars):
         # return {

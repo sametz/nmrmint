@@ -81,7 +81,7 @@ def tkplot_current(spectrum, w=0.5, spectrometer_frequency=300):
     #                 40 * (r_limit - l_limit))
     x = np.linspace(-1 * spectrometer_frequency,
                     15 * spectrometer_frequency,
-                    16000)  # 0.1 Hz resolution on 1 GHz spectrometer
+                    160000)  # 0.01 Hz resolution on 1 GHz spectrometer
 
     y = add_signals(x, spectrum, w)
     return x, y
@@ -100,7 +100,7 @@ def tkplot_total(spectrum, w=0.5, spectrometer_frequency=300):
     :return: a tuple of x and y coordinate linspaces"""
     x = np.linspace(-1 * spectrometer_frequency,
                     15 * spectrometer_frequency,
-                    16000)  # 0.1 Hz resolution on 1 GHz spectrometer
+                    160000)  # 0.01 Hz resolution on 1 GHz spectrometer
     y = add_signals(x, spectrum, w)
     return x, y
 

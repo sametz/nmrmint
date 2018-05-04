@@ -250,7 +250,7 @@ class View(Frame):
 
         # Currently, for debugging purposes, initial/blank spectra will have a
         # "TMS" peak at 0 that integrates to 1H.
-        self.blank_spectrum = [(0, 1)]
+        self.blank_spectrum = [(0, 0.05)]
         self.history_past = []
         self.history_future = []
 

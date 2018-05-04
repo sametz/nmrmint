@@ -153,9 +153,12 @@ class Controller:
         # if model in multiplet_models:
         # print('controller received ', model)
         if model == 'first_order':
-            spectrum = self.models[model](**data)
+            signal = data['signal']
+            couplings = data['couplings']
+            w = data['w']
+            spectrum = self.models[model](signal=signal, couplings=couplings)
             plotdata = tkplot_current(
-                spectrum,
+                spectrum, w,
                 spectrometer_frequency=self.view.spectrometer_frequency)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
@@ -172,9 +175,12 @@ class Controller:
 
     def lineshape_data(self, model, data):
         if model == 'first_order':
-            spectrum = self.models[model](**data)
+            signal = data['signal']
+            couplings = data['couplings']
+            w = data['w']
+            spectrum = self.models[model](signal=signal, couplings=couplings)
             plotdata = tkplot_current(
-                spectrum,
+                spectrum, w,
                 spectrometer_frequency=self.view.spectrometer_frequency)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
