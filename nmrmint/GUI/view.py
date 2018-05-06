@@ -277,6 +277,7 @@ class View(Frame):
         # Width sidebar setting currently has no effect
         # self.add_width_entry()
         self.add_clear_buttons()
+        self.add_filesave_buttons()
         self.add_subspectrum_buttons()
         self.add_subspectrum_navigation()
         self.add_plots()
@@ -389,7 +390,6 @@ class View(Frame):
         #     print('No model yet for this bar')
         history.change_toolbar(self.currentbar)
         self.update_current_plot()
-
 
     def add_nuclei_number_entry(self):
         """Add the "number of nuclei" entry to the GUI, and instantiate it as
@@ -528,6 +528,21 @@ class View(Frame):
                               command=lambda: self.clear_total())
         top_clear.pack()
         bottom_clear.pack()
+
+    def add_filesave_buttons(self):
+        """Add buttons for saving the total spectrum as EPS or PDF."""
+        save_eps_button = Button(self.SideFrame, text="Save as EPS",
+                                 command=lambda: self.save_as_eps())
+        save_pdf_button = Button(self.SideFrame, text="Save as PDF",
+                                 command=lambda: self.save_as_pdf())
+        save_eps_button.pack()
+        save_pdf_button.pack()
+
+    def save_as_eps(self):
+        print('Save as EPS!')
+
+    def save_as_pdf(self):
+        print('Save as PDF!')
 
     def add_subspectrum_buttons(self):
         """Add buttons for requesting: Add to Spectrum; Remove from Spectrum;
@@ -786,7 +801,6 @@ class View(Frame):
             history.add_current_to_total()
             self.clear_total()
             self.plot_total(history.total_x, history.total_y)
-
 
     def request_add_plot(self, model, **data):
         """Add the current (top) spectrum to the sum (bottom) spectrum.
