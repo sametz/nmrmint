@@ -13,7 +13,7 @@ import tkinter as tk
 from nmrmint.GUI.view import View
 from nmrmint.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
                                    first_order, add_spectra)
-from nmrmint.model.nmrplot import tkplot
+from nmrmint.model.nmrplot import tkplot_current, tkplot_total
 
 
 class Controller:
@@ -46,6 +46,7 @@ class Controller:
 
 
     """
+
     # TODO: refactor to reduce code redundancy
 
     def __init__(self, root):
@@ -86,7 +87,7 @@ class Controller:
         :param spectrum: [(frequency, intensity)...] A list of frequency,
         intensity tuples with the frequency in ppm."""
         freq, int_ = ([x * self.view.spectrometer_frequency
-                      for x, y in spectrum],
+                       for x, y in spectrum],
                       [y for x, y in spectrum])
         return list(zip(freq, int_))
 
@@ -136,7 +137,7 @@ class Controller:
 
     # The methods below provide the interface to the View.
 
-    def update_current_plot(self, model, **data):
+    def update_current_plot(self, model, data):
         """
         Pass the View's current (top) plot data to the appropriate
         model; simulate spectral data; and tell the view to plot the data.
@@ -146,15 +147,24 @@ class Controller:
 
         :return: None (including when model is not recognized)
         """
-        multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
-                            'first_order']
+        # multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
+        #                     'first_order']
 
-        if model in multiplet_models:
-            spectrum = self.models[model](**data)
-            plotdata = tkplot(spectrum)
+        # if model in multiplet_models:
+        # print('controller received ', model)
+        if model == 'first_order':
+            signal = data['signal']
+            couplings = data['couplings']
+            w = data['w']
+            spectrum = self.models[model](signal=signal, couplings=couplings)
+            plotdata = tkplot_current(
+                spectrum, w,
+                spectrometer_frequency=self.view.spectrometer_frequency)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
-            plotdata = tkplot(spectrum, w)
+            plotdata = tkplot_current(
+                spectrum, w,
+                spectrometer_frequency=self.view.spectrometer_frequency)
         else:
             print('model not recognized')
             return
@@ -162,6 +172,40 @@ class Controller:
         plotdata = self.lineshape_to_ppm(plotdata)
         self.view.clear_current()
         self.view.plot_current(*plotdata)
+
+    def lineshape_data(self, model, data):
+        if model == 'first_order':
+            signal = data['signal']
+            couplings = data['couplings']
+            w = data['w']
+            spectrum = self.models[model](signal=signal, couplings=couplings)
+            plotdata = tkplot_current(
+                spectrum, w,
+                spectrometer_frequency=self.view.spectrometer_frequency)
+        elif model == 'nspin':
+            spectrum, w = self.models[model](**data)
+            plotdata = tkplot_current(
+                spectrum, w,
+                spectrometer_frequency=self.view.spectrometer_frequency)
+        else:
+            print('model not recognized')
+            return None
+        return self.lineshape_to_ppm(plotdata)
+
+    def create_lineshape(self, spectrum, *w):
+        """Currently used to create blank spectra for history, but in future
+        many of the Controller methods will be refactored for reuse and
+        clarity.
+        """
+        # print('controller.create_lineshape received ', spectrum)
+        spectrum = self.spectrum_from_ppm(spectrum)
+        plotdata = tkplot_total(
+            spectrum, *w,
+            spectrometer_frequency=self.view.spectrometer_frequency)
+        plotdata = self.lineshape_to_ppm(plotdata)
+        # print('create_lineshape created plotdata: ', plotdata)
+
+        return plotdata
 
     def update_total_plot(self, spectrum, *w):
         """Call model to calculate plot data from the provided spectrum,
@@ -172,11 +216,31 @@ class Controller:
         :param w: optional peak width at half height.
         """
         spectrum = self.spectrum_from_ppm(spectrum)
-        plotdata = tkplot(spectrum, *w)
+        plotdata = tkplot_total(
+            spectrum,
+            *w,
+            spectrometer_frequency=self.view.spectrometer_frequency)
         plotdata = self.lineshape_to_ppm(plotdata)
         # self.view.canvas.clear_total()
         self.view.clear_total()
         self.view.plot_total(*plotdata)
+
+    def total_plot(self, spectrum, *w):
+        """Call model to calculate lineshape from provided spectrum,
+        and return it.
+
+        :param spectrum: [(float, float)...] The lineshape data for a total
+        spectrum plot.
+        :param w: optional peak width at half height.
+        :return: (np.linspace, np.array) of x, y- lineshape data.
+        """
+        spectrum = self.spectrum_from_ppm(spectrum)
+        plotdata = tkplot_total(
+            spectrum,
+            *w,
+            spectrometer_frequency=self.view.spectrometer_frequency)
+        plotdata = self.lineshape_to_ppm(plotdata)
+        return plotdata
 
     def add_view_plots(self, model, total_spectrum, **data):
         """Compute a spectrum from model, **data, add it to another spectrum,
@@ -201,13 +265,13 @@ class Controller:
         if model in multiplet_models:
             spectrum = self.models[model](**data)
             add_spectra(total_spectrum_Hz, spectrum)
-            plotdata = tkplot(spectrum)
-            total_plotdata = tkplot(total_spectrum_Hz)
+            plotdata = tkplot_total(spectrum)
+            total_plotdata = tkplot_total(total_spectrum_Hz)
         elif model == 'nspin':
             spectrum, w = self.models[model](**data)
             add_spectra(total_spectrum_Hz, spectrum)
-            plotdata = tkplot(spectrum, w)
-            total_plotdata = tkplot(total_spectrum_Hz, w)
+            plotdata = tkplot_total(spectrum, w)
+            total_plotdata = tkplot_total(total_spectrum_Hz, w)
         else:
             print('model not recognized')
             return

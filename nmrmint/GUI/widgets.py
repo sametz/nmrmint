@@ -95,8 +95,11 @@ class BaseEntryFrame(Frame):
         self.controller = controller
 
         # How the initial value for the widget depends on subclass, so:
-        # if not self.initial_value:
-        #     self.initial_value = 0.00  # Should be overridden by subclass
+        # Uncomment the code below to test BaseEntryFrame
+        try:
+            assert self.initial_value is not None
+        except AttributeError:
+            self.initial_value = 0.00  # Should be overridden by subclass
 
         self.initialize()
         self.add_label()
@@ -221,6 +224,23 @@ class BaseEntryFrame(Frame):
         except ValueError:
             return False
 
+    def get_value(self):
+        """Returns the contents of the Entry widget as a str.
+        Known issue: loss of decimal places if contents a decimal number.
+        e.g. if set with 0.00, becomes '0.0'.
+        :return: (str)
+        """
+        return self.value_var.get()
+
+    def set_value(self, val):
+        self.value_var.set(val)
+
+        # Tentatively, the fix to issues with toolbars detecting refreshes when
+        # subspectra are reloaded is to not update current_val, but call
+        # save_entry:
+        self.save_entry()
+        # self.current_value = val
+
 
 class ArrayBox(BaseEntryFrame):
     """
@@ -267,6 +287,16 @@ class ArrayBox(BaseEntryFrame):
         # if more than one row, assume J matrix and fill cross-diagonal element
         if self.array.shape[0] > 1:
             self.array[self.col, self.row] = self.value
+        # potential fix to refresh problem: forgot next line?
+        self.current_value = self.value
+
+    def set_value(self, val):
+        self.value_var.set(val)
+        self.save_entry()
+        # self.current_value = val
+        # self.array[self.row, self.col] = val
+        # if self.array.shape[0] > 1:
+        #     self.array[self.col, self.row] = val
 
 
 class ArraySpinBox(ArrayBox):
@@ -623,6 +653,8 @@ class MixinInt:
         """
         if not entry:
             return True  # Empty string: OK if entire entry deleted
+        if entry == '-':
+            return True  # OK to try and enter a negative value
         try:
             int(entry)
             return True
@@ -664,14 +696,27 @@ class HorizontalIntBox(MixinHorizontal, IntBox):
         super(HorizontalIntBox, self).__init__(**kwargs)
 
 
-class HorizontalEntryFrame(MixinHorizontal, MixinIntRange,
-                           SimpleVariableBox):
+class HorizontalEntryFrame(MixinHorizontal, SimpleVariableBox):
+    """A SimpleVariableBox with a horizontal layout."""
+    def __init__(self, **kwargs):
+        super(HorizontalEntryFrame, self).__init__(**kwargs)
+
+
+class HorizontalIntEntryFrame(MixinHorizontal, MixinInt, SimpleVariableBox):
+    """A SimpleVariableBox with a horizontal layout, and with Entry values
+    limited to integers."""
+    def __init__(self, **kwargs):
+        super(HorizontalIntEntryFrame, self).__init__(**kwargs)
+
+
+class HorizontalRangeEntryFrame(MixinHorizontal, MixinIntRange,
+                                SimpleVariableBox):
     """A SimpleVariableBox with a horizontal layout, and with Entry values
     limited to integers in the 2-8 range (currently hardcoded in
     MixinIntRange).
     """
     def __init__(self, **kwargs):
-        super(HorizontalEntryFrame, self).__init__(**kwargs)
+        super(HorizontalRangeEntryFrame, self).__init__(**kwargs)
 
 
 if __name__ == '__main__':
@@ -712,9 +757,9 @@ if __name__ == '__main__':
                                             name='SimpleVariableBox example',
                                             value=20.0)
     widget_list.append(simple_variable_box)
-    horizontal_test = HorizontalEntryFrame(parent=mainwindow,
-                                           name='horizontal test',
-                                           value=18)
+    horizontal_test = HorizontalRangeEntryFrame(parent=mainwindow,
+                                                name='horizontal test',
+                                                value=18)
     widget_list.append(horizontal_test)
 
     for widget in widget_list:

@@ -22,7 +22,11 @@ def lorentz(v, v0, I, w):
 
     :returns: Distribution evaluated at points in x.
     """
-    return I * ((0.5 * w) ** 2 / ((0.5 * w) ** 2 + (v - v0) ** 2))
+    # Adding a height scaling factor so that peak intensities are lowered as
+    # they are more broad. If I is the intensity with a default w of 0.5 Hz:
+    scaling_factor = 0.5 / w  # i.e. a 1 Hz wide peak will be half as high
+    return scaling_factor * I * (
+            (0.5 * w) ** 2 / ((0.5 * w) ** 2 + (v - v0) ** 2))
 
 
 def add_signals(linspace, peaklist, w):
@@ -63,21 +67,47 @@ def nmrplot(spectrum, y=1):
     return
 
 
-def tkplot(spectrum, w=0.5):
+def tkplot_current(spectrum, w=0.5, spectrometer_frequency=300):
+    # TODO: delete when no longer needed
     """Generate linspaces of x and y coordinates suitable for plotting on a
-    matplotlib tkinter current_canvas.
+    matplotlib tkinter current_canvas. An x-range suitable for a "current
+    plot" zoom is hard-coded in (minimum frequency -50 Hz from lowest
+    frequency peak; maximum frequency +50 Hz from highest frequency peak.)
     :param spectrum: A list of (frequency, intensity) tuples
     :param w: peak width at half height
     :return: a tuple of x and y coordinate linspaces
     """
     spectrum.sort()
-    r_limit = spectrum[-1][0] + 50
-    l_limit = spectrum[0][0] - 50
-    # testing indicated the following was a sweetspot resolution
-    x = np.linspace(l_limit, r_limit,  # 2400)
-                    40 * (r_limit - l_limit))
+    # r_limit = spectrum[-1][0] + 50
+    # l_limit = spectrum[0][0] - 50
+    # # testing indicated the following was a sweetspot resolution
+    # x = np.linspace(l_limit, r_limit,  # 2400)
+    #                 40 * (r_limit - l_limit))
+    x = np.linspace(-1 * spectrometer_frequency,
+                    15 * spectrometer_frequency,
+                    160000)  # 0.01 Hz resolution on 1 GHz spectrometer
+
     y = add_signals(x, spectrum, w)
     return x, y
+
+
+def tkplot_total(spectrum, w=0.5, spectrometer_frequency=300):
+    """Generate linspaces of x and y coordinates suitable for plotting on a
+    matplotlib tkinter current_canvas.
+
+    Hard-coding a -1 to 15 ppm linspace, with resolution such that a 1 GHz
+    spectrometer has 10 points per Hz.
+    :param spectrum: A list of (frequency, intensity) tuples
+    :param w: peak width at half height
+    :param spectrometer_frequency: the frequency of the spectrometer (i.e
+    frequency in MHz that 1H nuclei resonate at)
+    :return: a tuple of x and y coordinate linspaces"""
+    x = np.linspace(-1 * spectrometer_frequency,
+                    15 * spectrometer_frequency,
+                    160000)  # 0.01 Hz resolution on 1 GHz spectrometer
+    y = add_signals(x, spectrum, w)
+    return x, y
+
 
 
 if __name__ == '__main__':

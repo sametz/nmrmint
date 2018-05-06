@@ -1,0 +1,45 @@
+Route to refactoring data model
+
+Reasons:
+    - to have different line widths possible for different subspectra
+    - allow the spectrometer frequency to be changed mid-simulation and have
+    total spectrum accurately update
+    - to allow different spectral windows, rather than default to -50 min/+50
+    max
+
+
+1. Add left/right limit entry boxes. Suggest hard-coding max range from -1 ppm
+to +15 ppm. Then use matplotlib's set_xlim to implement these. Note: if set_xlim
+(larger_number, smaller_number), x axis should be automatically flipped, and any
+ manual axis flipping in code could be removed.
+
+2. Change the linspace used for lineshape calcs so that it is always from 15 to
+-1 ppm. How big of a performance hit will this be? Note: if this works, the x
+linspace will be a constant.
+
+3. Turn subspectra into objects. These should hold the toolbar numerical
+entries, the linewidth, and possibly the lineshape y data.
+
+4. Change the history and update functions to use subspectra objects. If
+linshape is part of the object, can re-compute linshapes only as needed.
+
+5. Have a change in spectrometer frequency re-compute and re-add all subspectra.
+
+6. Moving backwards/forwards in history: also change and re-configure toolbars?
+
+Alternatives:
+4. In lieu of current total spectrum history, be able to flip between
+subspectra, and toggle them active/inactive (add to/delete from total spectrum).
+6. Advanced modification: have undo/redo for subspectra instead of spectrum.
+
+4/14/2018: The program will become more simple if an adapter is created to be
+the interface between view and controller. Toolbars can send and receive
+parameters (dict, JSON, ...). Data sent by toolbar is converted into the type
+needed by the model and then passed to controller. Data received by toolbar is
+used to set it to another state, allowing possible undo/redo functionality or
+toolbar switching.
+
+4/15/2018 The Controller really is just an adapter, so this program was really
+using Model-View-Adapter throughout, not MVC. At some point, Adapter can
+probably be merged with Controller to cut out the middleman.
+

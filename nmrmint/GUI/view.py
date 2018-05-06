@@ -17,11 +17,18 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2TkAgg)
 from matplotlib.figure import Figure
 
+from nmrmint.GUI.adapter import Adapter
 from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
+from nmrmint.GUI.history import Subspectrum, History
 from nmrmint.GUI.toolbars import (FirstOrderBar,
+                                  SecondOrderBar,
                                   SecondOrderSpinBar)
-from nmrmint.GUI.widgets import HorizontalEntryFrame, SimpleVariableBox
+from nmrmint.GUI.widgets import (HorizontalRangeEntryFrame,
+                                 HorizontalEntryFrame,
+                                 SimpleVariableBox)
+
+history = History()
 
 
 class MPLplot(FigureCanvasTkAgg):
@@ -42,6 +49,7 @@ class MPLplot(FigureCanvasTkAgg):
         clear_total: clears the bottom plot
 
     """
+
     def __init__(self, figure, master=None, **options):
         """Extend FigureCanvasTkAgg with a Matplotlib Figure object, then add
         and pack itself plus a toolbar into the parent.
@@ -55,6 +63,8 @@ class MPLplot(FigureCanvasTkAgg):
         self.current_plot.invert_xaxis()
         self.total_plot = figure.add_subplot(212)
         self.total_plot.invert_xaxis()
+        self.x_min = -1  # ppm
+        self.x_max = 12  # ppm
         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.toolbar = NavigationToolbar2TkAgg(self, master)
         self.toolbar.update()
@@ -65,10 +75,13 @@ class MPLplot(FigureCanvasTkAgg):
         :param x: (numpy linspace)
         :param y: (numpy linspace)
         """
+        # print('view.plot_current received x ', x.size, ' y ', y.size)
         # for some reason axes were getting flipped after adding, so:
         self.current_plot.invert_xaxis()
+        self.set_current_window(x, y)
         self.current_plot.plot(x, y, linewidth=1)
-        self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
+        # self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
+        self.draw_idle()
 
     def plot_total(self, x, y):
         """Plot x, y data to the total_plot axis.
@@ -77,9 +90,73 @@ class MPLplot(FigureCanvasTkAgg):
         :param y: (numpy linspace)
         """
         # for some reason total_plot axis gets flipped, so:
-        self.total_plot.invert_xaxis()
+        # self.total_plot.invert_xaxis()
         self.total_plot.plot(x, y, linewidth=1)
-        self.f.canvas.draw_idle()
+        # self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
+        # # self.f.canvas.draw_idle()
+        # self.draw_idle()
+        self.update_total_plot_window()
+
+    def update_total_plot_window(self, *x_limits):
+
+        # TODO: initially tried x_min, x_max = *x_limits, but get
+        # error "can't use starred expression here"--learn how this
+        # should work.
+        if x_limits:
+            if len(x_limits) == 2:
+                self.x_min = x_limits[0]
+                self.x_max = x_limits[1]
+            else:
+                print('update_total_plot_window called with bad args')
+        # self.x_min = x_min
+        # self.x_max = x_max
+        self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
+        self.draw_idle()
+
+    def set_current_window(self, x, y):
+        left = False
+        right = False
+        # print('x, y', type(x), len(x), type(y), len(y))
+        # print('checking x order')
+        # ordered = True
+        # for i, x_ in enumerate(x[:-2]):
+        #     if x[i + 1] < x_:
+        #         # print('x stopped increasing at: ', i)
+        #         ordered = False
+        #         break
+        # if ordered:
+        #     print('x always increased, from ', x[0], 'to ', x[-1])
+
+        start = True
+        for i, y_ in enumerate(y[:-2]):
+
+            if y[i + 1] < y_ and start is True:
+                # print('y max found at: ', i, y_)
+                start = False
+            if y[i + 1] > y_:
+                start = True
+
+        for i, intensity in enumerate(y):
+            if intensity > 0.01:
+                left = i
+                # print('found left = ', left)
+                # print('intensity: ', intensity)
+                break
+        # if not left:
+        # print('no left found')
+        for j, intensity in enumerate(reversed(y)):
+            if intensity > 0.01:
+                right = j
+                # print('found right = ', right)
+                # print('intensity: ', intensity)
+                break
+        # if not right:
+        # print('no right found')
+        x_min = x[left] - 0.2
+        x_max = x[-right] + 0.2
+        # print('x window ', x_min, x_max)
+        self.current_plot.set_xlim(x_max, x_min)  # should flip x axis
+        self.draw_idle()
 
     def clear_all(self):
         """Clear all spectra plots."""
@@ -165,12 +242,15 @@ class View(Frame):
         # sys.settrace(trace_calls)
 
         self.controller = controller
+        self.adapter = Adapter(view=self)  # could this be defined outside View?
         self.nuclei_number = 2
         self.spectrometer_frequency = 300  # MHz
+        self.v_min = -1  # ppm
+        self.v_max = 12  # ppm
 
         # Currently, for debugging purposes, initial/blank spectra will have a
         # "TMS" peak at 0 that integrates to 1H.
-        self.blank_spectrum = [(0, 1)]
+        self.blank_spectrum = [(0, 0.05)]
         self.history_past = []
         self.history_future = []
 
@@ -180,21 +260,35 @@ class View(Frame):
         self.TopFrame = Frame(self, relief=RIDGE, borderwidth=1)
         self.TopFrame.pack(side=TOP, expand=NO, fill=X)
 
+        self.SubSpectrumButtonFrame = Frame(self, relief=RIDGE, borderwidth=1)
+        self.SubSpectrumButtonFrame.pack(side=TOP, expand=NO, fill=X)
+
+        self.SubSpectrumSelectionFrame = Frame(self, relief=RIDGE,
+                                               borderwidth=1)
+        self.SubSpectrumSelectionFrame.pack(side=TOP, expand=NO, fill=X)
+
         self.initialize_first_order_bar()
-        self.initialize_spinbars()
+        # self.initialize_spinbars()
+        self.initialize_nospinbars()
         self.add_calc_type_frame()
         self.add_nuclei_number_entry()
         self.add_spec_freq_entry()
+        self.add_minmax_entries()
         # Width sidebar setting currently has no effect
         # self.add_width_entry()
         self.add_clear_buttons()
+        self.add_subspectrum_buttons()
+        self.add_subspectrum_navigation()
         self.add_plots()
         self.add_history_buttons()
 
     def initialize_first_order_bar(self):
         """Instantiate the toolbar for first-order model."""
         bar_kwargs = {'parent': self.TopFrame,
-                      'controller': self.request_refresh_current_plot,
+                      # 'controller': self.request_refresh_current_plot,
+                      'controller': self.update_current_plot,
+                      # Bad to set spec_freq here? Will it change if
+                      # self.spectrometer_frequency changes?
                       'spec_freq': self.spectrometer_frequency}
         self.first_order_bar = FirstOrderBar(**bar_kwargs)
 
@@ -207,10 +301,20 @@ class View(Frame):
             spinbars: a list of SecondOrderSpinBar objects, one for each
             number of spins to simulate.
         """
-        kwargs = {'controller': self.request_refresh_current_plot,
+        kwargs = {'controller': self.update_current_plot,
                   'realtime': True}
         self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self.spinbars = [SecondOrderSpinBar(self.TopFrame, n=spins, **kwargs)
+                         for spins in self.spin_range]
+
+    def initialize_nospinbars(self):
+        """Used to test parent SecondOrderBar instead of child
+        SecondOrderSpinBar. Change view initialization to call this method
+        instead of initialize_spinbars.
+        """
+        kwargs = {'controller': self.update_current_plot}
+        self.spin_range = range(2, 9)  # hardcoded for only 2-8 spins
+        self.spinbars = [SecondOrderBar(self.TopFrame, n=spins, **kwargs)
                          for spins in self.spin_range]
 
     def add_calc_type_frame(self):
@@ -236,6 +340,9 @@ class View(Frame):
         second-order "number of nuclei" entry.
         """
         self.calc_type = 'first-order'
+        # If switching subspectrum's toolbars, cancel any activity
+        # if history.current_subspectrum().active:
+        #     self.toggle_subspectrum()
         self.select_toolbar(self.first_order_bar)
         for child in self.nuc_number_frame.winfo_children():
             child.configure(state='disable')
@@ -246,31 +353,49 @@ class View(Frame):
         nuclei" entry.
         """
         self.calc_type = 'second-order'
+        # If switching subspectrum's toolbars, cancel any activity
+        # if history.current_subspectrum().active:
+        #     self.toggle_subspectrum()
         self.select_toolbar(self.spinbars[self.nuclei_number - 2])
         for child in self.nuc_number_frame.winfo_children():
             child.configure(state='normal')
 
-    def select_toolbar(self, toolbar):
+    def select_toolbar(self, toolbar, deactivate=True):
         """Replaces the old toolbar with the new toolbar.
 
         :param toolbar: the toolbar to replace currentbar in the GUI.
+        :param deactivate: (Bool) should subspectrum activity be toggled?
+        Default behavior is to deactivate ss and delete it from total
+        spectrum when changing toolbars (i.e. when selecting the model for
+        the subspectrum). deactivate=False would be used when switching
+        between subspectra.
+
+        Rethink: maybe default should be to maintain activity, and refresh
+        total if active.
         """
+        #
+
         self.currentbar.grid_remove()
-        self.currentbar = toolbar
+        self.currentbar = toolbar  # redundant with history.toolbar?
+        # history.change_toolbar(toolbar)  # postpone?
         self.currentbar.grid(sticky=W)
         # record current bar of currentframe:
         self.active_bar_dict[self.calc_type] = toolbar
-        self.currentbar.set_freq(self.spectrometer_frequency)
-        try:
-            self.currentbar.request_plot()
-        except ValueError:
-            print('No model yet for this bar')
+        # self.currentbar.set_freq(self.spectrometer_frequency)  # remove?
+
+        # try:
+        #     self.currentbar.request_plot()
+        # except ValueError:
+        #     print('No model yet for this bar')
+        history.change_toolbar(self.currentbar)
+        self.update_current_plot()
+
 
     def add_nuclei_number_entry(self):
         """Add the "number of nuclei" entry to the GUI, and instantiate it as
         "disabled".
         """
-        self.nuc_number_frame = HorizontalEntryFrame(
+        self.nuc_number_frame = HorizontalRangeEntryFrame(
             parent=self.SideFrame,
             name='Number of nuclei:',
             value=self.nuclei_number,
@@ -301,8 +426,79 @@ class View(Frame):
     def set_spec_freq(self):
         """Set the spectrometer frequency."""
         self.spectrometer_frequency = self.spec_freq_widget.current_value
-        self.currentbar.set_freq(self.spectrometer_frequency)
-        self.request_refresh_total_plot(self.total_spectrum)
+        # self.currentbar.set_freq(self.spectrometer_frequency)
+        # self.request_refresh_total_plot(self.total_spectrum)
+        history.update_frequency(self.spectrometer_frequency)
+        self.update_all_spectra()
+
+    def update_all_spectra(self):
+        """Recompute all lineshape data, store in history, and refresh."""
+        history.save()
+        history.total_x, history.total_y = self.blank_total_spectrum()
+        converter = self.adapter.convert_toolbar_data
+        # subspectra_data = [data for data in history.all_spec_data()]
+        subspectra_data = history.all_spec_data()
+        print('view received: ', subspectra_data)
+        # print('subspectra data: ', subspectra_data)
+        print('testing all_spec_data')
+        for model, vars_ in history.all_spec_data():
+            print(model, vars_)
+        model_inputs = [(model, converter(model, vars_))
+                        for model, vars_ in history.all_spec_data()]
+        print('model inputs', model_inputs)
+        subspectra_lineshapes = [self.controller.lineshape_data(*input_)
+                                 for input_ in model_inputs]
+        print('subspectra lineshapes: ', subspectra_lineshapes)
+        history.update_all_spectra(subspectra_lineshapes)
+        x, y = history.current_lineshape()
+        self.clear_current()
+        self.plot_current(x, y)
+        x_total, y_total = history.total_x, history.total_y
+        self.clear_total()
+        self.plot_total(x_total, y_total)
+
+    def add_minmax_entries(self):
+        """Add entries for minimum and maximum frequency to display"""
+        # set View.v_min and .v_max to initial default values
+        self.v_min_frame = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='v min',
+            value=self.v_min,
+            controller=self.set_v_min)
+        self.v_max_frame = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='v max',
+            value=self.v_max,
+            controller=self.set_v_max)
+        self.v_min_frame.pack(side=TOP)
+        self.v_max_frame.pack(side=TOP)
+
+    def set_v_min(self):
+        print('vmin change detected')
+        self.v_min = self.v_min_frame.current_value
+        print('v_min now: ', self.v_min)
+        print('v_max is: ', self.v_max)
+        # TODO: add refresh of spectrum
+        # self.update_spec_window()
+        self.canvas.update_total_plot_window(self.v_min, self.v_max)
+
+    def set_v_max(self):
+        print('vmax change detected')
+        self.v_max = self.v_max_frame.current_value
+        print('v_min is: ', self.v_min)
+        print('v_max is now: ', self.v_max)
+        # TODO: add refresh of spectrum
+        # self.update_spec_window()
+        self.canvas.update_total_plot_window(self.v_min, self.v_max)
+
+    # def update_spec_window(self):
+    #     """Changes the range of the x axis (frequency) on the total spectrum.
+    #
+    #     This should probably be a canvas method, not a view method.
+    #     Which one should "own" the v_min/v_max variables?
+    #     """
+    #     self.canvas.total_plot.set_xlim(self.v_max, self.v_min)
+    #     self.canvas.draw_idle()
 
     def add_width_entry(self):
         """Add a labeled widget for entering desired peak width.
@@ -333,10 +529,166 @@ class View(Frame):
         top_clear.pack()
         bottom_clear.pack()
 
+    def add_subspectrum_buttons(self):
+        """Add buttons for requesting: Add to Spectrum; Remove from Spectrum;
+        New Subspectrum; Delete Subspectrum.
+        """
+        self.add_subspectrum_button = Button(
+            self.SubSpectrumButtonFrame,
+            text="Add to Spectrum",
+            highlightbackground='red',
+            command=lambda:
+            self.toggle_subspectrum())
+        # remove_subspectrum_button = Button(self.SubSpectrumButtonFrame,
+        #                                    text="Remove from Spectrum",
+        #                                    command=lambda:
+        #                                    self.remove_subspectrum())
+
+        new_subspectrum_button = Button(self.SubSpectrumButtonFrame,
+                                        text="New Subspectrum",
+                                        command=lambda: self.new_subspectrum())
+        delete_subspectrum_button = Button(
+            self.SubSpectrumButtonFrame,
+            text="Delete Subspectrum",
+            command=lambda: self.delete_subspectrum())
+        self.add_subspectrum_button.pack(side=LEFT)
+        # remove_subspectrum_button.pack(side=LEFT)
+        new_subspectrum_button.pack(side=LEFT)
+        delete_subspectrum_button.pack(side=LEFT)
+
+    def toggle_subspectrum(self):
+        # print(self.add_subspectrum_button['bg'])
+        subspectrum_active = history.current_subspectrum().toggle_active()
+        if subspectrum_active:
+            # self.add_subspectrum_button['highlightbackground'] = 'green'
+            self.set_active_button_color('green')
+            history.add_current_to_total()
+        else:
+            # self.add_subspectrum_button['highlightbackground'] = 'red'
+            self.add_subspectrum_button['highlightbackground'] = 'red'
+            history.remove_current_from_total()
+        self.clear_total()
+        self.plot_total(history.total_x, history.total_y)
+
+    def reset_active_button_color(self):
+        subspectrum = history.current_subspectrum()
+        if subspectrum.active:
+            self.set_active_button_color('green')
+        else:
+            self.set_active_button_color('red')
+
+    def set_active_button_color(self, color):
+        """Set the 'Add to Spectrum' button's color.
+
+        :param color: (str) the color to change the button's background to.
+        """
+        try:
+            self.add_subspectrum_button['highlightbackground'] = color
+        except Exception:
+            print('color not recognized')
+
+    def add_subspectrum(self):
+        history.save_current_linshape(self.current_x, self.current_y)
+        print('current_lineshape', self.current_x, self.current_y)
+        history.add_current_to_total()
+
+    def remove_subspectrum(self):
+        history.remove_current_from_total()
+
+    def new_subspectrum(self):
+        # Refactored. Adding story comments to try to make process clear
+
+        # Slightly hacky: here, we don't want the old toolbar to deactivate
+        # regardless of its activate status. CalcTypeFrame.click() will
+        # normally deactiate an active bar. Adding the new subspectrum first
+        # will point the .click() to it, see it as default deactive, and not
+        # take action.
+        history.add_subspectrum()
+
+        # Possible refactor: reset ***all*** toolbars? or just allow their
+        # last state to remain?
+
+        self.currentbar.restore_defaults()
+
+        # Want to switch to default 1st order bar, and to change radio
+        # button, so easy way is to:
+        self.CalcTypeFrame.click(0)
+
+        # Restore default toolbar values
+        self.currentbar.restore_defaults()
+
+        # update history and subspectrum with its status
+        history.change_toolbar(self.currentbar)
+
+        # Necessary? make sure active button is correct
+        self.reset_active_button_color()
+
+        # update label with subspectrum number
+        self.subspectrum_label.config(text="Subspectrum "
+                                           + str(history.current + 1))
+
+        # refresh current subspectrum plot
+        self.update_current_plot()
+
+    def delete_subspectrum(self):
+        print('Delete the current subspectrum!')
+        if history.length() < 2:
+            print('Not deleting...only 1 subspectrum left')
+            return
+        if history.current_subspectrum().active:
+            history.remove_current_from_total()
+        history.delete()
+        self.subspectrum_label.config(text="Subspectrum "
+                                           + str(history.current + 1))
+        self.select_toolbar(history.current_toolbar(),
+                            deactivate=False)
+        # self.currentbar.reset(history.current_subspectrum().vars)
+        self.update_current_plot()
+        self.clear_total()
+        self.plot_total(history.total_x, history.total_y)
+
+    def add_subspectrum_navigation(self):
+        subspectrum_back = Button(self.SubSpectrumSelectionFrame,
+                                  text="<-",
+                                  command=lambda: self.prev_subspectrum())
+        self.subspectrum_label = Label(
+            self.SubSpectrumSelectionFrame,
+            text="Subspectrum " + str(history.current + 1))
+        subspectrum_forward = Button(self.SubSpectrumSelectionFrame,
+                                     text="->",
+                                     command=lambda: self.next_subspectrum())
+        subspectrum_back.pack(side=LEFT)
+        self.subspectrum_label.pack(side=LEFT)
+        subspectrum_forward.pack(side=LEFT)
+
+    def next_subspectrum(self):
+        if history.forward():
+            self.subspectrum_label.config(text="Subspectrum "
+                                               + str(history.current + 1))
+            self.select_toolbar(history.current_toolbar(), deactivate=False)
+            self.currentbar.reset(history.current_subspectrum().vars)
+            self.update_current_plot()
+
+    def prev_subspectrum(self):
+        # history.dump()
+        if history.back():
+            self.subspectrum_label.config(text="Subspectrum "
+                                               + str(history.current + 1))
+            self.select_toolbar(history.current_toolbar(), deactivate=False)
+            self.currentbar.reset(history.current_subspectrum().vars)
+            self.update_current_plot()
+        # history.dump()
+        # assert history.subspectra[history.current] is not history.subspectra[
+        #     history.current - 1]
+        # assert 1 == 2
+
     def add_plots(self):
         """Add a MPLplot canvas to the GUI"""
         self.figure = Figure(figsize=(7, 5.6), dpi=100)  # original figsize 5, 4
         self.canvas = MPLplot(self.figure, self)
+        # View should override Canvas' default xlim
+        self.canvas.x_min = self.v_min
+        self.canvas.x_max = self.v_max
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
     def add_history_buttons(self):
@@ -393,6 +745,14 @@ class View(Frame):
 
     # Interface from View to Controller:
     # TODO: rename these
+
+    def blank_total_spectrum(self):
+        """Request and return a new blank total spectrum.
+
+        :return: (np.linspace, np.array) tuple of x, y- lineshape data
+        """
+        return self.controller.total_plot(self.blank_spectrum)
+
     def request_refresh_current_plot(self, model, **data):
         """Intercept the toolbar's plot request, include the total spectrum,
         and request an update from the Controller
@@ -400,7 +760,33 @@ class View(Frame):
         :param model: (str) Name of the model to use for calculation.
         :param data: (dict) kwargs for the requested model calculation.
         """
-        self.controller.update_current_plot(model, **data)
+        print('request_refresh_current_plot received ', model, data)
+        self.controller.update_current_plot(model, data)
+
+    # def update_current_plot(self, model, vars):
+    #     """Will become replacement for request_refresh_current_plot"""
+    #     print('update_current_plot received ', model, vars)
+    #     # history.update_vars(model, vars)
+    #     history.change_toolbar(self.currentbar)
+    #     data = self.adapter.convert_toolbar_data(model, vars)
+    #     self.controller.update_current_plot(model, data)
+
+    def update_current_plot(self):
+        """Testing a refactor where plots get needed data directly from
+        history."""
+        active = history.current_subspectrum().active
+        if active:
+            history.remove_current_from_total()
+        history.save()
+        model, vars_ = history.subspectrum_data()
+        print('update_current_plot received ', model, vars_)
+        data = self.adapter.convert_toolbar_data(model, vars_)
+        self.controller.update_current_plot(model, data)
+        if active:
+            history.add_current_to_total()
+            self.clear_total()
+            self.plot_total(history.total_x, history.total_y)
+
 
     def request_add_plot(self, model, **data):
         """Add the current (top) spectrum to the sum (bottom) spectrum.
@@ -436,10 +822,31 @@ class View(Frame):
         self.currentbar.grid(sticky=W)
         self.active_bar_dict = {'first-order': self.first_order_bar,
                                 'second-order': self.spinbars[0]}
-        self.total_spectrum = self.blank_spectrum
+        self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
+        history.change_toolbar(self.currentbar)
         self.currentbar.request_plot()
         self.controller.update_total_plot(self.total_spectrum)
-        self.history_past.append(self.total_spectrum[:])
+        # self.history_past.append(self.total_spectrum[:])
+
+        # test routines below (normally hashed out)
+
+        # self.currentbar.test_reset({'Vcentr': 5.0})  # for test purposes
+
+        # self.select_second_order()
+        # testbar = self.currentbar
+        # v, j, w = testbar.v, testbar.j, testbar.w_array
+        # testbar.test_reset(v, j, w)
+
+    # def start_history(self):
+    #     # self.history = History()
+    #     ss = self.record_subspectrum()
+    #     history.add_subspectrum(ss)
+    #     print('history initiated with subspectrum ', history.current,
+    #           " containing vars ", history.subspectra[history.current].vars)
+
+    # def record_subspectrum(self):
+    #     subspectrum = Subspectrum(vars=self.currentbar.vars)
+    #     return subspectrum
 
     # TODO: rename, e.g. update_history
     def update_total_spectrum(self, new_total_spectrum):
@@ -473,6 +880,10 @@ class View(Frame):
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
+        # print('x, y: ', x, y)
+        self.current_x, self.current_y = x, y
+        # print('current_x, current_y: ', self.current_x, self.current_y)
+        history.save_current_linshape(x, y)
         self.canvas.plot_current(x, y)
 
     def plot_total(self, x, y):
@@ -481,6 +892,7 @@ class View(Frame):
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
+        history.save_total_linshape(x, y)
         self.canvas.plot_total(x, y)
 
     # debugging below
