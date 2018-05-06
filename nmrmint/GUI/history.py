@@ -79,6 +79,7 @@ class History:
     def add_subspectrum(self):
         """Add a new subspectrum object to the list of stored subspectra."""
         self.save()
+        # self.current_toolbar().restore_defaults()
         subspectrum = Subspectrum()
         # if self.current >= 0:
         #     ss_current = self.current_subspectrum()

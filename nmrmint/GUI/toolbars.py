@@ -162,7 +162,7 @@ class FirstOrderBar(ToolBar):
             self.vars[key] = val
             widget = self.fields[key]
             widget.set_value(val)
-
+        print('Bar reset with vars: ', self.vars)
         # self.vars = copy.deepcopy(vars)
         # for key, val in self.vars.items():
         #     widget = self.fields[key]
@@ -369,9 +369,6 @@ class SecondOrderBar(ToolBar):
                             controller=self.request_plot)
             self.fields[name] = vbox
             vbox.pack(side=LEFT)
-        # print('spinbar ', n, ' fields:')
-        # for key, val in self.fields.items():
-        #     print(key, val)
 
     def add_peakwidth_widget(self):
         """Add peak width-entry widget to the toolbar."""
@@ -478,16 +475,32 @@ class SecondOrderBar(ToolBar):
         self.master.master.request_add_plot('nspin', **kwargs)
 
     def reset(self, vars):
+        """Reset the toolbar with supplied vars.
+
+        :param vars: {'v': 2D np.array of [[ppm chemical shifts...]],
+        'j': 2D np.array of Js in Hz,
+        'w': 2D np.array of [[peak width]]}
+
+        TODO: factor out clunky use of 2D arrays for v and w, to 1D array and
+        float."""
+
+        print('second-order reset with vars: ', vars)
         self.vars = copy.deepcopy(vars)
-        self.v = self.vars['v']
+        self.v_ppm = self.vars['v']
         self.j = self.vars['j']
         self.w = self.vars['w']
-        self.v_ppm = self.v / self.spec_freq
 
         for i, freq in enumerate(self.v_ppm[0]):
             name = 'V' + str(i + 1)
             widget = self.fields[name]
             widget.set_value(freq)
+            widget.array = self.v_ppm
+            print(name, 'was set to : ', freq)
+
+        width_widget = self.fields['W']
+        width = self.w[0][0]
+        width_widget.set_value(width)
+        width_widget.array = self.w
 
         # self.controller('nspin', self.vars)
         self.controller()

@@ -608,6 +608,8 @@ class View(Frame):
         # Possible refactor: reset ***all*** toolbars? or just allow their
         # last state to remain?
 
+        self.currentbar.restore_defaults()
+
         # Want to switch to default 1st order bar, and to change radio
         # button, so easy way is to:
         self.CalcTypeFrame.click(0)

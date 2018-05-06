@@ -95,8 +95,11 @@ class BaseEntryFrame(Frame):
         self.controller = controller
 
         # How the initial value for the widget depends on subclass, so:
-        # if not self.initial_value:
-        #     self.initial_value = 0.00  # Should be overridden by subclass
+        # Uncomment the code below to test BaseEntryFrame
+        try:
+            assert self.initial_value is not None
+        except AttributeError:
+            self.initial_value = 0.00  # Should be overridden by subclass
 
         self.initialize()
         self.add_label()
@@ -222,11 +225,21 @@ class BaseEntryFrame(Frame):
             return False
 
     def get_value(self):
+        """Returns the contents of the Entry widget as a str.
+        Known issue: loss of decimal places if contents a decimal number.
+        e.g. if set with 0.00, becomes '0.0'.
+        :return: (str)
+        """
         return self.value_var.get()
 
     def set_value(self, val):
         self.value_var.set(val)
-        # self.refresh()
+
+        # Tentatively, the fix to issues with toolbars detecting refreshes when
+        # subspectra are reloaded is to not update current_val, but call
+        # save_entry:
+        self.save_entry()
+        # self.current_value = val
 
 
 class ArrayBox(BaseEntryFrame):
@@ -274,6 +287,16 @@ class ArrayBox(BaseEntryFrame):
         # if more than one row, assume J matrix and fill cross-diagonal element
         if self.array.shape[0] > 1:
             self.array[self.col, self.row] = self.value
+        # potential fix to refresh problem: forgot next line?
+        self.current_value = self.value
+
+    def set_value(self, val):
+        self.value_var.set(val)
+        self.save_entry()
+        # self.current_value = val
+        # self.array[self.row, self.col] = val
+        # if self.array.shape[0] > 1:
+        #     self.array[self.col, self.row] = val
 
 
 class ArraySpinBox(ArrayBox):
