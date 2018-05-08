@@ -15,6 +15,8 @@ import numpy as np
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2TkAgg)
+from matplotlib.backends.backend_pdf import FigureCanvasPdf
+from matplotlib.backends.backend_ps import FigureCanvasPS
 from matplotlib.figure import Figure
 
 from nmrmint.GUI.adapter import Adapter
@@ -174,6 +176,19 @@ class MPLplot(FigureCanvasTkAgg):
         self.total_plot.clear()
         self.f.canvas.draw_idle()
 
+    # def total_figure(self):
+    #     total_figure = Figure()
+    #     total_plot = total_figure.add_subplot(111)
+    #     line = self.total_plot.get_lines()[0]
+    #     xd = line.get_xdata()
+    #     yd = line.get_ydata()
+    #     total_plot.plot(xd, yd, linewidth=1)
+    #     return total_figure
+    #
+    # def save_pdf(self):
+    #     figure = self.total_figure()
+    #     # self.f.savefig('test.pdf')
+    #     figure.savefig('test.pdf')
 
 class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
@@ -538,11 +553,24 @@ class View(Frame):
         save_eps_button.pack()
         save_pdf_button.pack()
 
+    def total_plot_figure(self):
+        """Return a Figure for the current total plot."""
+        figure = Figure()
+        axes = figure.add_subplot(111)
+        x, y = history.total_x, history.total_y
+        axes.plot(x, y, linewidth=0.5)
+        axes.set_xlim(self.v_max, self.v_min)
+        return figure
+
     def save_as_eps(self):
         print('Save as EPS!')
+        backend = FigureCanvasPS(self.total_plot_figure())
+        backend.print_eps('test.eps')
 
     def save_as_pdf(self):
         print('Save as PDF!')
+        backend = FigureCanvasPdf(self.total_plot_figure())
+        backend.print_pdf('test.pdf')
 
     def add_subspectrum_buttons(self):
         """Add buttons for requesting: Add to Spectrum; Remove from Spectrum;
