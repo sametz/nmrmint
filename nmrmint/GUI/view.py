@@ -263,6 +263,7 @@ class View(Frame):
         self.spectrometer_frequency = 300  # MHz
         self.v_min = -1  # ppm
         self.v_max = 12  # ppm
+        # self.is_landscape = True
 
         # Currently, for debugging purposes, initial/blank spectra will have a
         # "TMS" peak at 0 that integrates to 1H.
@@ -294,6 +295,8 @@ class View(Frame):
         # self.add_width_entry()
         self.add_clear_buttons()
         self.add_filesave_buttons()
+        self.add_orientation_buttons()
+        self.add_plot_dimensions()
         self.add_subspectrum_buttons()
         self.add_subspectrum_navigation()
         self.add_plots()
@@ -551,12 +554,12 @@ class View(Frame):
                                  command=lambda: self.save_as_eps())
         save_pdf_button = Button(self.SideFrame, text="Save as PDF",
                                  command=lambda: self.save_as_pdf())
-        save_eps_button.pack()
         save_pdf_button.pack()
+        save_eps_button.pack()
 
     def total_plot_figure(self):
         """Return a Figure for the current total plot."""
-        figure = Figure()
+        figure = Figure(figsize=(self.plot_width, self.plot_height))
         axes = figure.add_subplot(111)
         x, y = history.total_x, history.total_y
         axes.plot(x, y, linewidth=0.3)
@@ -566,20 +569,69 @@ class View(Frame):
     def save_as_eps(self):
         print('Save as EPS!')
         backend = FigureCanvasPS(self.total_plot_figure())
+        if self.is_landscape:
+            orientation = 'landscape'
+        else:
+            orientation = 'portrait'
         filename = asksaveasfilename()
         if filename:
             if filename[-4:] != '.eps':
                 filename += '.eps'
-            backend.print_eps(filename)
+            backend.print_eps(filename, orientation=orientation)
 
     def save_as_pdf(self):
         print('Save as PDF!')
-        backend = FigureCanvasPdf(self.total_plot_figure())
+        figure = self.total_plot_figure()
+        backend = FigureCanvasPdf(figure)
+        if self.is_landscape:
+            orientation = 'landscape'
+        else:
+            orientation = 'portrait'
         filename = asksaveasfilename()
         if filename:
             if filename[-4:] != '.pdf':
                 filename += '.pdf'
-            backend.print_pdf(filename)
+            backend.print_pdf(filename, orientation=orientation)
+            # figure.savefig(filename, orientation=orientation)
+
+    def add_orientation_buttons(self):
+        title = 'EPS Orientation'
+        buttons = (('Landscape',
+                    lambda: self.set_orientation(True)),
+                   ('Portrait',
+                    lambda: self.set_orientation(False)))
+
+        self.OrientationFrame = RadioFrame(self.SideFrame,
+                                        buttons=buttons, title=title,
+                                        relief=SUNKEN, borderwidth=1)
+        self.OrientationFrame.pack(side=TOP, expand=NO, fill=X)
+        self.OrientationFrame.click(0)
+
+    def set_orientation(self, is_landscape):
+        self.is_landscape = is_landscape
+        print('is_landscape: ', is_landscape)
+
+    def add_plot_dimensions(self):
+        self.plot_width = 6.5
+        self.plot_height = 2.5
+        self.plot_width_entry = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='Plot Width (inches)',
+            value=self.plot_width,
+            controller=self.set_plot_width)
+        self.plot_height_entry = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='Plot Height(inches)',
+            value=self.plot_height,
+            controller=self.set_plot_height)
+        self.plot_width_entry.pack(side=TOP)
+        self.plot_height_entry.pack(side=TOP)
+
+    def set_plot_width(self):
+        self.plot_width = self.plot_width_entry.current_value
+
+    def set_plot_height(self):
+        self.plot_height = self.plot_width_entry.current_value
 
     def add_subspectrum_buttons(self):
         """Add buttons for requesting: Add to Spectrum; Remove from Spectrum;
