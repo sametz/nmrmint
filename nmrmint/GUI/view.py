@@ -8,6 +8,7 @@ reference and methods for plotting data.
 * View: an extension of tkinter Frame that provides the main GUI.
 """
 from tkinter import *
+from tkinter.filedialog import asksaveasfilename
 
 import matplotlib
 import numpy as np
@@ -558,19 +559,27 @@ class View(Frame):
         figure = Figure()
         axes = figure.add_subplot(111)
         x, y = history.total_x, history.total_y
-        axes.plot(x, y, linewidth=0.5)
+        axes.plot(x, y, linewidth=0.3)
         axes.set_xlim(self.v_max, self.v_min)
         return figure
 
     def save_as_eps(self):
         print('Save as EPS!')
         backend = FigureCanvasPS(self.total_plot_figure())
-        backend.print_eps('test.eps')
+        filename = asksaveasfilename()
+        if filename:
+            if filename[-4:] != '.eps':
+                filename += '.eps'
+            backend.print_eps(filename)
 
     def save_as_pdf(self):
         print('Save as PDF!')
         backend = FigureCanvasPdf(self.total_plot_figure())
-        backend.print_pdf('test.pdf')
+        filename = asksaveasfilename()
+        if filename:
+            if filename[-4:] != '.pdf':
+                filename += '.pdf'
+            backend.print_pdf(filename)
 
     def add_subspectrum_buttons(self):
         """Add buttons for requesting: Add to Spectrum; Remove from Spectrum;
