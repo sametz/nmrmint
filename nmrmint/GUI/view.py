@@ -8,6 +8,7 @@ reference and methods for plotting data.
 * View: an extension of tkinter Frame that provides the main GUI.
 """
 from tkinter import *
+from tkinter.filedialog import asksaveasfilename
 
 import matplotlib
 import numpy as np
@@ -15,6 +16,8 @@ import numpy as np
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2TkAgg)
+from matplotlib.backends.backend_pdf import FigureCanvasPdf
+from matplotlib.backends.backend_ps import FigureCanvasPS
 from matplotlib.figure import Figure
 
 from nmrmint.GUI.adapter import Adapter
@@ -174,6 +177,19 @@ class MPLplot(FigureCanvasTkAgg):
         self.total_plot.clear()
         self.f.canvas.draw_idle()
 
+    # def total_figure(self):
+    #     total_figure = Figure()
+    #     total_plot = total_figure.add_subplot(111)
+    #     line = self.total_plot.get_lines()[0]
+    #     xd = line.get_xdata()
+    #     yd = line.get_ydata()
+    #     total_plot.plot(xd, yd, linewidth=1)
+    #     return total_figure
+    #
+    # def save_pdf(self):
+    #     figure = self.total_figure()
+    #     # self.f.savefig('test.pdf')
+    #     figure.savefig('test.pdf')
 
 class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
@@ -247,6 +263,7 @@ class View(Frame):
         self.spectrometer_frequency = 300  # MHz
         self.v_min = -1  # ppm
         self.v_max = 12  # ppm
+        # self.is_landscape = True
 
         # Currently, for debugging purposes, initial/blank spectra will have a
         # "TMS" peak at 0 that integrates to 1H.
@@ -277,6 +294,9 @@ class View(Frame):
         # Width sidebar setting currently has no effect
         # self.add_width_entry()
         self.add_clear_buttons()
+        self.add_filesave_buttons()
+        self.add_orientation_buttons()
+        self.add_plot_dimensions()
         self.add_subspectrum_buttons()
         self.add_subspectrum_navigation()
         self.add_plots()
@@ -389,7 +409,6 @@ class View(Frame):
         #     print('No model yet for this bar')
         history.change_toolbar(self.currentbar)
         self.update_current_plot()
-
 
     def add_nuclei_number_entry(self):
         """Add the "number of nuclei" entry to the GUI, and instantiate it as
@@ -528,6 +547,91 @@ class View(Frame):
                               command=lambda: self.clear_total())
         top_clear.pack()
         bottom_clear.pack()
+
+    def add_filesave_buttons(self):
+        """Add buttons for saving the total spectrum as EPS or PDF."""
+        save_eps_button = Button(self.SideFrame, text="Save as EPS",
+                                 command=lambda: self.save_as_eps())
+        save_pdf_button = Button(self.SideFrame, text="Save as PDF",
+                                 command=lambda: self.save_as_pdf())
+        save_pdf_button.pack()
+        save_eps_button.pack()
+
+    def total_plot_figure(self):
+        """Return a Figure for the current total plot."""
+        figure = Figure(figsize=(self.plot_width, self.plot_height))
+        axes = figure.add_subplot(111)
+        x, y = history.total_x, history.total_y
+        axes.plot(x, y, linewidth=0.3)
+        axes.set_xlim(self.v_max, self.v_min)
+        return figure
+
+    def save_as_eps(self):
+        print('Save as EPS!')
+        backend = FigureCanvasPS(self.total_plot_figure())
+        if self.is_landscape:
+            orientation = 'landscape'
+        else:
+            orientation = 'portrait'
+        filename = asksaveasfilename()
+        if filename:
+            if filename[-4:] != '.eps':
+                filename += '.eps'
+            backend.print_eps(filename, orientation=orientation)
+
+    def save_as_pdf(self):
+        print('Save as PDF!')
+        figure = self.total_plot_figure()
+        backend = FigureCanvasPdf(figure)
+        if self.is_landscape:
+            orientation = 'landscape'
+        else:
+            orientation = 'portrait'
+        filename = asksaveasfilename()
+        if filename:
+            if filename[-4:] != '.pdf':
+                filename += '.pdf'
+            backend.print_pdf(filename, orientation=orientation)
+            # figure.savefig(filename, orientation=orientation)
+
+    def add_orientation_buttons(self):
+        title = 'EPS Orientation'
+        buttons = (('Landscape',
+                    lambda: self.set_orientation(True)),
+                   ('Portrait',
+                    lambda: self.set_orientation(False)))
+
+        self.OrientationFrame = RadioFrame(self.SideFrame,
+                                        buttons=buttons, title=title,
+                                        relief=SUNKEN, borderwidth=1)
+        self.OrientationFrame.pack(side=TOP, expand=NO, fill=X)
+        self.OrientationFrame.click(0)
+
+    def set_orientation(self, is_landscape):
+        self.is_landscape = is_landscape
+        print('is_landscape: ', is_landscape)
+
+    def add_plot_dimensions(self):
+        self.plot_width = 6.5
+        self.plot_height = 2.5
+        self.plot_width_entry = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='Plot Width (inches)',
+            value=self.plot_width,
+            controller=self.set_plot_width)
+        self.plot_height_entry = HorizontalEntryFrame(
+            parent=self.SideFrame,
+            name='Plot Height(inches)',
+            value=self.plot_height,
+            controller=self.set_plot_height)
+        self.plot_width_entry.pack(side=TOP)
+        self.plot_height_entry.pack(side=TOP)
+
+    def set_plot_width(self):
+        self.plot_width = self.plot_width_entry.current_value
+
+    def set_plot_height(self):
+        self.plot_height = self.plot_width_entry.current_value
 
     def add_subspectrum_buttons(self):
         """Add buttons for requesting: Add to Spectrum; Remove from Spectrum;
@@ -786,7 +890,6 @@ class View(Frame):
             history.add_current_to_total()
             self.clear_total()
             self.plot_total(history.total_x, history.total_y)
-
 
     def request_add_plot(self, model, **data):
         """Add the current (top) spectrum to the sum (bottom) spectrum.
