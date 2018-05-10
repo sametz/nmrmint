@@ -289,13 +289,15 @@ class View(Frame):
         self.initialize_nospinbars()
         self.add_calc_type_frame()
         self.add_nuclei_number_entry()
-        self.add_spec_freq_entry()
-        self.add_minmax_entries()
+        self.add_specfreq_frame()
+        # self.add_spec_freq_entry()
+        # self.add_minmax_entries()
         # Width sidebar setting currently has no effect
         # self.add_width_entry()
-        self.add_clear_buttons()
-        self.add_filesave_buttons()
-        self.add_orientation_buttons()
+        # self.add_clear_buttons()
+        self.add_filesave_frame()
+        # self.add_filesave_buttons()
+        # self.add_orientation_buttons()
         self.add_plot_dimensions()
         self.add_subspectrum_buttons()
         self.add_subspectrum_navigation()
@@ -415,7 +417,8 @@ class View(Frame):
         "disabled".
         """
         self.nuc_number_frame = HorizontalRangeEntryFrame(
-            parent=self.SideFrame,
+            # parent=self.SideFrame,
+            parent=self.CalcTypeFrame,
             name='Number of nuclei:',
             value=self.nuclei_number,
             controller=self.set_nuc_number)
@@ -431,15 +434,23 @@ class View(Frame):
         # nuclei_number[0] is the toolbar for 2 spins, 1 for 3, etc. so:
         self.select_toolbar(self.spinbars[self.nuclei_number - 2])
 
+    def add_specfreq_frame(self):
+        self.specfreq_frame = Frame(
+            self.SideFrame,
+            relief=RIDGE, borderwidth=1)
+        self.specfreq_frame.pack(side=TOP, fill=X)
+        self.add_spec_freq_entry()
+        self.add_minmax_entries()
+
     def add_spec_freq_entry(self):
         """Add a labeled widget for entering spectrometer frequency.
         """
         self.spec_freq_widget = SimpleVariableBox(
-            self.SideFrame,
+            self.specfreq_frame,
             name='Spectrometer Frequency',
             controller=self.set_spec_freq,
             value=self.spectrometer_frequency,
-            min=1)
+            min=1,)
         self.spec_freq_widget.pack(side=TOP)
 
     def set_spec_freq(self):
@@ -480,12 +491,12 @@ class View(Frame):
         """Add entries for minimum and maximum frequency to display"""
         # set View.v_min and .v_max to initial default values
         self.v_min_frame = HorizontalEntryFrame(
-            parent=self.SideFrame,
+            parent=self.specfreq_frame,
             name='v min',
             value=self.v_min,
             controller=self.set_v_min)
         self.v_max_frame = HorizontalEntryFrame(
-            parent=self.SideFrame,
+            parent=self.specfreq_frame,
             name='v max',
             value=self.v_max,
             controller=self.set_v_max)
@@ -519,40 +530,47 @@ class View(Frame):
     #     self.canvas.total_plot.set_xlim(self.v_max, self.v_min)
     #     self.canvas.draw_idle()
 
-    def add_width_entry(self):
-        """Add a labeled widget for entering desired peak width.
+    # def add_width_entry(self):
+    #     """Add a labeled widget for entering desired peak width.
+    #
+    #     Feature currently inactive.
+    #     """
+    #     self.peak_width = 0.5
+    #     self.peak_width_widget = SimpleVariableBox(
+    #         self.SideFrame,
+    #         name='Peak Width',
+    #         controller=self.set_peak_width,
+    #         value=self.peak_width,
+    #         min=0.01)
+    #     self.peak_width_widget.pack(side=TOP)
+    #
+    # def set_peak_width(self):
+    #     """Currently has no effect."""
+    #     self.peak_width = self.peak_width_widget.current_value
+    #
+    # def add_clear_buttons(self):
+    #     """Add separate buttons for clearing the top (current) and bottom
+    #     (total) spectra.
+    #     """
+    #     top_clear = Button(self.SideFrame, text="Clear Current Spectrum",
+    #                        command=lambda: self.clear_current())
+    #     bottom_clear = Button(self.SideFrame, text="Clear Total Spectrum",
+    #                           command=lambda: self.clear_total())
+    #     top_clear.pack()
+    #     bottom_clear.pack()
 
-        Feature currently inactive.
-        """
-        self.peak_width = 0.5
-        self.peak_width_widget = SimpleVariableBox(
+    def add_filesave_frame(self):
+        self.filesave_frame = Frame(
             self.SideFrame,
-            name='Peak Width',
-            controller=self.set_peak_width,
-            value=self.peak_width,
-            min=0.01)
-        self.peak_width_widget.pack(side=TOP)
-
-    def set_peak_width(self):
-        """Currently has no effect."""
-        self.peak_width = self.peak_width_widget.current_value
-
-    def add_clear_buttons(self):
-        """Add separate buttons for clearing the top (current) and bottom
-        (total) spectra.
-        """
-        top_clear = Button(self.SideFrame, text="Clear Current Spectrum",
-                           command=lambda: self.clear_current())
-        bottom_clear = Button(self.SideFrame, text="Clear Total Spectrum",
-                              command=lambda: self.clear_total())
-        top_clear.pack()
-        bottom_clear.pack()
+            relief=RIDGE, borderwidth=1)
+        self.filesave_frame.pack(side=TOP, fill=X)
+        self.add_filesave_buttons()
 
     def add_filesave_buttons(self):
         """Add buttons for saving the total spectrum as EPS or PDF."""
-        save_eps_button = Button(self.SideFrame, text="Save as EPS",
+        save_eps_button = Button(self.filesave_frame, text="Save as EPS",
                                  command=lambda: self.save_as_eps())
-        save_pdf_button = Button(self.SideFrame, text="Save as PDF",
+        save_pdf_button = Button(self.filesave_frame, text="Save as PDF",
                                  command=lambda: self.save_as_pdf())
         save_pdf_button.pack()
         save_eps_button.pack()
@@ -601,9 +619,9 @@ class View(Frame):
                    ('Portrait',
                     lambda: self.set_orientation(False)))
 
-        self.OrientationFrame = RadioFrame(self.SideFrame,
+        self.OrientationFrame = RadioFrame(self.filesave_frame,
                                         buttons=buttons, title=title,
-                                        relief=SUNKEN, borderwidth=1)
+                                        relief=RIDGE, borderwidth=0)
         self.OrientationFrame.pack(side=TOP, expand=NO, fill=X)
         self.OrientationFrame.click(0)
 

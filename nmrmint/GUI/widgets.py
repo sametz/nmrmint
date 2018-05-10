@@ -145,7 +145,7 @@ class BaseEntryFrame(Frame):
         """
         self.entry.bind('<Return>', lambda event: self.on_return(event))
         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
-        # self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        self.entry.bind('<FocusOut>', lambda event: self.refresh())
         self.entry.bind('<FocusIn>',
                         lambda event: self.entry.select_range(0, END))
 
@@ -218,6 +218,8 @@ class BaseEntryFrame(Frame):
         """
         if not entry:
             return True  # Empty string: OK if entire entry deleted
+        if entry == '-':
+            return True  # OK to start entering a negative value
         try:
             float(entry)
             return True
@@ -363,7 +365,7 @@ class ArraySpinBox(ArrayBox):
         """
         self.entry.bind('<Return>', lambda event: self.on_return(event))
         self.entry.bind('<Tab>', lambda event: self.on_tab(event))
-        # self.entry.bind('<FocusOut>', lambda event: self.refresh())
+        self.entry.bind('<FocusOut>', lambda event: self.refresh())
         self.entry.bind('<FocusIn>',
                         lambda event: self.entry.selection('range', 0, END))
         self.entry.bind('<ButtonPress-1>', lambda event: self.on_press())
