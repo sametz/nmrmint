@@ -569,6 +569,7 @@ class View(Frame):
             relief=RIDGE, borderwidth=1)
         self.filesave_frame.pack(side=TOP, fill=X)
         self.add_filesave_buttons()
+        self.add_orientation_buttons()
 
     def add_filesave_buttons(self):
         """Add buttons for saving the total spectrum as EPS or PDF."""
