@@ -191,6 +191,7 @@ class MPLplot(FigureCanvasTkAgg):
     #     # self.f.savefig('test.pdf')
     #     figure.savefig('test.pdf')
 
+
 class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
 
@@ -268,8 +269,8 @@ class View(Frame):
         # Currently, for debugging purposes, initial/blank spectra will have a
         # "TMS" peak at 0 that integrates to 1H.
         self.blank_spectrum = [(0, 0.05)]
-        self.history_past = []
-        self.history_future = []
+        # self.history_past = []
+        # self.history_future = []
 
         self.SideFrame = Frame(self, relief=RIDGE, borderwidth=3)
         self.SideFrame.pack(side=LEFT, expand=NO, fill=Y)
@@ -277,12 +278,15 @@ class View(Frame):
         self.TopFrame = Frame(self, relief=RIDGE, borderwidth=1)
         self.TopFrame.pack(side=TOP, expand=NO, fill=X)
 
-        self.SubSpectrumButtonFrame = Frame(self, relief=RIDGE, borderwidth=1)
-        self.SubSpectrumButtonFrame.pack(side=TOP, expand=NO, fill=X)
+        self.SubSpectrumButtonFrame = Frame(self)  #,
+        # relief=RIDGE,  borderwidth=1)
+        self.SubSpectrumButtonFrame.pack(side=TOP,
+                                         expand=NO)
+                                         # fill=X)
 
-        self.SubSpectrumSelectionFrame = Frame(self, relief=RIDGE,
-                                               borderwidth=1)
-        self.SubSpectrumSelectionFrame.pack(side=TOP, expand=NO, fill=X)
+        # self.SubSpectrumSelectionFrame = Frame(self, relief=RIDGE,
+        #                                        borderwidth=1)
+        # self.SubSpectrumSelectionFrame.pack(side=TOP, expand=NO, fill=X)
 
         self.initialize_first_order_bar()
         # self.initialize_spinbars()
@@ -302,7 +306,7 @@ class View(Frame):
         self.add_subspectrum_buttons()
         self.add_subspectrum_navigation()
         self.add_plots()
-        self.add_history_buttons()
+        # self.add_history_buttons()
 
     def initialize_first_order_bar(self):
         """Instantiate the toolbar for first-order model."""
@@ -450,7 +454,7 @@ class View(Frame):
             name='Spectrometer Frequency',
             controller=self.set_spec_freq,
             value=self.spectrometer_frequency,
-            min=1,)
+            min=1, )
         self.spec_freq_widget.pack(side=TOP)
 
     def set_spec_freq(self):
@@ -620,8 +624,8 @@ class View(Frame):
                     lambda: self.set_orientation(False)))
 
         self.OrientationFrame = RadioFrame(self.filesave_frame,
-                                        buttons=buttons, title=title,
-                                        relief=RIDGE, borderwidth=0)
+                                           buttons=buttons, title=title,
+                                           relief=RIDGE, borderwidth=0)
         self.OrientationFrame.pack(side=TOP, expand=NO, fill=X)
         self.OrientationFrame.click(0)
 
@@ -673,10 +677,12 @@ class View(Frame):
             self.SubSpectrumButtonFrame,
             text="Delete Subspectrum",
             command=lambda: self.delete_subspectrum())
-        self.add_subspectrum_button.pack(side=LEFT)
-        # remove_subspectrum_button.pack(side=LEFT)
-        new_subspectrum_button.pack(side=LEFT)
-        delete_subspectrum_button.pack(side=LEFT)
+        # self.add_subspectrum_button.pack(side=LEFT)
+        # new_subspectrum_button.pack(side=LEFT)
+        # delete_subspectrum_button.pack(side=LEFT)
+        self.add_subspectrum_button.grid(row=1, column=0)
+        new_subspectrum_button.grid(row=1, column=1)
+        delete_subspectrum_button.grid(row=1, column=2)
 
     def toggle_subspectrum(self):
         # print(self.add_subspectrum_button['bg'])
@@ -770,18 +776,24 @@ class View(Frame):
         self.plot_total(history.total_x, history.total_y)
 
     def add_subspectrum_navigation(self):
-        subspectrum_back = Button(self.SubSpectrumSelectionFrame,
-                                  text="<-",
-                                  command=lambda: self.prev_subspectrum())
+        subspectrum_back = Button(
+            # self.SubSpectrumSelectionFrame,
+            self.SubSpectrumButtonFrame,
+            text="<-",
+            command=lambda: self.prev_subspectrum())
         self.subspectrum_label = Label(
-            self.SubSpectrumSelectionFrame,
+            self.SubSpectrumButtonFrame,
             text="Subspectrum " + str(history.current + 1))
-        subspectrum_forward = Button(self.SubSpectrumSelectionFrame,
-                                     text="->",
-                                     command=lambda: self.next_subspectrum())
-        subspectrum_back.pack(side=LEFT)
-        self.subspectrum_label.pack(side=LEFT)
-        subspectrum_forward.pack(side=LEFT)
+        subspectrum_forward = Button(
+            self.SubSpectrumButtonFrame,
+            text="->",
+            command=lambda: self.next_subspectrum())
+        # subspectrum_back.pack(side=LEFT)
+        # self.subspectrum_label.pack(side=LEFT)
+        # subspectrum_forward.pack(side=LEFT)
+        subspectrum_back.grid(row=0, column=0, sticky=E)
+        self.subspectrum_label.grid(row=0, column=1)
+        subspectrum_forward.grid(row=0, column=2, sticky=W)
 
     def next_subspectrum(self):
         if history.forward():
@@ -813,53 +825,53 @@ class View(Frame):
         self.canvas.x_max = self.v_max
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
-    def add_history_buttons(self):
-        """Add buttons to the GUI for moving forward/back in the total
-        spectrum creation history.
-
-        Change DUMP = True to include the DUMP HISTORY button for debugging.
-        """
-        DUMP = False
-        history_frame = Frame(self)
-        history_frame.pack(side=TOP)
-        back = Button(history_frame, text='Back',
-                      command=lambda: self.go_back())
-        forward = Button(history_frame, text='Forward',
-                         command=lambda: self.go_forward())
-        back.pack(side=LEFT)
-        forward.pack(side=RIGHT)
-
-        # Dump button for debugging history
-        if DUMP:
-            dump_button = Button(self, text='DUMP HISTORY',
-                                 command=lambda: self.dump_history())
-            dump_button.pack(side=TOP)
-
-    def go_back(self):
-        """Step back one point in the total spectrum history and refresh the
-        spectrum plot, or beep if already at beginning.
-        """
-        if len(self.history_past) > 1:
-            self.history_future.append(self.history_past.pop())
-            self.total_spectrum = self.history_past[-1]
-        else:
-            self.bell()
-            return
-
-        self.request_refresh_total_plot(self.total_spectrum)
-
-    def go_forward(self):
-        """Step forward one point in the total spectrum history and refresh the
-        spectrum plot, or beep if already at end.
-        """
-        try:
-            self.history_past.append(self.history_future.pop())
-            self.total_spectrum = self.history_past[-1]
-        except IndexError:
-            self.bell()
-            return
-
-        self.request_refresh_total_plot(self.total_spectrum)
+    # def add_history_buttons(self):
+    #     """Add buttons to the GUI for moving forward/back in the total
+    #     spectrum creation history.
+    #
+    #     Change DUMP = True to include the DUMP HISTORY button for debugging.
+    #     """
+    #     DUMP = False
+    #     history_frame = Frame(self)
+    #     history_frame.pack(side=TOP)
+    #     back = Button(history_frame, text='Back',
+    #                   command=lambda: self.go_back())
+    #     forward = Button(history_frame, text='Forward',
+    #                      command=lambda: self.go_forward())
+    #     back.pack(side=LEFT)
+    #     forward.pack(side=RIGHT)
+    #
+    #     # Dump button for debugging history
+    #     if DUMP:
+    #         dump_button = Button(self, text='DUMP HISTORY',
+    #                              command=lambda: self.dump_history())
+    #         dump_button.pack(side=TOP)
+    #
+    # def go_back(self):
+    #     """Step back one point in the total spectrum history and refresh the
+    #     spectrum plot, or beep if already at beginning.
+    #     """
+    #     if len(self.history_past) > 1:
+    #         self.history_future.append(self.history_past.pop())
+    #         self.total_spectrum = self.history_past[-1]
+    #     else:
+    #         self.bell()
+    #         return
+    #
+    #     self.request_refresh_total_plot(self.total_spectrum)
+    #
+    # def go_forward(self):
+    #     """Step forward one point in the total spectrum history and refresh the
+    #     spectrum plot, or beep if already at end.
+    #     """
+    #     try:
+    #         self.history_past.append(self.history_future.pop())
+    #         self.total_spectrum = self.history_past[-1]
+    #     except IndexError:
+    #         self.bell()
+    #         return
+    #
+    #     self.request_refresh_total_plot(self.total_spectrum)
 
     #########################################################################
     # Methods below provide the interface to the controller

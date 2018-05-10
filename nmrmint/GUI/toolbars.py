@@ -72,16 +72,17 @@ class ToolBar(Frame):
         self.model = 'model'  # must be overwritten by subclasses
         self.defaults = {}  # overwrite for subclasses
         self.vars = {}
-        self.add_spectra_button = Button(self,
-                                         name='addbutton',
-                                         text='Add To Total',
-                                         command=lambda: self.add_spectra())
-        self.add_spectra_button.pack(side=RIGHT)
+        # self.add_spectra_button = Button(self,
+        #                                  name='addbutton',
+        #                                  text='Add To Total',
+        #                                  command=lambda: self.add_spectra())
+        # self.add_spectra_button.pack(side=RIGHT)
         # for testing:
         self.reset_button = Button(self,
                                    name='reset_button',
                                    text='Reset',
-                                   command=lambda: self.restore_defaults())
+                                   command=lambda:
+                                   self.restore_defaults_and_refresh())
         self.reset_button.pack(side=RIGHT)
 
     def request_plot(self):
@@ -91,11 +92,15 @@ class ToolBar(Frame):
         # self.controller.update_current_plot(self.model, **self.vars)
         self.controller(self.model, **self.vars)
 
-    def add_spectra(self):
-        """Send request to controller to add the current spectrum to the
-        total spectrum.
-        """
-        self.master.master.request_add_plot(self.model, **self.vars)
+    # def add_spectra(self):
+    #     """Send request to controller to add the current spectrum to the
+    #     total spectrum.
+    #     """
+    #     self.master.master.request_add_plot(self.model, **self.vars)
+
+    def restore_defaults_and_refresh(self):
+        self.restore_defaults()
+        self.request_plot()
 
     def restore_defaults(self):
         self.reset(self.defaults)
@@ -343,7 +348,7 @@ class SecondOrderBar(ToolBar):
         # print('called add_frequency_widgets')
         self.add_peakwidth_widget()
         self.add_J_button(n)
-        self.add_addspectra_button()
+        # self.add_addspectra_button()
         self.reset_button = Button(self,
                                    name='reset_button',
                                    text='Reset',
@@ -386,14 +391,14 @@ class SecondOrderBar(ToolBar):
                            command=lambda: self.vj_popup(n))
         vj_button.pack(side=LEFT, expand=N, fill=NONE)
 
-    def add_addspectra_button(self):
-        """Add a button to the toolbar that will add the (top) current
-        simulated spectrum to the (bottom) total spectrum plot.
-        """
-        self.add_spectra_button = Button(self,
-                                         text='Add To Total',
-                                         command=lambda: self.add_spectra())
-        self.add_spectra_button.pack(side=RIGHT)
+    # def add_addspectra_button(self):
+    #     """Add a button to the toolbar that will add the (top) current
+    #     simulated spectrum to the (bottom) total spectrum plot.
+    #     """
+    #     self.add_spectra_button = Button(self,
+    #                                      text='Add To Total',
+    #                                      command=lambda: self.add_spectra())
+    #     self.add_spectra_button.pack(side=RIGHT)
 
     def vj_popup(self, n):
         """
@@ -464,12 +469,12 @@ class SecondOrderBar(ToolBar):
         # self.controller('nspin', vars_copy)
         self.controller()
 
-    def add_spectra(self):
-        """Adapt 2D array data to kwargs of correct type for the controller."""
-        self.update_v()
-        kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
-                  'j': self.j,
-                  'w': self.w_array[0, 0]}  # controller takes float for w
+    # def add_spectra(self):
+    #     """Adapt 2D array data to kwargs of correct type for the controller."""
+    #     self.update_v()
+    #     kwargs = {'v': self.v[0, :],  # controller takes 1D array of freqs
+    #               'j': self.j,
+    #               'w': self.w_array[0, 0]}  # controller takes float for w
 
         # self.controller.update_current_plot('nspin', **kwargs)
         self.master.master.request_add_plot('nspin', **kwargs)
