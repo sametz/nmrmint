@@ -8,19 +8,20 @@ reference and methods for plotting data.
 * View: an extension of tkinter Frame that provides the main GUI.
 """
 from tkinter import *
-from tkinter.filedialog import asksaveasfilename
+# from tkinter.filedialog import asksaveasfilename
 
-import matplotlib
+# import matplotlib
 import numpy as np
 
-matplotlib.use("TkAgg")  # must be invoked before the imports below
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
-                                               NavigationToolbar2TkAgg)
-from matplotlib.backends.backend_pdf import FigureCanvasPdf
-from matplotlib.backends.backend_ps import FigureCanvasPS
-from matplotlib.figure import Figure
+# matplotlib.use("TkAgg")  # must be invoked before the imports below
+# from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+#                                                NavigationToolbar2TkAgg)
+# from matplotlib.backends.backend_pdf import FigureCanvasPdf
+# from matplotlib.backends.backend_ps import FigureCanvasPS
+# from matplotlib.figure import Figure
 
 from nmrmint.GUI.adapter import Adapter
+from nmrmint.GUI.backends import MPLplot, save_as_eps, save_as_pdf
 from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
 from nmrmint.GUI.history import Subspectrum, History
@@ -34,163 +35,160 @@ from nmrmint.GUI.widgets import (HorizontalRangeEntryFrame,
 history = History()
 
 
-class MPLplot(FigureCanvasTkAgg):
-    """The Canvas object for plotting simulated spectra.
-
-    MPLgraph extends on FigureCanvasTkAgg by including a reference to a
-    matplotlib Figure object, plus methods for plotting.
-
-    Attributes:
-        (TODO: probably should all be private; learn about private attributes)
-
-    Methods:
-        plot_current: plot data to the top axis (i.e. the spectrum affected
-        by the current toolbar inputs)
-        plot_total: plot data to the bottom axis (i.e. the summation spectrum)
-        clear_all: clears both plots
-        clear_current: clears the top plot
-        clear_total: clears the bottom plot
-
-    """
-
-    def __init__(self, figure, master=None, **options):
-        """Extend FigureCanvasTkAgg with a Matplotlib Figure object, then add
-        and pack itself plus a toolbar into the parent.
-
-        :param figure: a matplotlib.figure.Figure object
-        """
-        FigureCanvasTkAgg.__init__(self, figure, master, **options)
-        self.total_data = np.array([])
-        self.f = figure
-        self.current_plot = figure.add_subplot(211)
-        self.current_plot.invert_xaxis()
-        self.total_plot = figure.add_subplot(212)
-        self.total_plot.invert_xaxis()
-        self.x_min = -1  # ppm
-        self.x_max = 12  # ppm
-        self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        self.toolbar = NavigationToolbar2TkAgg(self, master)
-        self.toolbar.update()
-
-    def plot_current(self, x, y):
-        """Plot x, y data to the current_plot axis.
-
-        :param x: (numpy linspace)
-        :param y: (numpy linspace)
-        """
-        # print('view.plot_current received x ', x.size, ' y ', y.size)
-        # for some reason axes were getting flipped after adding, so:
-        self.current_plot.invert_xaxis()
-        self.set_current_window(x, y)
-        self.current_plot.plot(x, y, linewidth=1)
-        # self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
-        self.draw_idle()
-
-    def plot_total(self, x, y):
-        """Plot x, y data to the total_plot axis.
-
-        :param x: (numpy linspace)
-        :param y: (numpy linspace)
-        """
-        # for some reason total_plot axis gets flipped, so:
-        # self.total_plot.invert_xaxis()
-        self.total_plot.plot(x, y, linewidth=1)
-        # self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
-        # # self.f.canvas.draw_idle()
-        # self.draw_idle()
-        self.update_total_plot_window()
-
-    def update_total_plot_window(self, *x_limits):
-
-        # TODO: initially tried x_min, x_max = *x_limits, but get
-        # error "can't use starred expression here"--learn how this
-        # should work.
-        if x_limits:
-            if len(x_limits) == 2:
-                self.x_min = x_limits[0]
-                self.x_max = x_limits[1]
-            else:
-                print('update_total_plot_window called with bad args')
-        # self.x_min = x_min
-        # self.x_max = x_max
-        self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
-        self.draw_idle()
-
-    def set_current_window(self, x, y):
-        left = False
-        right = False
-        # print('x, y', type(x), len(x), type(y), len(y))
-        # print('checking x order')
-        # ordered = True
-        # for i, x_ in enumerate(x[:-2]):
-        #     if x[i + 1] < x_:
-        #         # print('x stopped increasing at: ', i)
-        #         ordered = False
-        #         break
-        # if ordered:
-        #     print('x always increased, from ', x[0], 'to ', x[-1])
-
-        start = True
-        for i, y_ in enumerate(y[:-2]):
-
-            if y[i + 1] < y_ and start is True:
-                # print('y max found at: ', i, y_)
-                start = False
-            if y[i + 1] > y_:
-                start = True
-
-        for i, intensity in enumerate(y):
-            if intensity > 0.01:
-                left = i
-                # print('found left = ', left)
-                # print('intensity: ', intensity)
-                break
-        # if not left:
-        # print('no left found')
-        for j, intensity in enumerate(reversed(y)):
-            if intensity > 0.01:
-                right = j
-                # print('found right = ', right)
-                # print('intensity: ', intensity)
-                break
-        # if not right:
-        # print('no right found')
-        x_min = x[left] - 0.2
-        x_max = x[-right] + 0.2
-        # print('x window ', x_min, x_max)
-        self.current_plot.set_xlim(x_max, x_min)  # should flip x axis
-        self.draw_idle()
-
-    # coverage
-    # def clear_all(self):
-    #     """Clear all spectra plots."""
-    #     self.current_plot.clear()
-    #     self.total_plot.clear()
-    #     self.f.canvas.draw_idle()
-
-    def clear_current(self):
-        """Clear the current spectrum plot"""
-        self.current_plot.clear()
-        self.f.canvas.draw_idle()
-
-    def clear_total(self):
-        """Clear the summation spectrum plot."""
-        self.total_plot.clear()
-        self.f.canvas.draw_idle()
-
-    # def total_figure(self):
-    #     total_figure = Figure()
-    #     total_plot = total_figure.add_subplot(111)
-    #     line = self.total_plot.get_lines()[0]
-    #     xd = line.get_xdata()
-    #     yd = line.get_ydata()
-    #     total_plot.plot(xd, yd, linewidth=1)
-    #     return total_figure
-    #
-    # def save_pdf(self):
-    #     figure = self.total_figure()
-    #     # self.f.savefig('test.pdf')
-    #     figure.savefig('test.pdf')
+# class MPLplot(FigureCanvasTkAgg):
+#     """The Canvas object for plotting simulated spectra.
+#
+#     MPLgraph extends on FigureCanvasTkAgg by including a reference to a
+#     matplotlib Figure object, plus methods for plotting.
+#
+#     Attributes:
+#
+#     Methods:
+#         plot_current: plot data to the top axis (i.e. the spectrum affected
+#         by the current toolbar inputs)
+#         plot_total: plot data to the bottom axis (i.e. the summation spectrum)
+#         clear_all: clears both plots
+#         clear_current: clears the top plot
+#         clear_total: clears the bottom plot
+#
+#     """
+#
+#     def __init__(self, figure, master=None, **options):
+#         """Extend FigureCanvasTkAgg with a Matplotlib Figure object, then add
+#         and pack itself plus a toolbar into the parent.
+#
+#         :param figure: a matplotlib.figure.Figure object
+#         """
+#         FigureCanvasTkAgg.__init__(self, figure, master, **options)
+#         self.total_data = np.array([])
+#         self.f = figure
+#         self.current_plot = figure.add_subplot(211)
+#         self.current_plot.invert_xaxis()
+#         self.total_plot = figure.add_subplot(212)
+#         self.total_plot.invert_xaxis()
+#         self.x_min = -1  # ppm
+#         self.x_max = 12  # ppm
+#         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+#         self.toolbar = NavigationToolbar2TkAgg(self, master)
+#         self.toolbar.update()
+#
+#     def plot_current(self, x, y):
+#         """Plot x, y data to the current_plot axis.
+#
+#         :param x: (numpy linspace)
+#         :param y: (numpy linspace)
+#         """
+#         # print('view.plot_current received x ', x.size, ' y ', y.size)
+#         # for some reason axes were getting flipped after adding, so:
+#         self.current_plot.invert_xaxis()
+#         self._set_current_window(x, y)
+#         self.current_plot.plot(x, y, linewidth=1)
+#         # self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
+#         self.draw_idle()
+#
+#     def plot_total(self, x, y):
+#         """Plot x, y data to the total_plot axis.
+#
+#         :param x: (numpy linspace)
+#         :param y: (numpy linspace)
+#         """
+#         # for some reason total_plot axis gets flipped, so:
+#         # self.total_plot.invert_xaxis()
+#         self.total_plot.plot(x, y, linewidth=1)
+#         # self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
+#         # # self.f.canvas.draw_idle()
+#         # self.draw_idle()
+#         self.set_total_plot_window()
+#
+#     def set_total_plot_window(self, *x_limits):
+#
+#
+#         if x_limits:
+#             if len(x_limits) == 2:
+#                 self.x_min = x_limits[0]
+#                 self.x_max = x_limits[1]
+#             else:
+#                 print('set_total_plot_window called with bad args')
+#         # self.x_min = x_min
+#         # self.x_max = x_max
+#         self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
+#         self.draw_idle()
+#
+#     def _set_current_window(self, x, y):
+#         left = False
+#         right = False
+#         # print('x, y', type(x), len(x), type(y), len(y))
+#         # print('checking x order')
+#         # ordered = True
+#         # for i, x_ in enumerate(x[:-2]):
+#         #     if x[i + 1] < x_:
+#         #         # print('x stopped increasing at: ', i)
+#         #         ordered = False
+#         #         break
+#         # if ordered:
+#         #     print('x always increased, from ', x[0], 'to ', x[-1])
+#
+#         start = True
+#         for i, y_ in enumerate(y[:-2]):
+#
+#             if y[i + 1] < y_ and start is True:
+#                 # print('y max found at: ', i, y_)
+#                 start = False
+#             if y[i + 1] > y_:
+#                 start = True
+#
+#         for i, intensity in enumerate(y):
+#             if intensity > 0.01:
+#                 left = i
+#                 # print('found left = ', left)
+#                 # print('intensity: ', intensity)
+#                 break
+#         # if not left:
+#         # print('no left found')
+#         for j, intensity in enumerate(reversed(y)):
+#             if intensity > 0.01:
+#                 right = j
+#                 # print('found right = ', right)
+#                 # print('intensity: ', intensity)
+#                 break
+#         # if not right:
+#         # print('no right found')
+#         x_min = x[left] - 0.2
+#         x_max = x[-right] + 0.2
+#         # print('x window ', x_min, x_max)
+#         self.current_plot.set_xlim(x_max, x_min)  # should flip x axis
+#         self.draw_idle()
+#
+#     # coverage
+#     # def clear_all(self):
+#     #     """Clear all spectra plots."""
+#     #     self.current_plot.clear()
+#     #     self.total_plot.clear()
+#     #     self.f.canvas.draw_idle()
+#
+#     def clear_current(self):
+#         """Clear the current spectrum plot"""
+#         self.current_plot.clear()
+#         # self.f.canvas.draw_idle()
+#
+#     def clear_total(self):
+#         """Clear the summation spectrum plot."""
+#         self.total_plot.clear()
+#         # self.f.canvas.draw_idle()
+#
+#     # def total_figure(self):
+#     #     total_figure = Figure()
+#     #     total_plot = total_figure.add_subplot(111)
+#     #     line = self.total_plot.get_lines()[0]
+#     #     xd = line.get_xdata()
+#     #     yd = line.get_ydata()
+#     #     total_plot.plot(xd, yd, linewidth=1)
+#     #     return total_figure
+#     #
+#     # def save_pdf(self):
+#     #     figure = self.total_figure()
+#     #     # self.f.savefig('test.pdf')
+#     #     figure.savefig('test.pdf')
 
 
 class View(Frame):
@@ -387,18 +385,10 @@ class View(Frame):
         for child in self.nuc_number_frame.winfo_children():
             child.configure(state='normal')
 
-    def select_toolbar(self, toolbar, deactivate=True):
+    def select_toolbar(self, toolbar):  # , deactivate=True):
         """Replaces the old toolbar with the new toolbar.
 
         :param toolbar: the toolbar to replace currentbar in the GUI.
-        :param deactivate: (Bool) should subspectrum activity be toggled?
-        Default behavior is to deactivate ss and delete it from total
-        spectrum when changing toolbars (i.e. when selecting the model for
-        the subspectrum). deactivate=False would be used when switching
-        between subspectra.
-
-        Rethink: maybe default should be to maintain activity, and refresh
-        total if active.
         """
         #
 
@@ -515,7 +505,7 @@ class View(Frame):
         print('v_max is: ', self.v_max)
         # TODO: add refresh of spectrum
         # self.update_spec_window()
-        self.canvas.update_total_plot_window(self.v_min, self.v_max)
+        self.canvas.set_total_plot_window(self.v_min, self.v_max)
 
     def set_v_max(self):
         print('vmax change detected')
@@ -524,7 +514,7 @@ class View(Frame):
         print('v_max is now: ', self.v_max)
         # TODO: add refresh of spectrum
         # self.update_spec_window()
-        self.canvas.update_total_plot_window(self.v_min, self.v_max)
+        self.canvas.set_total_plot_window(self.v_min, self.v_max)
 
     # def update_spec_window(self):
     #     """Changes the range of the x axis (frequency) on the total spectrum.
@@ -581,6 +571,7 @@ class View(Frame):
         save_pdf_button.pack()
         save_eps_button.pack()
 
+    #coverage
     def total_plot_figure(self):
         """Return a Figure for the current total plot."""
         figure = Figure(figsize=(self.plot_width, self.plot_height))
@@ -591,31 +582,41 @@ class View(Frame):
         return figure
 
     def save_as_eps(self):
-        print('Save as EPS!')
-        backend = FigureCanvasPS(self.total_plot_figure())
         if self.is_landscape:
             orientation = 'landscape'
         else:
             orientation = 'portrait'
-        filename = asksaveasfilename()
-        if filename:
-            if filename[-4:] != '.eps':
-                filename += '.eps'
-            backend.print_eps(filename, orientation=orientation)
+        save_as_eps(x=history.total_x,
+                    y=history.total_y,
+                    xlim=(self.v_max, self.v_min),
+                    figsize=(self.plot_width, self.plot_height),
+                    orientation=orientation)
+        # print('Save as EPS!')
+        # backend = FigureCanvasPS(self._create_figure())
+
+        # filename = asksaveasfilename()
+        # if filename:
+        #     if filename[-4:] != '.eps':
+        #         filename += '.eps'
+        #     backend.print_eps(filename, orientation=orientation)
 
     def save_as_pdf(self):
-        print('Save as PDF!')
-        figure = self.total_plot_figure()
-        backend = FigureCanvasPdf(figure)
-        if self.is_landscape:
-            orientation = 'landscape'
-        else:
-            orientation = 'portrait'
-        filename = asksaveasfilename()
-        if filename:
-            if filename[-4:] != '.pdf':
-                filename += '.pdf'
-            backend.print_pdf(filename, orientation=orientation)
+        save_as_pdf(x=history.total_x,
+                    y=history.total_y,
+                    xlim=(self.v_max, self.v_min),
+                    figsize=(self.plot_width, self.plot_height))
+        # print('Save as PDF!')
+        # figure = self._create_figure()
+        # backend = FigureCanvasPdf(figure)
+        # if self.is_landscape:
+        #     orientation = 'landscape'
+        # else:
+        #     orientation = 'portrait'
+        # filename = asksaveasfilename()
+        # if filename:
+        #     if filename[-4:] != '.pdf':
+        #         filename += '.pdf'
+        #     backend.print_pdf(filename, orientation=orientation)
             # figure.savefig(filename, orientation=orientation)
 
     def add_orientation_buttons(self):
@@ -655,7 +656,7 @@ class View(Frame):
         self.plot_width = self.plot_width_entry.current_value
 
     def set_plot_height(self):
-        self.plot_height = self.plot_width_entry.current_value
+        self.plot_height = self.plot_height_entry.current_value
 
     def add_subspectrum_buttons(self):
         """Add buttons for requesting: Add to Spectrum; Remove from Spectrum;
@@ -712,10 +713,7 @@ class View(Frame):
 
         :param color: (str) the color to change the button's background to.
         """
-        try:
-            self.add_subspectrum_button['highlightbackground'] = color
-        except Exception:
-            print('color not recognized')
+        self.add_subspectrum_button['highlightbackground'] = color
 
     # coverage
     # def add_subspectrum(self):
@@ -772,8 +770,7 @@ class View(Frame):
         history.delete()
         self.subspectrum_label.config(text="Subspectrum "
                                            + str(history.current + 1))
-        self.select_toolbar(history.current_toolbar(),
-                            deactivate=False)
+        self.select_toolbar(history.current_toolbar())  # , deactivate=False)
         # self.currentbar.reset(history.current_subspectrum().vars)
         self.update_current_plot()
         self.clear_total()
@@ -803,7 +800,8 @@ class View(Frame):
         if history.forward():
             self.subspectrum_label.config(text="Subspectrum "
                                                + str(history.current + 1))
-            self.select_toolbar(history.current_toolbar(), deactivate=False)
+            self.select_toolbar(history.current_toolbar())  # ,
+            # deactivate=False)
             self.currentbar.reset(history.current_subspectrum().vars)
             self.update_current_plot()
 
@@ -812,7 +810,8 @@ class View(Frame):
         if history.back():
             self.subspectrum_label.config(text="Subspectrum "
                                                + str(history.current + 1))
-            self.select_toolbar(history.current_toolbar(), deactivate=False)
+            self.select_toolbar(history.current_toolbar())  # ,
+            # deactivate=False)
             self.currentbar.reset(history.current_subspectrum().vars)
             self.update_current_plot()
         # history.dump()
@@ -822,8 +821,8 @@ class View(Frame):
 
     def add_plots(self):
         """Add a MPLplot canvas to the GUI"""
-        self.figure = Figure(figsize=(7, 5.6), dpi=100)  # original figsize 5, 4
-        self.canvas = MPLplot(self.figure, self)
+        # self.figure = Figure(figsize=(7, 5.6), dpi=100)  # original figsize 5, 4
+        self.canvas = MPLplot(master=self)
         # View should override Canvas' default xlim
         self.canvas.x_min = self.v_min
         self.canvas.x_max = self.v_max
@@ -865,7 +864,8 @@ class View(Frame):
     #     self.request_refresh_total_plot(self.total_spectrum)
     #
     # def go_forward(self):
-    #     """Step forward one point in the total spectrum history and refresh the
+    #     """Step forward one point in the total spectrum history and refresh
+    # the
     #     spectrum plot, or beep if already at end.
     #     """
     #     try:
