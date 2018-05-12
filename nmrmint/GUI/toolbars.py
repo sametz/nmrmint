@@ -173,6 +173,7 @@ class FirstOrderBar(ToolBar):
         #     widget = self.fields[key]
         #     widget.set_value(val)
 
+    # coverage
     def test_reset(self, vars):
         for key, val in vars.items():
             self.vars[key] = val
@@ -199,6 +200,7 @@ class FirstOrderBar(ToolBar):
         #     except:
         #         print('FAIL')
 
+    # coverage
     def set_freq(self, freq):
         """Set the simulated spectrometer frequency and update the current
         plot accordingly.
@@ -246,6 +248,7 @@ class FirstOrderBar(ToolBar):
     #             'couplings': couplings}
     #     return data
 
+    # coverage
     def add_spectra(self):
         """Add the (top) current spectrum simulation to the (bottom) total
         simulated spectrum plot.
@@ -442,6 +445,7 @@ class SecondOrderBar(ToolBar):
 
         datagrid.pack()
 
+    # coverage
     def set_freq(self, freq):
         """Set the simulated spectrometer frequency and update the current
         plot accordingly.
@@ -451,6 +455,7 @@ class SecondOrderBar(ToolBar):
         self.spec_freq = freq
         # self.request_plot()  # refreshing will be handled externally
 
+    # coverage
     def update_v(self):
         """Translate the ppm frequencies in v_ppm to Hz, and overwrite v
         with the result.
@@ -510,6 +515,7 @@ class SecondOrderBar(ToolBar):
         # self.controller('nspin', self.vars)
         self.controller()
 
+    # coverage
     def test_reset(self, v, j, w):
         pass
         # self.v = v
@@ -539,6 +545,9 @@ class SecondOrderBar(ToolBar):
         #         print('value is now ', widget.get_value())
 
 
+# TODO: most recent changes have used SecondOrderBar. If SecondOrderSpinBar
+# is still a possible option, make sure that it is updated to be a complete
+# swap for SecondOrderBar
 class SecondOrderSpinBar(SecondOrderBar):
     """A subclass of SecondOrderBar that uses ArraySpinBox widgets for the
     toolbar.

@@ -48,16 +48,18 @@ class Subspectrum:
     #     """
     #     model, _vars = self.toolbar.model, self.toolbar.vars
 
-
+    # coverage
     def activate(self):
         """Currently not implemented"""
         self.active = True
         self.call_model
 
+    # coverage
     def deactivate(self):
         """Currently not implemented"""
         self.active = False
 
+    # coverage
     def call_model(self):
         """Currently not implemented"""
         pass
@@ -248,7 +250,7 @@ class History:
                 self.total_y += y
 
 
-
+    # coverage
     # below are functions that might not be currently called
     # TODO: check for cruft
 

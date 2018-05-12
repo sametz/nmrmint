@@ -1,41 +1,44 @@
-"""Take data sent by toolbars, and convert it to the form required by the
-Controller (i.e. suitable for passing to the Model)--and vice-versa.
+"""Tools to convert the data exported from the View to the data format
+required by the Controller.
+
+TODO: consider merging this with the Controller. If a MVC design is
+maintained, with different views possible, each view could have its own
+adapter. At the least, change its location to the Controller directory.
+
+Provides the following class:
+* Adapter: provides an API for converting View data according to the type of
+simulation required of the Model.
 """
 
+
 class Adapter:
+    """Convert the data exported from the View's toolbars toolbars to the
+    data format usable by the Controller.
+    Controller (i.e. suitable for passing to the Model)--and vice-versa.
+    """
 
     def __init__(self, view):
+        """The view must have a .spectrometer_frequency attribute.
+        """
         self.view = view
-        self.controller = view.controller
+        # self.controller = view.controller
 
-    # def from_toolbar(self, model, vars):
-    #     # self.view.request_refresh_current_plot(model, **kwargs)
-    #     if model == 'first_order':
-    #         data = self.convert_first_order(vars)
-    #         self.controller.update_current_plot(model, data)
-    #         # request = (model, self.convert_first_order(vars))
-    #         # for i in range(2):
-    #         #     print(i, request[i])
-    #         # # print(*request)
-    #         # self.controller.update_current_plot(*request)
-    #     elif model == 'nspin':
-    #         data = self.convert_second_order(vars)
-    #         self.controller.update_current_plot(model, data)
-    #     else:
-    #         print('model not recognized')
+    def convert_toolbar_data(self, model, vars_):
+        """Choose the correct conversion for the given model.
 
-    def convert_toolbar_data(self, model, vars):
+        """
         if model == 'first_order':
-            return self.convert_first_order(vars)
+            return self.convert_first_order(vars_)
         elif model == 'nspin':
-            return self.convert_second_order(vars)
+            return self.convert_second_order(vars_)
         else:
             print('model not recognized')
 
-    def to_toolbar(self):
-        pass
+    # coverage
+    # def to_toolbar(self):
+    #     pass
 
-    def convert_first_order(self, vars):
+    def convert_first_order(self, vars_):
         """Convert the dictionary of widget entries from the FirstOrderBar to
         the data required by the controller interface.
 
@@ -47,30 +50,27 @@ class Adapter:
         constant and n is the number of nuclei coupled to the nucleus of
         interest with that same J value.
         """
-        _Jax = vars['JAX']
-        _a = vars['#A']
-        _Jbx = vars['JBX']
-        _b = vars['#B']
-        _Jcx = vars['JCX']
-        _c = vars['#C']
-        _Jdx = vars['JDX']
-        _d = vars['#D']
-        _Vcentr = vars['Vcentr'] * self.view.spectrometer_frequency
-        _integration = vars['# of nuclei']
+        _Jax = vars_['JAX']
+        _a = vars_['#A']
+        _Jbx = vars_['JBX']
+        _b = vars_['#B']
+        _Jcx = vars_['JCX']
+        _c = vars_['#C']
+        _Jdx = vars_['JDX']
+        _d = vars_['#D']
+        _Vcentr = vars_['Vcentr'] * self.view.spectrometer_frequency
+        _integration = vars_['# of nuclei']
         singlet = (_Vcentr, _integration)
         allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
         couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
-        width = vars['width']
+        width = vars_['width']
         return {'signal': singlet, 'couplings': couplings, 'w': width}
 
-    def convert_second_order(self, vars):
-        # return {
-        # 'v': vars['v'][0, :],
-        # 'j': vars['j'],
-        # 'w': vars['w'][0, 0]}
-        v_ppm = vars['v'][0, :]
+    def convert_second_order(self, vars_):
+
+        v_ppm = vars_['v'][0, :]
         v_Hz = v_ppm * self.view.spectrometer_frequency
         return {
             'v': v_Hz,
-            'j': vars['j'],
-            'w': vars['w'][0, 0]}
+            'j': vars_['j'],
+            'w': vars_['w'][0, 0]}

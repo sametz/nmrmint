@@ -161,11 +161,12 @@ class MPLplot(FigureCanvasTkAgg):
         self.current_plot.set_xlim(x_max, x_min)  # should flip x axis
         self.draw_idle()
 
-    def clear_all(self):
-        """Clear all spectra plots."""
-        self.current_plot.clear()
-        self.total_plot.clear()
-        self.f.canvas.draw_idle()
+    # coverage
+    # def clear_all(self):
+    #     """Clear all spectra plots."""
+    #     self.current_plot.clear()
+    #     self.total_plot.clear()
+    #     self.f.canvas.draw_idle()
 
     def clear_current(self):
         """Clear the current spectrum plot"""
@@ -278,7 +279,7 @@ class View(Frame):
         self.TopFrame = Frame(self, relief=RIDGE, borderwidth=1)
         self.TopFrame.pack(side=TOP, expand=NO, fill=X)
 
-        self.SubSpectrumButtonFrame = Frame(self)  #,
+        self.SubSpectrumButtonFrame = Frame(self)  # ,
         # relief=RIDGE,  borderwidth=1)
         self.SubSpectrumButtonFrame.pack(side=TOP,
                                          expand=NO)
@@ -716,13 +717,15 @@ class View(Frame):
         except Exception:
             print('color not recognized')
 
-    def add_subspectrum(self):
-        history.save_current_linshape(self.current_x, self.current_y)
-        print('current_lineshape', self.current_x, self.current_y)
-        history.add_current_to_total()
+    # coverage
+    # def add_subspectrum(self):
+    #     history.save_current_linshape(self.current_x, self.current_y)
+    #     print('current_lineshape', self.current_x, self.current_y)
+    #     history.add_current_to_total()
 
-    def remove_subspectrum(self):
-        history.remove_current_from_total()
+    # coverage
+    # def remove_subspectrum(self):
+    #     history.remove_current_from_total()
 
     def new_subspectrum(self):
         # Refactored. Adding story comments to try to make process clear
@@ -888,15 +891,16 @@ class View(Frame):
         """
         return self.controller.total_plot(self.blank_spectrum)
 
-    def request_refresh_current_plot(self, model, **data):
-        """Intercept the toolbar's plot request, include the total spectrum,
-        and request an update from the Controller
-
-        :param model: (str) Name of the model to use for calculation.
-        :param data: (dict) kwargs for the requested model calculation.
-        """
-        print('request_refresh_current_plot received ', model, data)
-        self.controller.update_current_plot(model, data)
+    # coverage
+    # def request_refresh_current_plot(self, model, **data):
+    #     """Intercept the toolbar's plot request, include the total spectrum,
+    #     and request an update from the Controller
+    #
+    #     :param model: (str) Name of the model to use for calculation.
+    #     :param data: (dict) kwargs for the requested model calculation.
+    #     """
+    #     print('request_refresh_current_plot received ', model, data)
+    #     self.controller.update_current_plot(model, data)
 
     # def update_current_plot(self, model, vars):
     #     """Will become replacement for request_refresh_current_plot"""
@@ -922,24 +926,26 @@ class View(Frame):
             self.clear_total()
             self.plot_total(history.total_x, history.total_y)
 
-    def request_add_plot(self, model, **data):
-        """Add the current (top) spectrum to the sum (bottom) spectrum.
+    # coverage
+    # def request_add_plot(self, model, **data):
+    #     """Add the current (top) spectrum to the sum (bottom) spectrum.
+    #
+    #     :param model: (str) Name of the model used for calculating the
+    #     current (top) spectrum.
+    #     :param data: (dict) kwargs for the requested model calculation.
+    #     """
+    #     self.controller.add_view_plots(model, self.total_spectrum, **data)
 
-        :param model: (str) Name of the model used for calculating the
-        current (top) spectrum.
-        :param data: (dict) kwargs for the requested model calculation.
-        """
-        self.controller.add_view_plots(model, self.total_spectrum, **data)
-
-    def request_refresh_total_plot(self, spectrum, *w):
-        """Request a plot of the total (summation, botttom) spectrum using
-        the provided spectrum and optional line width.
-
-        :param spectrum: ([(float, float)...] A list of (frequency,
-        intensity) tuples.
-        :param w: optional peak width at half height.
-        """
-        self.controller.update_total_plot(spectrum, *w)
+    # coverage
+    # def request_refresh_total_plot(self, spectrum, *w):
+    #     """Request a plot of the total (summation, botttom) spectrum using
+    #     the provided spectrum and optional line width.
+    #
+    #     :param spectrum: ([(float, float)...] A list of (frequency,
+    #     intensity) tuples.
+    #     :param w: optional peak width at half height.
+    #     """
+    #     self.controller.update_total_plot(spectrum, *w)
 
     # Interface from Controller to View:
 
@@ -956,10 +962,10 @@ class View(Frame):
         self.currentbar.grid(sticky=W)
         self.active_bar_dict = {'first-order': self.first_order_bar,
                                 'second-order': self.spinbars[0]}
-        self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
+        # self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
         history.change_toolbar(self.currentbar)
         self.currentbar.request_plot()
-        self.controller.update_total_plot(self.total_spectrum)
+        self.controller.update_total_plot(self.blank_spectrum)
         # self.history_past.append(self.total_spectrum[:])
 
         # test routines below (normally hashed out)
@@ -982,22 +988,24 @@ class View(Frame):
     #     subspectrum = Subspectrum(vars=self.currentbar.vars)
     #     return subspectrum
 
+    # coverage
     # TODO: rename, e.g. update_history
-    def update_total_spectrum(self, new_total_spectrum):
-        """Set the current total spectrum, adding it to the history list of
-        changes, and deleting the forward history.
+    # def update_total_spectrum(self, new_total_spectrum):
+    #     """Set the current total spectrum, adding it to the history list of
+    #     changes, and deleting the forward history.
+    #
+    #     :param new_total_spectrum: ([(float, float)...] A list of (frequency,
+    #     intensity) tuples.
+    #     """
+    #     self.total_spectrum = new_total_spectrum
+    #     self.history_past.append(self.total_spectrum[:])
+    #     self.history_future = []
 
-        :param new_total_spectrum: ([(float, float)...] A list of (frequency,
-        intensity) tuples.
-        """
-        self.total_spectrum = new_total_spectrum
-        self.history_past.append(self.total_spectrum[:])
-        self.history_future = []
-
-    def clear(self):
-        """Erase all plots."""
-        self.canvas.clear_all()
-        self.total_spectrum = self.blank_spectrum
+    # coverage
+    # def clear(self):
+    #     """Erase all plots."""
+    #     self.canvas.clear_all()
+    #     self.total_spectrum = self.blank_spectrum
 
     def clear_current(self):
         """Erase the current (top) spectrum plot."""
@@ -1029,14 +1037,15 @@ class View(Frame):
         history.save_total_linshape(x, y)
         self.canvas.plot_total(x, y)
 
+    # coverage
     # debugging below
-    def dump_history(self):
-        print('Current past history contents:')
-        print(self.history_past)
-        print('Current future history contents:')
-        print(self.history_future)
-        print('Current total_spectrum:')
-        print(self.total_spectrum)
+    # def dump_history(self):
+    #     print('Current past history contents:')
+    #     print(self.history_past)
+    #     print('Current future history contents:')
+    #     print(self.history_future)
+    #     print('Current total_spectrum:')
+    #     print(self.total_spectrum)
 
 
 # Debugging routines:
