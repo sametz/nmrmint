@@ -35,162 +35,6 @@ from nmrmint.GUI.widgets import (HorizontalRangeEntryFrame,
 history = History()
 
 
-# class MPLplot(FigureCanvasTkAgg):
-#     """The Canvas object for plotting simulated spectra.
-#
-#     MPLgraph extends on FigureCanvasTkAgg by including a reference to a
-#     matplotlib Figure object, plus methods for plotting.
-#
-#     Attributes:
-#
-#     Methods:
-#         plot_current: plot data to the top axis (i.e. the spectrum affected
-#         by the current toolbar inputs)
-#         plot_total: plot data to the bottom axis (i.e. the summation spectrum)
-#         clear_all: clears both plots
-#         clear_current: clears the top plot
-#         clear_total: clears the bottom plot
-#
-#     """
-#
-#     def __init__(self, figure, master=None, **options):
-#         """Extend FigureCanvasTkAgg with a Matplotlib Figure object, then add
-#         and pack itself plus a toolbar into the parent.
-#
-#         :param figure: a matplotlib.figure.Figure object
-#         """
-#         FigureCanvasTkAgg.__init__(self, figure, master, **options)
-#         self.total_data = np.array([])
-#         self.f = figure
-#         self.current_plot = figure.add_subplot(211)
-#         self.current_plot.invert_xaxis()
-#         self.total_plot = figure.add_subplot(212)
-#         self.total_plot.invert_xaxis()
-#         self.x_min = -1  # ppm
-#         self.x_max = 12  # ppm
-#         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-#         self.toolbar = NavigationToolbar2TkAgg(self, master)
-#         self.toolbar.update()
-#
-#     def plot_current(self, x, y):
-#         """Plot x, y data to the current_plot axis.
-#
-#         :param x: (numpy linspace)
-#         :param y: (numpy linspace)
-#         """
-#         # print('view.plot_current received x ', x.size, ' y ', y.size)
-#         # for some reason axes were getting flipped after adding, so:
-#         self.current_plot.invert_xaxis()
-#         self._set_current_window(x, y)
-#         self.current_plot.plot(x, y, linewidth=1)
-#         # self.f.canvas.draw_idle()  # DRAW IS CRITICAL TO REFRESH
-#         self.draw_idle()
-#
-#     def plot_total(self, x, y):
-#         """Plot x, y data to the total_plot axis.
-#
-#         :param x: (numpy linspace)
-#         :param y: (numpy linspace)
-#         """
-#         # for some reason total_plot axis gets flipped, so:
-#         # self.total_plot.invert_xaxis()
-#         self.total_plot.plot(x, y, linewidth=1)
-#         # self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
-#         # # self.f.canvas.draw_idle()
-#         # self.draw_idle()
-#         self.set_total_plot_window()
-#
-#     def set_total_plot_window(self, *x_limits):
-#
-#
-#         if x_limits:
-#             if len(x_limits) == 2:
-#                 self.x_min = x_limits[0]
-#                 self.x_max = x_limits[1]
-#             else:
-#                 print('set_total_plot_window called with bad args')
-#         # self.x_min = x_min
-#         # self.x_max = x_max
-#         self.total_plot.set_xlim(self.x_max, self.x_min)  # should flip x axis
-#         self.draw_idle()
-#
-#     def _set_current_window(self, x, y):
-#         left = False
-#         right = False
-#         # print('x, y', type(x), len(x), type(y), len(y))
-#         # print('checking x order')
-#         # ordered = True
-#         # for i, x_ in enumerate(x[:-2]):
-#         #     if x[i + 1] < x_:
-#         #         # print('x stopped increasing at: ', i)
-#         #         ordered = False
-#         #         break
-#         # if ordered:
-#         #     print('x always increased, from ', x[0], 'to ', x[-1])
-#
-#         start = True
-#         for i, y_ in enumerate(y[:-2]):
-#
-#             if y[i + 1] < y_ and start is True:
-#                 # print('y max found at: ', i, y_)
-#                 start = False
-#             if y[i + 1] > y_:
-#                 start = True
-#
-#         for i, intensity in enumerate(y):
-#             if intensity > 0.01:
-#                 left = i
-#                 # print('found left = ', left)
-#                 # print('intensity: ', intensity)
-#                 break
-#         # if not left:
-#         # print('no left found')
-#         for j, intensity in enumerate(reversed(y)):
-#             if intensity > 0.01:
-#                 right = j
-#                 # print('found right = ', right)
-#                 # print('intensity: ', intensity)
-#                 break
-#         # if not right:
-#         # print('no right found')
-#         x_min = x[left] - 0.2
-#         x_max = x[-right] + 0.2
-#         # print('x window ', x_min, x_max)
-#         self.current_plot.set_xlim(x_max, x_min)  # should flip x axis
-#         self.draw_idle()
-#
-#     # coverage
-#     # def clear_all(self):
-#     #     """Clear all spectra plots."""
-#     #     self.current_plot.clear()
-#     #     self.total_plot.clear()
-#     #     self.f.canvas.draw_idle()
-#
-#     def clear_current(self):
-#         """Clear the current spectrum plot"""
-#         self.current_plot.clear()
-#         # self.f.canvas.draw_idle()
-#
-#     def clear_total(self):
-#         """Clear the summation spectrum plot."""
-#         self.total_plot.clear()
-#         # self.f.canvas.draw_idle()
-#
-#     # def total_figure(self):
-#     #     total_figure = Figure()
-#     #     total_plot = total_figure.add_subplot(111)
-#     #     line = self.total_plot.get_lines()[0]
-#     #     xd = line.get_xdata()
-#     #     yd = line.get_ydata()
-#     #     total_plot.plot(xd, yd, linewidth=1)
-#     #     return total_figure
-#     #
-#     # def save_pdf(self):
-#     #     figure = self.total_figure()
-#     #     # self.f.savefig('test.pdf')
-#     #     figure.savefig('test.pdf')
-
-
 class View(Frame):
     """Provides the GUI for nmrmint by extending a tkinter Frame.
 
@@ -265,11 +109,9 @@ class View(Frame):
         self.v_max = 12  # ppm
         # self.is_landscape = True
 
-        # Currently, for debugging purposes, initial/blank spectra will have a
-        # "TMS" peak at 0 that integrates to 1H.
+        # Initial/blank spectra will have a "TMS" peak at 0 that integrates
+        # to 0.05 H.
         self.blank_spectrum = [(0, 0.05)]
-        # self.history_past = []
-        # self.history_future = []
 
         self.SideFrame = Frame(self, relief=RIDGE, borderwidth=3)
         self.SideFrame.pack(side=LEFT, expand=NO, fill=Y)
@@ -288,8 +130,12 @@ class View(Frame):
         # self.SubSpectrumSelectionFrame.pack(side=TOP, expand=NO, fill=X)
 
         self.initialize_first_order_bar()
+
+        # Depending on whether spin widgets are wanted or not, select one of
+        # the next two lines:
         # self.initialize_spinbars()
         self.initialize_nospinbars()
+
         self.add_calc_type_frame()
         self.add_nuclei_number_entry()
         self.add_specfreq_frame()
@@ -305,6 +151,7 @@ class View(Frame):
         self.add_subspectrum_buttons()
         self.add_subspectrum_navigation()
         self.add_plots()
+        self.initialize_active_bars()
         # self.add_history_buttons()
 
     def initialize_first_order_bar(self):
@@ -572,14 +419,14 @@ class View(Frame):
         save_eps_button.pack()
 
     #coverage
-    def total_plot_figure(self):
-        """Return a Figure for the current total plot."""
-        figure = Figure(figsize=(self.plot_width, self.plot_height))
-        axes = figure.add_subplot(111)
-        x, y = history.total_x, history.total_y
-        axes.plot(x, y, linewidth=0.3)
-        axes.set_xlim(self.v_max, self.v_min)
-        return figure
+    # def total_plot_figure(self):
+    #     """Return a Figure for the current total plot."""
+    #     figure = Figure(figsize=(self.plot_width, self.plot_height))
+    #     axes = figure.add_subplot(111)
+    #     x, y = history.total_x, history.total_y
+    #     axes.plot(x, y, linewidth=0.3)
+    #     axes.set_xlim(self.v_max, self.v_min)
+    #     return figure
 
     def save_as_eps(self):
         if self.is_landscape:
@@ -828,62 +675,55 @@ class View(Frame):
         self.canvas.x_max = self.v_max
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
-    # def add_history_buttons(self):
-    #     """Add buttons to the GUI for moving forward/back in the total
-    #     spectrum creation history.
-    #
-    #     Change DUMP = True to include the DUMP HISTORY button for debugging.
-    #     """
-    #     DUMP = False
-    #     history_frame = Frame(self)
-    #     history_frame.pack(side=TOP)
-    #     back = Button(history_frame, text='Back',
-    #                   command=lambda: self.go_back())
-    #     forward = Button(history_frame, text='Forward',
-    #                      command=lambda: self.go_forward())
-    #     back.pack(side=LEFT)
-    #     forward.pack(side=RIGHT)
-    #
-    #     # Dump button for debugging history
-    #     if DUMP:
-    #         dump_button = Button(self, text='DUMP HISTORY',
-    #                              command=lambda: self.dump_history())
-    #         dump_button.pack(side=TOP)
-    #
-    # def go_back(self):
-    #     """Step back one point in the total spectrum history and refresh the
-    #     spectrum plot, or beep if already at beginning.
-    #     """
-    #     if len(self.history_past) > 1:
-    #         self.history_future.append(self.history_past.pop())
-    #         self.total_spectrum = self.history_past[-1]
-    #     else:
-    #         self.bell()
-    #         return
-    #
-    #     self.request_refresh_total_plot(self.total_spectrum)
-    #
-    # def go_forward(self):
-    #     """Step forward one point in the total spectrum history and refresh
-    # the
-    #     spectrum plot, or beep if already at end.
-    #     """
-    #     try:
-    #         self.history_past.append(self.history_future.pop())
-    #         self.total_spectrum = self.history_past[-1]
-    #     except IndexError:
-    #         self.bell()
-    #         return
-    #
-    #     self.request_refresh_total_plot(self.total_spectrum)
+    def initialize_active_bars(self):
+       """Initialize the GUI and history with the default toolbars for first
+       and second
+       order.
+       """
+       self.currentbar = self.first_order_bar
+       self.currentbar.grid(sticky=W)
+       self.active_bar_dict = {'first-order': self.first_order_bar,
+                               'second-order': self.spinbars[0]}
+       history.change_toolbar(self.currentbar)
 
     #########################################################################
     # Methods below provide the interface to the controller
     #########################################################################
 
-    # Interface from View to Controller:
     # TODO: rename these
 
+    # To avoid a circular reference, a call to the Controller cannot be made
+    # until View is fully instantiated. Initializing the plot with a call to
+    # Controller is postponed by placing it in the following function and
+    # having the Controller call it when the View is ready.
+    def initialize(self):
+        """Initialize the plots.
+
+        To avoid a circular reference, this method is called by the
+        Controller after it instantiates View."""
+        # self.currentbar = self.first_order_bar
+        # self.currentbar.grid(sticky=W)
+        # self.active_bar_dict = {'first-order': self.first_order_bar,
+        #                         'second-order': self.spinbars[0]}
+        # # self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
+        # history.change_toolbar(self.currentbar)
+        # TODO refactor toolbars so don't have to use their request.plot()
+        # but call controller directly with the toolbar vars.
+        # If this is done, entire issue with circular reference can be
+        # eliminated and entire initialize function can be removed.
+        self.currentbar.request_plot()
+        # TODO move to just in controller
+        self.controller.update_total_plot(self.blank_spectrum)
+        # self.history_past.append(self.total_spectrum[:])
+
+        # test routines below (normally hashed out)
+
+        # self.currentbar.test_reset({'Vcentr': 5.0})  # for test purposes
+
+        # self.select_second_order()
+        # testbar = self.currentbar
+        # v, j, w = testbar.v, testbar.j, testbar.w_array
+        # testbar.test_reset(v, j, w)
     def blank_total_spectrum(self):
         """Request and return a new blank total spectrum.
 
@@ -913,9 +753,12 @@ class View(Frame):
     def update_current_plot(self):
         """Testing a refactor where plots get needed data directly from
         history."""
+        # Remove old current plot from total plot if necessary
+        # TODO: maybe change to a Subspectrum.deactivate() method?
         active = history.current_subspectrum().active
         if active:
             history.remove_current_from_total()
+
         history.save()
         model, vars_ = history.subspectrum_data()
         print('update_current_plot received ', model, vars_)
@@ -949,33 +792,7 @@ class View(Frame):
 
     # Interface from Controller to View:
 
-    # To avoid a circular reference, a call to the Controller cannot be made
-    # until View is fully instantiated. Initializing the plot with a call to
-    # Controller is postponed by placing it in the following function and
-    # having the Controller call it when the View is ready.
-    def initialize(self):
-        """Initialize the plots.
 
-        To avoid a circular reference, this method is called by the
-        Controller after it instantiates View."""
-        self.currentbar = self.first_order_bar
-        self.currentbar.grid(sticky=W)
-        self.active_bar_dict = {'first-order': self.first_order_bar,
-                                'second-order': self.spinbars[0]}
-        # self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
-        history.change_toolbar(self.currentbar)
-        self.currentbar.request_plot()
-        self.controller.update_total_plot(self.blank_spectrum)
-        # self.history_past.append(self.total_spectrum[:])
-
-        # test routines below (normally hashed out)
-
-        # self.currentbar.test_reset({'Vcentr': 5.0})  # for test purposes
-
-        # self.select_second_order()
-        # testbar = self.currentbar
-        # v, j, w = testbar.v, testbar.j, testbar.w_array
-        # testbar.test_reset(v, j, w)
 
     # def start_history(self):
     #     # self.history = History()

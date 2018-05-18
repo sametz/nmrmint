@@ -71,7 +71,7 @@ class ToolBar(Frame):
         self.controller = controller
         self.model = 'model'  # must be overwritten by subclasses
         self.defaults = {}  # overwrite for subclasses
-        self.vars = {}
+        self._vars = {}
         # self.add_spectra_button = Button(self,
         #                                  name='addbutton',
         #                                  text='Add To Total',
@@ -84,6 +84,18 @@ class ToolBar(Frame):
                                    command=lambda:
                                    self.restore_defaults_and_refresh())
         self.reset_button.pack(side=RIGHT)
+
+    @property
+    def vars(self):
+        return self._vars
+
+    @vars.setter
+    def vars(self, value):
+        self._vars = value
+
+    @vars.getter
+    def vars(self):
+        return self._vars
 
     def request_plot(self):
         """Send request to controller to recalculate and refresh the view's
@@ -147,7 +159,7 @@ class FirstOrderBar(ToolBar):
                          'Vcentr': 150 / self.spec_freq,
                          '# of nuclei': 1,
                          'width': 0.5}
-        self.vars = self.defaults.copy()
+        self._vars = self.defaults.copy()
         self.fields = {}
         kwargs = {'dict_': self.vars,
                   'controller': self.request_plot}
@@ -174,41 +186,41 @@ class FirstOrderBar(ToolBar):
         #     widget.set_value(val)
 
     # coverage
-    def test_reset(self, vars):
-        for key, val in vars.items():
-            self.vars[key] = val
-            widget = self.fields[key]
-            print('found ', key, 'with value ',
-                  widget.get_value())
-            widget.set_value(val)
-            print('changed it to: ', widget.get_value())
-
-        # self.request_plot()
-        # res = self.nametowidget("width")
-        # print(res, res.value_var.get())
-        # widgets = self.children
-        # for widget in widgets:
-        #     print(widget)
-        #     try:
-        #         print(self.nametowidget('addbutton'))
-        #     except:
-        #         print('FAIL')
-        # for key, val in vars.items():
-        #     name = ".!view.!frame2.!firstorderbar." + key
-        #     try:
-        #         print(self.nametowidget(name))
-        #     except:
-        #         print('FAIL')
+    # def test_reset(self, vars):
+    #     for key, val in vars.items():
+    #         self.vars[key] = val
+    #         widget = self.fields[key]
+    #         print('found ', key, 'with value ',
+    #               widget.get_value())
+    #         widget.set_value(val)
+    #         print('changed it to: ', widget.get_value())
+    #
+    #     # self.request_plot()
+    #     # res = self.nametowidget("width")
+    #     # print(res, res.value_var.get())
+    #     # widgets = self.children
+    #     # for widget in widgets:
+    #     #     print(widget)
+    #     #     try:
+    #     #         print(self.nametowidget('addbutton'))
+    #     #     except:
+    #     #         print('FAIL')
+    #     # for key, val in vars.items():
+    #     #     name = ".!view.!frame2.!firstorderbar." + key
+    #     #     try:
+    #     #         print(self.nametowidget(name))
+    #     #     except:
+    #     #         print('FAIL')
 
     # coverage
-    def set_freq(self, freq):
-        """Set the simulated spectrometer frequency and update the current
-        plot accordingly.
-
-        :param freq: (float) the frequency of the spectrometer to simulate.
-        """
-        self.spec_freq = freq
-        self.request_plot()
+    # def set_freq(self, freq):
+    #     """Set the simulated spectrometer frequency and update the current
+    #     plot accordingly.
+    #
+    #     :param freq: (float) the frequency of the spectrometer to simulate.
+    #     """
+    #     self.spec_freq = freq
+    #     self.request_plot()
 
     def request_plot(self):
         """Request the Controller to plot the spectrum."""
@@ -249,12 +261,12 @@ class FirstOrderBar(ToolBar):
     #     return data
 
     # coverage
-    def add_spectra(self):
-        """Add the (top) current spectrum simulation to the (bottom) total
-        simulated spectrum plot.
-        """
-        kwargs = self.make_kwargs()
-        self.master.master.request_add_plot(self.model, **kwargs)
+    # def add_spectra(self):
+    #     """Add the (top) current spectrum simulation to the (bottom) total
+    #     simulated spectrum plot.
+    #     """
+    #     kwargs = self.make_kwargs()
+    #     self.master.master.request_add_plot(self.model, **kwargs)
 
 
 class SecondOrderBar(ToolBar):
@@ -337,8 +349,8 @@ class SecondOrderBar(ToolBar):
         self.spec_freq = spec_freq
         self.v_ppm = self.v / self.spec_freq
 
-        self.vars = self.create_var_dict()
-        self.defaults = copy.deepcopy(self.vars)  # for resetting toolbar
+        self._vars = self.create_var_dict()
+        self.defaults = copy.deepcopy(self._vars)  # for resetting toolbar
         # TODO: see if deepcopy is needed here
 
         # following seems to be a hack to get a spinbox for w, when currently
@@ -355,8 +367,22 @@ class SecondOrderBar(ToolBar):
         self.reset_button = Button(self,
                                    name='reset_button',
                                    text='Reset',
-                                   command=lambda: self.restore_defaults())
+                                   command=lambda: self.restore_defaults_and_refresh())
         self.reset_button.pack(side=RIGHT)
+
+    @property
+    def vars(self):
+        return self._vars
+
+    @vars.getter
+    def vars(self):
+        self._vars = self.create_var_dict()
+        return self._vars
+
+    @vars.setter
+    def vars(self, value):
+        print('setter given ', value)
+        self._vars = value
 
     def create_var_dict(self):
         return {'v': self.v_ppm,
@@ -468,7 +494,7 @@ class SecondOrderBar(ToolBar):
     def request_plot(self):
         """Adapt 2D array data to kwargs of correct type for the controller."""
         # self.update_v()  # no longer needed?
-        self.vars = self.create_var_dict()
+        # self.vars = self.create_var_dict()
         # vars_copy = copy.deepcopy(self.vars)  # should now be handled by
         # history
         # self.controller('nspin', vars_copy)
@@ -481,10 +507,10 @@ class SecondOrderBar(ToolBar):
     #               'j': self.j,
     #               'w': self.w_array[0, 0]}  # controller takes float for w
 
-        # self.controller.update_current_plot('nspin', **kwargs)
-        self.master.master.request_add_plot('nspin', **kwargs)
+    # self.controller.update_current_plot('nspin', **kwargs)
+    # self.master.master.request_add_plot('nspin', **kwargs)
 
-    def reset(self, vars):
+    def reset(self, _vars):
         """Reset the toolbar with supplied vars.
 
         :param vars: {'v': 2D np.array of [[ppm chemical shifts...]],
@@ -494,11 +520,13 @@ class SecondOrderBar(ToolBar):
         TODO: factor out clunky use of 2D arrays for v and w, to 1D array and
         float."""
 
-        print('second-order reset with vars: ', vars)
-        self.vars = copy.deepcopy(vars)
-        self.v_ppm = self.vars['v']
-        self.j = self.vars['j']
-        self.w = self.vars['w']
+        print('second-order reset with vars: ', _vars)
+        # print('test setter')
+        # self.vars = copy.deepcopy(_vars)
+        # print('test getter: ', self.vars)
+        self.v_ppm = _vars['v']
+        self.j = _vars['j']
+        self.w = _vars['w']
 
         for i, freq in enumerate(self.v_ppm[0]):
             name = 'V' + str(i + 1)
@@ -554,6 +582,7 @@ class SecondOrderSpinBar(SecondOrderBar):
 
     Overrides add_frequency_widgets and add_peakwidth_widget.
     """
+
     def __init__(self, parent=None,
                  from_=-10000.00, to=10000.00, increment=10, realtime=False,
                  **options):
@@ -605,6 +634,7 @@ if __name__ == '__main__':
         def update_view_plot(*args, **kwargs):
             print(args)
             print(kwargs)
+
 
     dummy_controller = DummyController()
 

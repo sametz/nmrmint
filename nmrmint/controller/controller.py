@@ -1,7 +1,9 @@
 """
 The controller for the nmrmint app.
 
-Assumes a tkinter view.
+The controller is actually more of an Adapter to connect a View to the Model.
+For example, it can potentially allow other Views to be substituted at some
+point (PyQt; web interface). Currently, the controller assumes a tkinter view.
 
 Provides the following class:
 * Controller    Class that handles data and requests to/from the model and 
@@ -17,8 +19,7 @@ from nmrmint.model.nmrplot import tkplot_current, tkplot_total
 
 
 class Controller:
-    """Instantiate nmrmint's view, and pass data and requests to/from
-    the model and the view.
+    """Pass data and requests to/from the model and the view.
     
     The controller assumes the view offers the following methods:
     * initialize: Initialize the view (some initialization methods have to
@@ -236,10 +237,11 @@ class Controller:
         :param w: optional peak width at half height.
         :return: (np.linspace, np.array) of x, y- lineshape data.
         """
+        # scheduled for removal
         spectrum = self.spectrum_from_ppm(spectrum)
         plotdata = tkplot_total(
             spectrum,
-            *w,
+            *w,  # what is w doing here?! should be obsolete!
             spectrometer_frequency=self.view.spectrometer_frequency)
         plotdata = self.lineshape_to_ppm(plotdata)
         return plotdata
