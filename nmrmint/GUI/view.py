@@ -711,72 +711,14 @@ class View(Frame):
     # Methods below provide the interface to the controller
     #########################################################################
 
-    # TODO: rename these
-
-    # To avoid a circular reference, a call to the Controller cannot be made
-    # until View is fully instantiated. Initializing the plot with a call to
-    # Controller is postponed by placing it in the following function and
-    # having the Controller call it when the View is ready.
-    # def initialize(self):
-    #     """Initialize the plots.
-    #
-    #     To avoid a circular reference, this method is called by the
-    #     Controller after it instantiates View."""
-    #     # self.currentbar = self.first_order_bar
-    #     # self.currentbar.grid(sticky=W)
-    #     # self.active_bar_dict = {'first-order': self.first_order_bar,
-    #     #                         'second-order': self.spinbars[0]}
-    #     # # self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
-    #     # history.change_toolbar(self.currentbar)
-    #     # TODO refactor toolbars so don't have to use their request.plot()
-    #     # but call controller directly with the toolbar vars.
-    #     # If this is done, entire issue with circular reference can be
-    #     # eliminated and entire initialize function can be removed.
-    #
-    #     # self.update_current_plot()
-    #
-    #     # self.currentbar.request_plot()
-    #     # TODO move to just in controller
-    #     # self.controller.update_total_plot(self.controller.blank_spectrum)
-    #     # self.history_past.append(self.total_spectrum[:])
-    #
-    #     # test routines below (normally hashed out)
-    #
-    #     # self.currentbar.test_reset({'Vcentr': 5.0})  # for test purposes
-    #
-    #     # self.select_second_order()
-    #     # testbar = self.currentbar
-    #     # v, j, w = testbar.v, testbar.j, testbar.w_array
-    #     # testbar.test_reset(v, j, w)
-    # def blank_total_spectrum(self):
-    #     """Request and return a new blank total spectrum.
-    #
-    #     :return: (np.linspace, np.array) tuple of x, y- lineshape data
-    #     """
-    #     return self.controller.total_plot(self.blank_spectrum)
-
-    # coverage
-    # def request_refresh_current_plot(self, model, **data):
-    #     """Intercept the toolbar's plot request, include the total spectrum,
-    #     and request an update from the Controller
-    #
-    #     :param model: (str) Name of the model to use for calculation.
-    #     :param data: (dict) kwargs for the requested model calculation.
-    #     """
-    #     print('request_refresh_current_plot received ', model, data)
-    #     self.controller.update_current_plot(model, data)
-
-    # def update_current_plot(self, model, vars):
-    #     """Will become replacement for request_refresh_current_plot"""
-    #     print('update_current_plot received ', model, vars)
-    #     # history.update_vars(model, vars)
-    #     history.change_toolbar(self.currentbar)
-    #     data = self.adapter.convert_toolbar_data(model, vars)
-    #     self.controller.update_current_plot(model, data)
-
     def update_current_plot(self):
-        """Testing a refactor where plots get needed data directly from
-        history."""
+        """Recalculates lineshapes that depend on the current subspectrum's
+        values, and replots them.
+
+        Also records the changes to history. TODO: bad code smell--function
+        doing too many things. May be solved when history is refactored into
+        Controller and out of View.
+        """
         # Remove old current plot from total plot if necessary
         # TODO: maybe change to a Subspectrum.deactivate() method?
         active = history.current_subspectrum().active
@@ -785,108 +727,41 @@ class View(Frame):
 
         history.save()
         model, vars_ = history.subspectrum_data()
-        print('update_current_plot received ', model, vars_)
-
-        # data = self.adapter.convert_toolbar_data(model, vars_)
         self.controller.update_current_plot(model, vars_)
         if active:
             history.add_current_to_total()
             self.clear_total()
             self.plot_total(history.total_x, history.total_y)
 
-    # coverage
-    # def request_add_plot(self, model, **data):
-    #     """Add the current (top) spectrum to the sum (bottom) spectrum.
-    #
-    #     :param model: (str) Name of the model used for calculating the
-    #     current (top) spectrum.
-    #     :param data: (dict) kwargs for the requested model calculation.
-    #     """
-    #     self.controller.add_view_plots(model, self.total_spectrum, **data)
-
-    # coverage
-    # def request_refresh_total_plot(self, spectrum, *w):
-    #     """Request a plot of the total (summation, botttom) spectrum using
-    #     the provided spectrum and optional line width.
-    #
-    #     :param spectrum: ([(float, float)...] A list of (frequency,
-    #     intensity) tuples.
-    #     :param w: optional peak width at half height.
-    #     """
-    #     self.controller.update_total_plot(spectrum, *w)
-
-    # Interface from Controller to View:
-
-    # def start_history(self):
-    #     # self.history = History()
-    #     ss = self.record_subspectrum()
-    #     history.add_subspectrum(ss)
-    #     print('history initiated with subspectrum ', history.current,
-    #           " containing vars ", history.subspectra[history.current].vars)
-
-    # def record_subspectrum(self):
-    #     subspectrum = Subspectrum(vars=self.currentbar.vars)
-    #     return subspectrum
-
-    # coverage
-    # TODO: rename, e.g. update_history
-    # def update_total_spectrum(self, new_total_spectrum):
-    #     """Set the current total spectrum, adding it to the history list of
-    #     changes, and deleting the forward history.
-    #
-    #     :param new_total_spectrum: ([(float, float)...] A list of (frequency,
-    #     intensity) tuples.
-    #     """
-    #     self.total_spectrum = new_total_spectrum
-    #     self.history_past.append(self.total_spectrum[:])
-    #     self.history_future = []
-
-    # coverage
-    # def clear(self):
-    #     """Erase all plots."""
-    #     self.canvas.clear_all()
-    #     self.total_spectrum = self.blank_spectrum
-
     def clear_current(self):
         """Erase the current (top) spectrum plot."""
         self.canvas.clear_current()
+
+    def plot_current(self, x, y):
+        """Plot data to the current (top) spectrum's axis, and save the
+        lineshapes to the history.
+
+        Arguments:
+            x, y: (numpy.ndarray, numpy.ndarray) x and y coordinates
+        """
+        self.current_x, self.current_y = x, y
+        # print('current_x, current_y: ', self.current_x, self.current_y)
+        history.save_current_linshape(x, y)
+        self.canvas.plot_current(x, y)
 
     def clear_total(self):
         """Erase the total (bottom) spectrum plot."""
         # self.total_spectrum = self.blank_spectrum
         self.canvas.clear_total()
 
-    def plot_current(self, x, y):
-        """Plot data to the current spectrum's axis (top).
-
-        Arguments:
-            x, y: numpy linspaces of x and y coordinates
-        """
-        # print('x, y: ', x, y)
-        self.current_x, self.current_y = x, y
-        # print('current_x, current_y: ', self.current_x, self.current_y)
-        history.save_current_linshape(x, y)
-        self.canvas.plot_current(x, y)
-
     def plot_total(self, x, y):
-        """Plot data to the total spectrum's axis (bottom).
+        """Plot data to the total (bottom) spectrum's axis.
 
         Arguments:
             x, y: numpy linspaces of x and y coordinates
         """
         history.save_total_linshape(x, y)
         self.canvas.plot_total(x, y)
-
-    # coverage
-    # debugging below
-    # def dump_history(self):
-    #     print('Current past history contents:')
-    #     print(self.history_past)
-    #     print('Current future history contents:')
-    #     print(self.history_future)
-    #     print('Current total_spectrum:')
-    #     print(self.total_spectrum)
-
 
 # Debugging routines:
 

@@ -101,7 +101,7 @@ def tkplot(spectrum, w=0.5, spectrometer_frequency=300):
     :param w: peak width at half height
     :param spectrometer_frequency: the frequency of the spectrometer (i.e
     frequency in MHz that 1H nuclei resonate at)
-    :return: a tuple of x and y coordinate linspaces"""
+    :return: a tuple of x and y numpy.ndarrays"""
     x = np.linspace(-1 * spectrometer_frequency,
                     15 * spectrometer_frequency,
                     160000)  # 0.01 Hz resolution on 1 GHz spectrometer
