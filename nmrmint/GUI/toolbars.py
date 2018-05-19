@@ -472,24 +472,24 @@ class SecondOrderBar(ToolBar):
         datagrid.pack()
 
     # coverage
-    def set_freq(self, freq):
-        """Set the simulated spectrometer frequency and update the current
-        plot accordingly.
-
-        :param freq: (float) the frequency of the spectrometer to simulate.
-        """
-        self.spec_freq = freq
-        # self.request_plot()  # refreshing will be handled externally
+    # def set_freq(self, freq):
+    #     """Set the simulated spectrometer frequency and update the current
+    #     plot accordingly.
+    #
+    #     :param freq: (float) the frequency of the spectrometer to simulate.
+    #     """
+    #     self.spec_freq = freq
+    #     # self.request_plot()  # refreshing will be handled externally
 
     # coverage
-    def update_v(self):
-        """Translate the ppm frequencies in v_ppm to Hz, and overwrite v
-        with the result.
-
-        No longer needed?
-        """
-        self.v = self.v_ppm * self.spec_freq
-        self.vars = self.create_var_dict()
+    # def update_v(self):
+    #     """Translate the ppm frequencies in v_ppm to Hz, and overwrite v
+    #     with the result.
+    #
+    #     No longer needed?
+    #     """
+    #     self.v = self.v_ppm * self.spec_freq
+    #     self.vars = self.create_var_dict()
 
     # def request_plot(self):
     #     """Adapt 2D array data to kwargs of correct type for the controller."""
@@ -538,41 +538,41 @@ class SecondOrderBar(ToolBar):
         width_widget = self.fields['W']
         width = self.w[0][0]
         width_widget.set_value(width)
-        width_widget.array = self.w
-        print('W was set to: ', width_widget.array)
+        # width_widget.array = self.w
+        # print('W was set to: ', width_widget.array)
         print('W field was set to: ', width_widget.get_value())
 
         # self.controller('nspin', self.vars)
         self.controller()
 
     # coverage
-    def test_reset(self, v, j, w):
-        pass
-        # self.v = v
-        # print('start of test: v = ', self.v)
-        # self.v += 300
-        # print('v changed to: ', self.v)
-        # self.v_ppm = v / self.spec_freq
-        # self.j = j
-        # self.w_array = w
-
-        # for freq in range(1, len(self.v_ppm[0]) + 1):
-        #     name = 'V' + str(freq)
-        #     print('n = ', len(self.v) + 1, ' name: ', name)
-        #     widget = self.fields[name]
-        #     print('found widget: ', widget)
-
-        # for i, freq in enumerate(self.v_ppm[0]):
-        #     print(i, freq)
-        #     name = 'V' + str(i + 1)
-        #     print(name)
-        #     widget = self.fields[name]
-        #     if float(widget.get_value()) != freq:
-        #         print('CHANGE DETECTED: ',
-        #               float(widget.get_value()),
-        #               freq)
-        #         widget.set_value(freq)
-        #         print('value is now ', widget.get_value())
+    # def test_reset(self, v, j, w):
+    #     pass
+    #     # self.v = v
+    #     # print('start of test: v = ', self.v)
+    #     # self.v += 300
+    #     # print('v changed to: ', self.v)
+    #     # self.v_ppm = v / self.spec_freq
+    #     # self.j = j
+    #     # self.w_array = w
+    #
+    #     # for freq in range(1, len(self.v_ppm[0]) + 1):
+    #     #     name = 'V' + str(freq)
+    #     #     print('n = ', len(self.v) + 1, ' name: ', name)
+    #     #     widget = self.fields[name]
+    #     #     print('found widget: ', widget)
+    #
+    #     # for i, freq in enumerate(self.v_ppm[0]):
+    #     #     print(i, freq)
+    #     #     name = 'V' + str(i + 1)
+    #     #     print(name)
+    #     #     widget = self.fields[name]
+    #     #     if float(widget.get_value()) != freq:
+    #     #         print('CHANGE DETECTED: ',
+    #     #               float(widget.get_value()),
+    #     #               freq)
+    #     #         widget.set_value(freq)
+    #     #         print('value is now ', widget.get_value())
 
 
 # TODO: most recent changes have used SecondOrderBar. If SecondOrderSpinBar
