@@ -111,6 +111,14 @@ class TestBaseEntryFrame:
         """Test that .set_value() updates the widget properly."""
         # GIVEN a BaseEntryFrame widget and a new value
         new_value = 1.0
+        assert new_value != float(base_entry.get_value())
+
+        # WHEN widget is told to set its value to the new value:
+        base_entry.set_value(new_value)
+
+        # THEN the correct updates have been made
+        assert new_value == float(base_entry.get_value())
+        assert new_value == base_entry.current_value
 
 
 class TestArrayBox:

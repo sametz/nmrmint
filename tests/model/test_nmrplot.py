@@ -26,6 +26,7 @@ def test_lorentz_standard_max_height():
 
     assert lorentz(v0, v0, I, w) == approx(1.0)
 
+
 def test_lorentz_broadening():
     """If the width is doubled from the standard 0.5 Hz, then the max height
     should be half of I."""

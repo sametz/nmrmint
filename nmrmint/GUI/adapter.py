@@ -1,3 +1,4 @@
+"""Scheduled for deletion--refactored into Controller.py"""
 """Tools to convert the data exported from the View to the data format
 required by the Controller.
 

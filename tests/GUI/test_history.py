@@ -662,8 +662,6 @@ def test_current_lineshape(ss1, x1, y1):
     assert np.array_equal(y, y1)
 
 
-
-
 def test_save_current_linshape(x1, y1):
     """Test that two linespaces are saved as subspectrum.x, subspectrum.y"""
     # GIVEN a history with a single subspectrum

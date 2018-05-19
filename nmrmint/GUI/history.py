@@ -14,7 +14,7 @@ class Subspectrum:
     calculation type, variables used, and the toolbar required in the
     GUI.
     """
-    def __init__(self, model=None, vars=None, x=None, y=None,
+    def __init__(self, model=None, vars_=None, x=None, y=None,
                  toolbar=None,
                  activity=False):
         """
@@ -22,7 +22,7 @@ class Subspectrum:
         :param model: str They type of calculation, either first order
         ("first_order") or second_order ("nspins"), matching strings used by
         toolbar widget. TODO: adopt better name, e.g. latter = "second_order"
-        :param vars: {} a dict of toolbar variables used to simulate the
+        :param vars_: {} a dict of toolbar variables used to simulate the
         subspectrum.
         :param x: numpy.linspace of x coordinates for the simulation result
         :param y: numpy.linspace of y coordinates for the simulation result
@@ -31,7 +31,7 @@ class Subspectrum:
         for addition to the total spectrum. Used as a toggle.
         """
         self.model = model
-        self.vars = vars
+        self.vars = vars_
         self.x = x
         self.y = y
         self.toolbar = toolbar
@@ -53,7 +53,6 @@ class Subspectrum:
     def activate(self):
         """Currently not implemented"""
         self.active = True
-        self.call_model
 
     # coverage
     def deactivate(self):
@@ -220,13 +219,13 @@ class History:
     def remove_current_from_total(self):
         self.total_y -= self.current_subspectrum().y
 
-    def update_vars(self, model, vars):
+    def update_vars(self, model, vars_):
         """Replaces current subpectrum's model and vars, using a deep copy
         of the latter. Deep copy should be required for second order sims."""
         subspectrum = self.subspectra[self.current]
         subspectrum.model = model
-        subspectrum.vars = copy.deepcopy(vars)
-        print('Subspectrum ', self.current, model, ' updated with vars: ', vars)
+        subspectrum.vars = copy.deepcopy(vars_)
+        print('Subspectrum ', self.current, model, ' updated with vars: ', vars_)
 
     def update_frequency(self, freq):
         """Updates all subspectra to use a different spectrometer frequency;
@@ -250,16 +249,15 @@ class History:
             if subspectrum.active:
                 self.total_y += y
 
-
     # coverage
     # below are functions that might not be currently called
     # TODO: check for cruft
 
-    def remove_subspectrum(self, subspectrum):
-        self.remove_current_from_total()
+    # def remove_subspectrum(self, subspectrum):
+    #     self.remove_current_from_total()
 
-    def clear_total_spectrum(self):
-        self.total_spectrum = []  # CHANGE TO NUMPY LINSPACE
+    # def clear_total_spectrum(self):
+    #     self.total_spectrum = []  # CHANGE TO NUMPY LINSPACE
 
     def dump(self):
         """for debugging"""

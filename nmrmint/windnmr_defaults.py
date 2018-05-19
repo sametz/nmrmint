@@ -14,9 +14,9 @@ AB2dict = {'Jab': 12.0,
 
 # for expediency, including the 2,6-dichlorophenol AB2 for test_nmrmath
 dcp = {'Jab': 7.9,
-        'Vab': 26.5,
-        'Vcentr': 13.25,
-        'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
+       'Vab': 26.5,
+       'Vcentr': 13.25,
+       'Wa': 0.5, 'Right-Hz': 0, 'WdthHz': 300}
 
 ABXdict = {'Jab': 12.0,
            'Jax': 2.0,
@@ -78,7 +78,6 @@ multiplet_bar_defaults = {'AB': ab_kwargs,
                           'ABX3': abx3_kwargs,
                           'AAXX': aaxx_kwargs,
                           'AABB': aabb_kwargs}
-
 
 if __name__ == '__main__':
     for bar in ['AB', 'AB2', 'ABX', 'ABX3', 'AAXX', 'AABB']:

@@ -599,15 +599,15 @@ class SimpleVariableBox(BaseEntryFrame):
     specified by new kwarg 'min'.
     """
 
-    def __init__(self, parent=None, value=0.5, min=0, **options):
+    def __init__(self, parent=None, value=0.5, min_=0, **options):
         """Extend BaseEntryFrame by implementing initial value and minimum
         value parameters.
 
         :param value: (float) Value to instantiate Entry with.
-        :param min: (float) Minimum value the Entry is allowed to hold.
+        :param min_: (float) Minimum value the Entry is allowed to hold.
         """
         self.initial_value = value
-        self.minimum_value = min
+        self.minimum_value = min_
         BaseEntryFrame.__init__(self, parent, **options)
 
     def save_entry(self):

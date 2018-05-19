@@ -20,7 +20,7 @@ import numpy as np
 # from matplotlib.backends.backend_ps import FigureCanvasPS
 # from matplotlib.figure import Figure
 
-from nmrmint.GUI.adapter import Adapter
+# from nmrmint.GUI.adapter import Adapter
 from nmrmint.GUI.backends import MPLplot, save_as_eps, save_as_pdf
 from nmrmint.GUI.frames import RadioFrame
 from nmrmint.windnmr_defaults import multiplet_bar_defaults
@@ -102,7 +102,7 @@ class View(Frame):
         # sys.settrace(trace_calls)
 
         self.controller = controller
-        self.adapter = Adapter(view=self)  # could this be defined outside View?
+        # self.adapter = Adapter(view=self)  # could this be defined outside View?
         self.nuclei_number = 2
         self.spectrometer_frequency = 300  # MHz
         self.v_min = -1  # ppm
@@ -123,7 +123,7 @@ class View(Frame):
         # relief=RIDGE,  borderwidth=1)
         self.SubSpectrumButtonFrame.pack(side=TOP,
                                          expand=NO)
-                                         # fill=X)
+        # fill=X)
 
         # self.SubSpectrumSelectionFrame = Frame(self, relief=RIDGE,
         #                                        borderwidth=1)
@@ -292,7 +292,7 @@ class View(Frame):
             name='Spectrometer Frequency',
             controller=self.set_spec_freq,
             value=self.spectrometer_frequency,
-            min=1, )
+            min_=1, )
         self.spec_freq_widget.pack(side=TOP)
 
     def set_spec_freq(self):
@@ -308,7 +308,8 @@ class View(Frame):
         history.save()
         history.total_x, history.total_y = \
             self.controller.blank_total_spectrum()
-        converter = self.adapter.convert_toolbar_data
+
+        # converter = self.adapter.convert_toolbar_data
         # subspectra_data = [data for data in history.all_spec_data()]
         subspectra_data = history.all_spec_data()
         print('view received: ', subspectra_data)
@@ -316,11 +317,11 @@ class View(Frame):
         print('testing all_spec_data')
         for model, vars_ in history.all_spec_data():
             print(model, vars_)
-        model_inputs = [(model, converter(model, vars_))
-                        for model, vars_ in history.all_spec_data()]
-        print('model inputs', model_inputs)
-        subspectra_lineshapes = [self.controller.lineshape_data(*input_)
-                                 for input_ in model_inputs]
+        # model_inputs = [(model, converter(model, vars_))
+        #                 for model, vars_ in history.all_spec_data()]
+        # print('model inputs', model_inputs)
+        subspectra_lineshapes = [self.controller.lineshape_data(model, vars_)
+                                 for model, vars_ in subspectra_data]
         print('subspectra lineshapes: ', subspectra_lineshapes)
         history.update_all_spectra(subspectra_lineshapes)
         x, y = history.current_lineshape()
@@ -419,7 +420,7 @@ class View(Frame):
         save_pdf_button.pack()
         save_eps_button.pack()
 
-    #coverage
+    # coverage
     # def total_plot_figure(self):
     #     """Return a Figure for the current total plot."""
     #     figure = Figure(figsize=(self.plot_width, self.plot_height))
@@ -465,7 +466,7 @@ class View(Frame):
         #     if filename[-4:] != '.pdf':
         #         filename += '.pdf'
         #     backend.print_pdf(filename, orientation=orientation)
-            # figure.savefig(filename, orientation=orientation)
+        # figure.savefig(filename, orientation=orientation)
 
     def add_orientation_buttons(self):
         title = 'EPS Orientation'
@@ -678,15 +679,15 @@ class View(Frame):
         self.canvas._tkcanvas.pack(anchor=SE, expand=YES, fill=BOTH)
 
     def initialize_active_bars(self):
-       """Initialize the GUI and history with the default toolbars for first
+        """Initialize the GUI and history with the default toolbars for first
        and second
        order.
        """
-       self.currentbar = self.first_order_bar
-       self.currentbar.grid(sticky=W)
-       self.active_bar_dict = {'first-order': self.first_order_bar,
-                               'second-order': self.spinbars[0]}
-       history.change_toolbar(self.currentbar)
+        self.currentbar = self.first_order_bar
+        self.currentbar.grid(sticky=W)
+        self.active_bar_dict = {'first-order': self.first_order_bar,
+                                'second-order': self.spinbars[0]}
+        history.change_toolbar(self.currentbar)
 
     #########################################################################
     # Methods below provide the interface to the controller
@@ -767,8 +768,9 @@ class View(Frame):
         history.save()
         model, vars_ = history.subspectrum_data()
         print('update_current_plot received ', model, vars_)
-        data = self.adapter.convert_toolbar_data(model, vars_)
-        self.controller.update_current_plot(model, data)
+
+        # data = self.adapter.convert_toolbar_data(model, vars_)
+        self.controller.update_current_plot(model, vars_)
         if active:
             history.add_current_to_total()
             self.clear_total()
@@ -796,8 +798,6 @@ class View(Frame):
     #     self.controller.update_total_plot(spectrum, *w)
 
     # Interface from Controller to View:
-
-
 
     # def start_history(self):
     #     # self.history = History()

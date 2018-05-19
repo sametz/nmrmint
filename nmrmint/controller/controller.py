@@ -143,15 +143,54 @@ class Controller:
         else:
             return nspinspec(v, j), w
 
-    # The methods below provide the interface to the View.
+    def convert_first_order(self, vars_):
+        """Convert the dictionary of widget entries from the FirstOrderBar to
+        the data required by the controller interface.
 
-    def update_current_plot(self, model, data):
+        The controller needs to pass a (signal, couplings) tuple to the model.
+        - signal is a (frequency, intensity) tuple representing the frequency
+        and intensity of the signal in the absence of coupling. Intensity is
+        1 by default.
+        - couplings is a list of (J, n) tuples, where J is the coupling
+        constant and n is the number of nuclei coupled to the nucleus of
+        interest with that same J value.
+        """
+        _Jax = vars_['JAX']
+        _a = vars_['#A']
+        _Jbx = vars_['JBX']
+        _b = vars_['#B']
+        _Jcx = vars_['JCX']
+        _c = vars_['#C']
+        _Jdx = vars_['JDX']
+        _d = vars_['#D']
+        _Vcentr = vars_['Vcentr'] * self.view.spectrometer_frequency
+        _integration = vars_['# of nuclei']
+        singlet = (_Vcentr, _integration)
+        allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
+        couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
+        width = vars_['width']
+        return {'signal': singlet, 'couplings': couplings, 'w': width}
+
+    def convert_second_order(self, vars_):
+
+        v_ppm = vars_['v'][0, :]
+        v_Hz = v_ppm * self.view.spectrometer_frequency
+        return {
+            'v': v_Hz,
+            'j': vars_['j'],
+            'w': vars_['w'][0, 0]}
+
+    #########################################################################
+    # Methods below provide the interface to the view
+    #########################################################################
+
+    def update_current_plot(self, model, vars_):
         """
         Pass the View's current (top) plot data to the appropriate
         model; simulate spectral data; and tell the view to plot the data.
 
         :param model: (str) The type of calculation to be performed.
-        :param data: kwargs for the requested model.
+        :param vars_: kwargs for the requested model.
 
         :return: None (including when model is not recognized)
         """
@@ -160,29 +199,33 @@ class Controller:
 
         # if model in multiplet_models:
         # print('controller received ', model)
-        if model == 'first_order':
-            signal = data['signal']
-            couplings = data['couplings']
-            w = data['w']
-            spectrum = self.models[model](signal=signal, couplings=couplings)
-            plotdata = tkplot(
-                spectrum, w,
-                spectrometer_frequency=self.view.spectrometer_frequency)
-        elif model == 'nspin':
-            spectrum, w = self.models[model](**data)
-            plotdata = tkplot(
-                spectrum, w,
-                spectrometer_frequency=self.view.spectrometer_frequency)
-        else:
-            print('model not recognized')
-            return
-
-        plotdata = self.lineshape_to_ppm(plotdata)
+        # if model == 'first_order':
+        #     data = self.convert_first_order(vars_)
+        #     signal = data['signal']
+        #     couplings = data['couplings']
+        #     w = data['w']
+        #     spectrum = self.models[model](signal=signal, couplings=couplings)
+        #     plotdata = tkplot(
+        #         spectrum, w,
+        #         spectrometer_frequency=self.view.spectrometer_frequency)
+        # elif model == 'nspin':
+        #     data = self.convert_second_order(vars_)
+        #     spectrum, w = self.models[model](**data)
+        #     plotdata = tkplot(
+        #         spectrum, w,
+        #         spectrometer_frequency=self.view.spectrometer_frequency)
+        # else:
+        #     print('model not recognized')
+        #     return
+        #
+        # plotdata = self.lineshape_to_ppm(plotdata)
+        plotdata = self.lineshape_data(model, vars_)
         self.view.clear_current()
         self.view.plot_current(*plotdata)
 
-    def lineshape_data(self, model, data):
+    def lineshape_data(self, model, vars_):
         if model == 'first_order':
+            data = self.convert_first_order(vars_)
             signal = data['signal']
             couplings = data['couplings']
             w = data['w']
@@ -191,6 +234,7 @@ class Controller:
                 spectrum, w,
                 spectrometer_frequency=self.view.spectrometer_frequency)
         elif model == 'nspin':
+            data = self.convert_second_order(vars_)
             spectrum, w = self.models[model](**data)
             plotdata = tkplot(
                 spectrum, w,
@@ -199,6 +243,17 @@ class Controller:
             print('model not recognized')
             return None
         return self.lineshape_to_ppm(plotdata)
+
+    def blank_total_spectrum(self):
+        # Initial/blank spectra will have a "TMS" peak at 0 that integrates
+        # to 0.05 H.
+        self.blank_spectrum = [(0, 0.05)]
+        # return self.total_plot(self.blank_spectrum)
+        plotdata = tkplot(
+            self.blank_spectrum,
+            spectrometer_frequency=self.view.spectrometer_frequency)
+        plotdata = self.lineshape_to_ppm(plotdata)
+        return plotdata
 
     # coverage
     # def create_lineshape(self, spectrum, *w):
@@ -251,17 +306,6 @@ class Controller:
     #         spectrometer_frequency=self.view.spectrometer_frequency)
     #     plotdata = self.lineshape_to_ppm(plotdata)
     #     return plotdata
-
-    def blank_total_spectrum(self):
-        # Initial/blank spectra will have a "TMS" peak at 0 that integrates
-        # to 0.05 H.
-        self.blank_spectrum = [(0, 0.05)]
-        # return self.total_plot(self.blank_spectrum)
-        plotdata = tkplot(
-            self.blank_spectrum,
-            spectrometer_frequency=self.view.spectrometer_frequency)
-        plotdata = self.lineshape_to_ppm(plotdata)
-        return plotdata
 
     # coverage
     # def add_view_plots(self, model, total_spectrum, **data):

@@ -174,8 +174,8 @@ class FirstOrderBar(ToolBar):
 
         # self.test_reset(self.vars)
 
-    def reset(self, vars):
-        for key, val in vars.items():
+    def reset(self, vars_):
+        for key, val in vars_.items():
             self.vars[key] = val
             widget = self.fields[key]
             widget.set_value(val)
