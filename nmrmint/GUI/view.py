@@ -273,6 +273,7 @@ class View(Frame):
         and activates the corresponding toolbar.
         """
         self.nuclei_number = self.nuc_number_frame.current_value
+        # self.nuc_number_frame.set_value(self.nuclei_number)
         # nuclei_number[0] is the toolbar for 2 spins, 1 for 3, etc. so:
         self.select_toolbar(self.spinbars[self.nuclei_number - 2])
 
@@ -646,27 +647,44 @@ class View(Frame):
         subspectrum_forward.grid(row=0, column=2, sticky=W)
 
     def next_subspectrum(self):
+        history.dump()
         if history.forward():
             self.subspectrum_label.config(text="Subspectrum "
                                                + str(history.current + 1))
+            self.update_nuclei_number()
+
             self.select_toolbar(history.current_toolbar())  # ,
             # deactivate=False)
             self.currentbar.reset(history.current_subspectrum().vars)
             self.update_current_plot()
+            history.dump()
 
     def prev_subspectrum(self):
-        # history.dump()
+        history.dump()
         if history.back():
             self.subspectrum_label.config(text="Subspectrum "
                                                + str(history.current + 1))
-            self.select_toolbar(history.current_toolbar())  # ,
+            self.update_nuclei_number()
+            # self.select_toolbar(history.current_toolbar())  # ,
             # deactivate=False)
             self.currentbar.reset(history.current_subspectrum().vars)
             self.update_current_plot()
-        # history.dump()
+            history.dump()
         # assert history.subspectra[history.current] is not history.subspectra[
         #     history.current - 1]
         # assert 1 == 2
+
+    def update_nuclei_number(self):
+        current_model, current_vars = history.subspectrum_data()
+        if current_model == 'nspin':
+            nspins = len(current_vars['v'][0])
+            print('nspins is now: ', nspins)
+            self.nuc_number_frame.set_value(nspins)
+            self.set_nuc_number()
+            self.CalcTypeFrame.click(1)
+        else:
+            self.CalcTypeFrame.click(0)
+
 
     # noinspection PyProtectedMember
     def add_plots(self):

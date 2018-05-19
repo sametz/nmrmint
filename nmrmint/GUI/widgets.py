@@ -157,6 +157,8 @@ class BaseEntryFrame(Frame):
     def refresh(self):
         """Save the Entry value to the data structure then request a view
         refresh."""
+        # if self.name == "W" or self.name == "V1":
+        #     print('W debug')
         if self.entry_is_changed():
             self.save_entry()
             self.controller()
@@ -167,7 +169,9 @@ class BaseEntryFrame(Frame):
 
         :return: True if changed, False if not.
         """
-        return str(self.current_value) != self.value_var.get()
+        get_value = self.value_var.get()  # for debugging
+        return self.current_value != float(get_value)
+        # return str(self.current_value) != self.value_var.get()
 
     def save_entry(self):
         """Saves widget's entry as self.stored_value , filling the entry with

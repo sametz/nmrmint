@@ -1,4 +1,1 @@
-* When flipping between subspectra, radio button for first/second order doesn't
-get reset to the corresponding current spectrum type.
-
 * w for second-order broken?

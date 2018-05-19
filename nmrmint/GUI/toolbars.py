@@ -539,6 +539,8 @@ class SecondOrderBar(ToolBar):
         width = self.w[0][0]
         width_widget.set_value(width)
         width_widget.array = self.w
+        print('W was set to: ', width_widget.array)
+        print('W field was set to: ', width_widget.get_value())
 
         # self.controller('nspin', self.vars)
         self.controller()
