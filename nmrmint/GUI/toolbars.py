@@ -97,12 +97,12 @@ class ToolBar(Frame):
     def vars(self):
         return self._vars
 
-    def request_plot(self):
-        """Send request to controller to recalculate and refresh the view's
-        plot.
-        """
-        # self.controller.update_current_plot(self.model, **self.vars)
-        self.controller(self.model, **self.vars)
+    # def request_plot(self):
+    #     """Send request to controller to recalculate and refresh the view's
+    #     plot.
+    #     """
+    #     # self.controller.update_current_plot(self.model, **self.vars)
+    #     self.controller(self.model, **self.vars)
 
     # def add_spectra(self):
     #     """Send request to controller to add the current spectrum to the
@@ -112,12 +112,12 @@ class ToolBar(Frame):
 
     def restore_defaults_and_refresh(self):
         self.restore_defaults()
-        self.request_plot()
+        self.controller()
 
     def restore_defaults(self):
         self.reset(self.defaults)
 
-    def reset(self, vars):
+    def reset(self, _vars):
         pass
 
 
@@ -162,7 +162,7 @@ class FirstOrderBar(ToolBar):
         self._vars = self.defaults.copy()
         self.fields = {}
         kwargs = {'dict_': self.vars,
-                  'controller': self.request_plot}
+                  'controller': self.controller}
         for key in ['# of nuclei', 'JAX', '#A', 'JBX', '#B', 'JCX', '#C',
                     'JDX', '#D', 'Vcentr', 'width']:
             if '#' not in key:
@@ -222,14 +222,14 @@ class FirstOrderBar(ToolBar):
     #     self.spec_freq = freq
     #     self.request_plot()
 
-    def request_plot(self):
-        """Request the Controller to plot the spectrum."""
-
-        # vars_copy = copy.deepcopy(self.vars)
-        # self.controller(self.model, vars_copy)
-
-        # If subspectrum is holding deepcopy of vars, and new controller used:
-        self.controller()
+    # def request_plot(self):
+    #     """Request the Controller to plot the spectrum."""
+    #
+    #     # vars_copy = copy.deepcopy(self.vars)
+    #     # self.controller(self.model, vars_copy)
+    #
+    #     # If subspectrum is holding deepcopy of vars, and new controller used:
+    #     self.controller()
 
     # def make_kwargs(self):
     #     """Convert the dictionary of widget entries (self.vars) to a dict
@@ -400,14 +400,14 @@ class SecondOrderBar(ToolBar):
             # print('add_frequency_units working with name ', name)
             vbox = ArrayBox(self, array=self.v_ppm, coord=(0, freq),
                             name=name,
-                            controller=self.request_plot)
+                            controller=self.controller)
             self.fields[name] = vbox
             vbox.pack(side=LEFT)
 
     def add_peakwidth_widget(self):
         """Add peak width-entry widget to the toolbar."""
         wbox = ArrayBox(self, array=self.w_array, coord=(0, 0), name="W",
-                        controller=self.request_plot)
+                        controller=self.controller)
         self.fields['W'] = wbox
         wbox.pack(side=LEFT)
 
@@ -455,7 +455,7 @@ class SecondOrderBar(ToolBar):
             v = ArrayBox(datagrid, array=self.v_ppm,
                          coord=(0, row - 1),  # V1 stored in v[0, 0], etc.
                          name=vtext, color='gray90',
-                         controller=self.request_plot)
+                         controller=self.controller)
             v.grid(row=row, column=0, sticky=NSEW, padx=1, pady=1)
             for col in range(1, n + 1):
                 if col < row:
@@ -463,7 +463,7 @@ class SecondOrderBar(ToolBar):
                                  # J12 stored in j[0, 1] (and j[1, 0]) etc
                                  coord=(col - 1, row - 1),
                                  name="J%d%d" % (col, row),
-                                 controller=self.request_plot)
+                                 controller=self.controller)
                     j.grid(row=row, column=col, sticky=NSEW, padx=1, pady=1)
                 else:
                     Label(datagrid, bg='grey').grid(
@@ -491,14 +491,14 @@ class SecondOrderBar(ToolBar):
         self.v = self.v_ppm * self.spec_freq
         self.vars = self.create_var_dict()
 
-    def request_plot(self):
-        """Adapt 2D array data to kwargs of correct type for the controller."""
-        # self.update_v()  # no longer needed?
-        # self.vars = self.create_var_dict()
-        # vars_copy = copy.deepcopy(self.vars)  # should now be handled by
-        # history
-        # self.controller('nspin', vars_copy)
-        self.controller()
+    # def request_plot(self):
+    #     """Adapt 2D array data to kwargs of correct type for the controller."""
+    #     # self.update_v()  # no longer needed?
+    #     # self.vars = self.create_var_dict()
+    #     # vars_copy = copy.deepcopy(self.vars)  # should now be handled by
+    #     # history
+    #     # self.controller('nspin', vars_copy)
+    #     self.controller()
 
     # def add_spectra(self):
     #     """Adapt 2D array data to kwargs of correct type for the controller."""
@@ -513,7 +513,7 @@ class SecondOrderBar(ToolBar):
     def reset(self, _vars):
         """Reset the toolbar with supplied vars.
 
-        :param vars: {'v': 2D np.array of [[ppm chemical shifts...]],
+        :param _vars: {'v': 2D np.array of [[ppm chemical shifts...]],
         'j': 2D np.array of Js in Hz,
         'w': 2D np.array of [[peak width]]}
 

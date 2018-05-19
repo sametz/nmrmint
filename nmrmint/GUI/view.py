@@ -111,7 +111,7 @@ class View(Frame):
 
         # Initial/blank spectra will have a "TMS" peak at 0 that integrates
         # to 0.05 H.
-        self.blank_spectrum = [(0, 0.05)]
+        # self.blank_spectrum = [(0, 0.05)]
 
         self.SideFrame = Frame(self, relief=RIDGE, borderwidth=3)
         self.SideFrame.pack(side=LEFT, expand=NO, fill=Y)
@@ -306,7 +306,8 @@ class View(Frame):
     def update_all_spectra(self):
         """Recompute all lineshape data, store in history, and refresh."""
         history.save()
-        history.total_x, history.total_y = self.blank_total_spectrum()
+        history.total_x, history.total_y = \
+            self.controller.blank_total_spectrum()
         converter = self.adapter.convert_toolbar_data
         # subspectra_data = [data for data in history.all_spec_data()]
         subspectra_data = history.all_spec_data()
@@ -666,6 +667,7 @@ class View(Frame):
         #     history.current - 1]
         # assert 1 == 2
 
+    # noinspection PyProtectedMember
     def add_plots(self):
         """Add a MPLplot canvas to the GUI"""
         # self.figure = Figure(figsize=(7, 5.6), dpi=100)  # original figsize 5, 4
@@ -696,40 +698,43 @@ class View(Frame):
     # until View is fully instantiated. Initializing the plot with a call to
     # Controller is postponed by placing it in the following function and
     # having the Controller call it when the View is ready.
-    def initialize(self):
-        """Initialize the plots.
-
-        To avoid a circular reference, this method is called by the
-        Controller after it instantiates View."""
-        # self.currentbar = self.first_order_bar
-        # self.currentbar.grid(sticky=W)
-        # self.active_bar_dict = {'first-order': self.first_order_bar,
-        #                         'second-order': self.spinbars[0]}
-        # # self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
-        # history.change_toolbar(self.currentbar)
-        # TODO refactor toolbars so don't have to use their request.plot()
-        # but call controller directly with the toolbar vars.
-        # If this is done, entire issue with circular reference can be
-        # eliminated and entire initialize function can be removed.
-        self.currentbar.request_plot()
-        # TODO move to just in controller
-        self.controller.update_total_plot(self.blank_spectrum)
-        # self.history_past.append(self.total_spectrum[:])
-
-        # test routines below (normally hashed out)
-
-        # self.currentbar.test_reset({'Vcentr': 5.0})  # for test purposes
-
-        # self.select_second_order()
-        # testbar = self.currentbar
-        # v, j, w = testbar.v, testbar.j, testbar.w_array
-        # testbar.test_reset(v, j, w)
-    def blank_total_spectrum(self):
-        """Request and return a new blank total spectrum.
-
-        :return: (np.linspace, np.array) tuple of x, y- lineshape data
-        """
-        return self.controller.total_plot(self.blank_spectrum)
+    # def initialize(self):
+    #     """Initialize the plots.
+    #
+    #     To avoid a circular reference, this method is called by the
+    #     Controller after it instantiates View."""
+    #     # self.currentbar = self.first_order_bar
+    #     # self.currentbar.grid(sticky=W)
+    #     # self.active_bar_dict = {'first-order': self.first_order_bar,
+    #     #                         'second-order': self.spinbars[0]}
+    #     # # self.total_spectrum = self.blank_spectrum  # TODO refactor redundancy
+    #     # history.change_toolbar(self.currentbar)
+    #     # TODO refactor toolbars so don't have to use their request.plot()
+    #     # but call controller directly with the toolbar vars.
+    #     # If this is done, entire issue with circular reference can be
+    #     # eliminated and entire initialize function can be removed.
+    #
+    #     # self.update_current_plot()
+    #
+    #     # self.currentbar.request_plot()
+    #     # TODO move to just in controller
+    #     # self.controller.update_total_plot(self.controller.blank_spectrum)
+    #     # self.history_past.append(self.total_spectrum[:])
+    #
+    #     # test routines below (normally hashed out)
+    #
+    #     # self.currentbar.test_reset({'Vcentr': 5.0})  # for test purposes
+    #
+    #     # self.select_second_order()
+    #     # testbar = self.currentbar
+    #     # v, j, w = testbar.v, testbar.j, testbar.w_array
+    #     # testbar.test_reset(v, j, w)
+    # def blank_total_spectrum(self):
+    #     """Request and return a new blank total spectrum.
+    #
+    #     :return: (np.linspace, np.array) tuple of x, y- lineshape data
+    #     """
+    #     return self.controller.total_plot(self.blank_spectrum)
 
     # coverage
     # def request_refresh_current_plot(self, model, **data):
@@ -830,7 +835,7 @@ class View(Frame):
 
     def clear_total(self):
         """Erase the total (bottom) spectrum plot."""
-        self.total_spectrum = self.blank_spectrum
+        # self.total_spectrum = self.blank_spectrum
         self.canvas.clear_total()
 
     def plot_current(self, x, y):

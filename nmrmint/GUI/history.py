@@ -2,6 +2,7 @@
 calculation, and the resulting lineshape data) and History (for providing
 undo/redo/add spectrum/subtract spectrum functionality).
 """
+# TODO belongs with Controller--move there at some point
 
 import copy
 
