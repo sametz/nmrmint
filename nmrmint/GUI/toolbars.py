@@ -145,6 +145,8 @@ class FirstOrderBar(ToolBar):
 
         :param spec_freq: the frequency of the simulated spectrometer.
         """
+        # TODO: bad code smell: does spec_freq belong in a toolbar?
+        # Think View only
         ToolBar.__init__(self, parent, **options)
         self.spec_freq = spec_freq
         self.model = 'first_order'

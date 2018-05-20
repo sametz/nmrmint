@@ -25,20 +25,20 @@ class Controller:
     """Pass data and requests to/from the model and the view.
     
     The controller assumes the view offers the following methods:
-    * clear_current
-    * plot_current
-    *update_current_plot (TODO: bad code smell--only used once, during
+        * clear_current
+        * plot_current
+        *update_current_plot (TODO: bad code smell--only used once, during
     initialization)
-    * clear_total
-    * plot_total
+        * clear_total
+        * plot_total
 
     The controller assumes the View has the following attribute:
-    * spectrometer_frequency (float) The frequency of the simulated
+        * spectrometer_frequency (float) The frequency of the simulated
     spectrometer (i.e. the MHz at which TMS protons resonate).
 
     The controller provides the following methods:
-    * update_current_plot: update the current (top) spectrum of the View.
-    * lineshape_data: calculate a lineshape for a given model and variables
+        * update_current_plot: update the current (top) spectrum of the View.
+        * lineshape_data: calculate a lineshape for a given model and variables
     """
 
     def __init__(self, root):
