@@ -392,6 +392,7 @@ class View(Frame):
         self._add_subspectrum_button['highlightbackground'] = color
 
     def _new_subspectrum(self):
+        """Add a new subspectrum and set it and GUI to default first-order."""
         # Refactored. Adding story comments to try to make process clear
         # TODO: this method is very low-level/granular. Refactor View and
         # History to make more clear?
@@ -406,6 +407,8 @@ class View(Frame):
         # Reset current toolbar to default settings before leaving it
         self._currentbar.restore_defaults()
 
+        # TODO: _update_simulation_frame (via _refresh_GUI_widgets) also does
+        #  a click. Refactor out?
         # Want to switch to default 1st order bar, and to change radio
         # button, so easy way is to:
         self._calc_type_frame.click(0)
@@ -413,15 +416,31 @@ class View(Frame):
         # update history and subspectrum with its status
         history.change_toolbar(self._currentbar)
 
-        # Make sure active button color is correct
-        self._reset_active_button_color()
+        self._refresh_current_GUI()
 
-        # update label with subspectrum number
+    def _refresh_current_GUI(self):
+        """Refresh GUI widgets and current subspectrum plot to match current
+        subspectrum."""
+        self._refresh_GUI_widgets()
+        self.update_current_plot()
+
+    def _refresh_GUI_widgets(self):
+        """Refresh GUI widgets to agree with a change of subspectrum."""
+        self._reset_active_button_color()
         self._subspectrum_label.config(text="Subspectrum "
                                             + str(history.current + 1))
+        self._update_simulation_frame()
 
-        # refresh current subspectrum plot
-        self.update_current_plot()
+    def _update_simulation_frame(self):
+        """Reset the simulation frame widgets to match the current toolbar."""
+        current_model, current_vars = history.subspectrum_data()
+        if current_model == 'nspin':
+            nspins = len(current_vars['v'][0])
+            self._nuc_number_frame.set_value(nspins)
+            self._set_nuc_number()
+            self._calc_type_frame.click(1)
+        else:
+            self._calc_type_frame.click(0)
 
     def _delete_subspectrum(self):
         """Delete the current subspectrum object.
@@ -430,78 +449,40 @@ class View(Frame):
         after deletion.
         """
         if history.delete():
-            self._reset_active_button_color()
-            self._subspectrum_label.config(text="Subspectrum "
-                                                + str(history.current + 1))
-            self._select_toolbar(history.current_toolbar())
-            self.update_current_plot()
+            self._refresh_current_GUI()
             self.clear_total()
             self.plot_total(history.total_x, history.total_y)
 
     def _add_subspectrum_navigation(self):
+        """Add subspectrum navigation tools to the GUI."""
         subspectrum_back = Button(
-            # self.SubSpectrumSelectionFrame,
             self._subspectrum_button_frame,
             text="<-",
-            command=lambda: self.prev_subspectrum())
+            command=lambda: self._prev_subspectrum())
         self._subspectrum_label = Label(
             self._subspectrum_button_frame,
             text="Subspectrum " + str(history.current + 1))
         subspectrum_forward = Button(
             self._subspectrum_button_frame,
             text="->",
-            command=lambda: self.next_subspectrum())
-        # subspectrum_back.pack(side=LEFT)
-        # self._subspectrum_label.pack(side=LEFT)
-        # subspectrum_forward.pack(side=LEFT)
+            command=lambda: self._next_subspectrum())
         subspectrum_back.grid(row=0, column=0, sticky=E)
         self._subspectrum_label.grid(row=0, column=1)
         subspectrum_forward.grid(row=0, column=2, sticky=W)
 
-    def next_subspectrum(self):
-        history.dump()
+    def _next_subspectrum(self):
+        """Advance in the history, if possible, and refresh the GUI."""
         if history.forward():
-            self._subspectrum_label.config(text="Subspectrum "
-                                                + str(history.current + 1))
-            self.update_nuclei_number()
+            self._refresh_current_GUI()
 
-            self._select_toolbar(history.current_toolbar())  # ,
-            # deactivate=False)
-            self._currentbar.reset(history.current_subspectrum().vars)
-            self.update_current_plot()
-            history.dump()
-
-    def prev_subspectrum(self):
-        history.dump()
+    def _prev_subspectrum(self):
+        """Backtrack in the history, if possible, and refresh the GUI."""
         if history.back():
-            self._subspectrum_label.config(text="Subspectrum "
-                                                + str(history.current + 1))
-            self.update_nuclei_number()
-            # self._select_toolbar(history.current_toolbar())  # ,
-            # deactivate=False)
-            self._currentbar.reset(history.current_subspectrum().vars)
-            self.update_current_plot()
-            history.dump()
-        # assert history.subspectra[history.current] is not history.subspectra[
-        #     history.current - 1]
-        # assert 1 == 2
-
-    def update_nuclei_number(self):
-        current_model, current_vars = history.subspectrum_data()
-        if current_model == 'nspin':
-            nspins = len(current_vars['v'][0])
-            print('nspins is now: ', nspins)
-            self._nuc_number_frame.set_value(nspins)
-            self._set_nuc_number()
-            self._calc_type_frame.click(1)
-        else:
-            self._calc_type_frame.click(0)
-
+            self._refresh_current_GUI()
 
     # noinspection PyProtectedMember
     def _add_plots(self):
         """Add a MPLplot canvas to the GUI"""
-        # self.figure = Figure(figsize=(7, 5.6), dpi=100)  # original figsize 5, 4
         self.canvas = MPLplot(master=self)
         # View should override Canvas' default xlim
         self.canvas.x_min = self._v_min

@@ -1,3 +1,0 @@
-When flipping between subspectra, a previous subspectrum's "Add to Spectrum"
-button color may not agree with the active state (but functionality is fine..
-.just misleading to user).
