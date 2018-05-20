@@ -81,21 +81,9 @@ class History:
     def add_subspectrum(self):
         """Add a new subspectrum object to the list of stored subspectra."""
         self.save()
-        # self.current_toolbar().restore_defaults()
         subspectrum = Subspectrum()
-        # if self.current >= 0:
-        #     ss_current = self.current_subspectrum()
-        #     toolbar_current = self.current_toolbar()
-        #     print('Departing a ', ss_current.model,
-        #           'with vars: ', ss_current.vars)
-        #     print('and with a ', toolbar_current.model,
-        #           'with vars: ', toolbar_current.vars)
-
         self.subspectra.append(subspectrum)
         self.current = len(self.subspectra) - 1
-        # assert subspectrum is self.current_subspectrum()  #Remove once confident
-        # self.total_spectrum += subspectrum.linshape
-        print('added subspectrum to history; counter is: ', self.current)
 
     def current_subspectrum(self):
         return self.subspectra[self.current]
@@ -126,10 +114,14 @@ class History:
         """Deletes the current subspectrum. History will reset to the next
         more recent subspectrum, or the previous subspectrum if it was the
         last subspectrum that was deleted.
+
+        :return: (bool) True if deletion performed; False if not.
         """
         if len(self.subspectra) == 1:
             print("Can't delete subspectrum: only one left!")
             return False
+        if self.current_subspectrum().active:
+            self.remove_current_from_total()
         del self.subspectra[self.current]
         if self.current >= len(self.subspectra):
             self.current = len(self.subspectra) - 1
@@ -249,15 +241,8 @@ class History:
             if subspectrum.active:
                 self.total_y += y
 
-    # coverage
-    # below are functions that might not be currently called
-    # TODO: check for cruft
 
-    # def remove_subspectrum(self, subspectrum):
-    #     self.remove_current_from_total()
-
-    # def clear_total_spectrum(self):
-    #     self.total_spectrum = []  # CHANGE TO NUMPY LINSPACE
+    # Debugging routines below:
 
     def dump(self):
         """for debugging"""

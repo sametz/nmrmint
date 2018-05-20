@@ -155,7 +155,7 @@ def save_as_pdf(x, y, xlim, figsize):
     """Create and save a PDF file from plot data.
 
     Currently, it doesn't seem possible to select landscape vs. portrait for
-    PDF. Try save_as_eps if that feature is important.
+    PDF. Try _save_as_eps if that feature is important.
 
     :param x: (numpy ndarray)
     :param y: (numpy ndarray)
