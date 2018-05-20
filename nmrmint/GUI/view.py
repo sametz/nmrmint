@@ -538,20 +538,18 @@ class View(Frame):
             x, y: (numpy.ndarray, numpy.ndarray) x and y coordinates
         """
         self.current_x, self.current_y = x, y
-        # print('current_x, current_y: ', self.current_x, self.current_y)
         history.save_current_linshape(x, y)
         self.canvas.plot_current(x, y)
 
     def clear_total(self):
         """Erase the total (bottom) spectrum plot."""
-        # self.total_spectrum = self.blank_spectrum
         self.canvas.clear_total()
 
     def plot_total(self, x, y):
         """Plot data to the total (bottom) spectrum's axis.
 
         Arguments:
-            x, y: numpy linspaces of x and y coordinates
+            x, y: (numpy.ndarray, numpy.ndarray) x and y coordinates
         """
         history.save_total_linshape(x, y)
         self.canvas.plot_total(x, y)

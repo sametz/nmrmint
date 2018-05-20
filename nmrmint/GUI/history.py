@@ -44,10 +44,8 @@ class Subspectrum:
         self.active = not self.active
         return self.active
 
-    # def update_plot_data(self):
-    #     """Request new lineshape data and store it.
-    #     """
-    #     model, _vars = self.toolbar.model, self.toolbar.vars
+    # TODO: if undo/redo functionality is implemented in future, create
+    # methods here that will allow undo/redo at the subspectrum level.
 
     # coverage
     def activate(self):
