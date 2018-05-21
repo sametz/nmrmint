@@ -1,8 +1,18 @@
-"""Provides classes for Subspectrum objects (variables for a lineshape
-calculation, and the resulting lineshape data) and History (for providing
-undo/redo/add spectrum/subtract spectrum functionality).
+"""Provides tools for storing the states of individual subspectrum
+calculations, and adding/removing/switching between them.
+
+Provides the following classes:
+    * Subspectrum: Memento object that contain variables for a
+lineshape calculation, and the resulting lineshape data.
+    * History: provides functionality for adding, deleting, and switching
+between subspectra objects.
 """
-# TODO belongs with Controller--move there at some point
+# TODO Does this belong with the Controller?
+# History currently includes toolbar references and methods for resetting
+# toolbars with new data. Consider refactoring out references to toolbars and
+# serve only as a record of data. View could take on the responsibility of
+# selecting toolbars and resetting them with data.
+# If this is done, toolbar should be refactored out of Subspectrum as well.
 
 import copy
 
@@ -10,25 +20,45 @@ import copy
 class Subspectrum:
     """A memento for storing the current state of a subspectrum.
 
-    The subspectrum is a simulation of a spin system, plus the
+    The subspectrum is a simulation of an NMR signal or spin system, plus the
     calculation type, variables used, and the toolbar required in the
     GUI.
+
+    Since Subspectrum is used to store state, any mutable attributes must be
+    deepcopies of their source, e.g. to avoid toolbar changes from corrupting
+    the Subspectrum record.
+
+    Provides the following attributes:
+        * model: the model type ('first_order' for a first-order multiplet,
+    or "nspin" for a second-order spin system). Should match the model
+    names used by the toolbars.
+        * vars_: the variables used by the Controller for a model
+    calculation.
+        * x and y: the plot data corresponding to the lineshape matching the
+    model, vars_ data.
+        * toolbar: the View's toolbar object used for the subspectrum inputs
+        * active: Boolean indicating whether the subspectrum is currently
+    added to the total spectrum.
+
+    Provides the following method:
+        * toggle_active: toggles the activity
     """
     def __init__(self, model=None, vars_=None, x=None, y=None,
                  toolbar=None,
                  activity=False):
         """
 
-        :param model: str They type of calculation, either first order
+        :param model: (str) They type of calculation, either first order
         ("first_order") or second_order ("nspins"), matching strings used by
         toolbar widget. TODO: adopt better name, e.g. latter = "second_order"
-        :param vars_: {} a dict of toolbar variables used to simulate the
+        :param vars_: (dict) of toolbar variables used to simulate the
         subspectrum.
-        :param x: numpy.linspace of x coordinates for the simulation result
-        :param y: numpy.linspace of y coordinates for the simulation result
-        :param toolbar: GUI.toolbar.ToolBar subclass
-        :param activity: bool Indicates if the subspectrum has been selected
-        for addition to the total spectrum. Used as a toggle.
+        :param x: (numpy.ndarray) of x coordinates for the simulation result
+        :param y: (numpy.ndarray) of y coordinates for the simulation result
+        :param toolbar: (GUI.toolbar.ToolBar subclass) associated with
+        subspectrum calculation
+        :param activity: (bool) True if the subspectrum has been selected
+        for addition to the total spectrum.
         """
         self.model = model
         self.vars = vars_
@@ -40,7 +70,7 @@ class Subspectrum:
     def toggle_active(self):
         """Toggle the subspectrum between active and inactive states.
 
-        :returns: current subspectrum activity (bool)"""
+        :return: current subspectrum activity (bool)"""
         self.active = not self.active
         return self.active
 
@@ -48,64 +78,95 @@ class Subspectrum:
     # methods here that will allow undo/redo at the subspectrum level.
 
     # coverage
-    def activate(self):
+    def _activate(self):
         """Currently not implemented"""
         self.active = True
 
     # coverage
-    def deactivate(self):
+    def _deactivate(self):
         """Currently not implemented"""
         self.active = False
 
     # coverage
-    def call_model(self):
+    def _call_model(self):
         """Currently not implemented"""
         pass
 
 
 class History:
+    """Provides functionality for adding, deleting, and switching between
+    Subspectrum objects, as well as for recording the current View state.
+
+    History maintains a list of subspectrum objects in the order that they
+    were created in. It also maintains the current data for the total
+    spectrum plot, adding or removing individual subspectrum plots to it as
+    the subspectrum activity is toggled.
+
+    Provides the following attributes:
+        * total_x (numpy.ndarray) x coordinates for the total spectrum plot
+        * total_y (numpy.ndarray) y coordinates for the total spectrum plot
+        * current: index pointing to current subspectrum in _subspectra.
+        TODO: bad idea making this attribute public? Use getter/setter?
+
+    Provides the following methods:
+    """
 
     def __init__(self):
-        self.subspectra = []
+        """History is expected to be instantiated without arguments.
+
+        A single, blank Subspectrum object is instantiated as well, becoming
+        the current_subspectrum() object.
+        """
+        self._subspectra = []
         self.total_x = None
         self.total_y = None
-        self.toolbar = None
-        self.current = 0
-        self.subspectra.append(Subspectrum())
-        print('Initialized history with blank subspectrum')
+        self._toolbar = None
+        self.current = 0  # Used by View to change subspectrum label
+        self._subspectra.append(Subspectrum())
 
-    # TODO: use self.length() instead of len(self.subspectra)
+    #########################################################################
+    # Methods below provide the interface to the controller
+    #########################################################################
 
     def add_subspectrum(self):
-        """Add a new subspectrum object to the list of stored subspectra."""
+        """Add a new subspectrum object to the list of stored subspectra.
+
+        History will save the current subspectrum status and then index to
+        the newly-created Subspectrum.
+        """
         self.save()
-        subspectrum = Subspectrum()
-        self.subspectra.append(subspectrum)
-        self.current = len(self.subspectra) - 1
+        self._subspectra.append(Subspectrum())
+        self.current = len(self._subspectra) - 1
 
     def current_subspectrum(self):
-        return self.subspectra[self.current]
+        """Return the current Subspectrum object."""
+        return self._subspectra[self.current]
 
     def subspectrum_data(self):
+        """Return the simulation data from the current Subspectrum.
+
+        :return: (str, dict) model name, model variables
+        """
         return self.current_subspectrum().model, self.current_subspectrum().vars
 
     def all_spec_data(self):
-        """Yield model, vars for all subspectra."""
-        # for subspectrum in self.subspectra:
-        #     yield subspectrum.model, subspectrum.vars
-        # return ((subspectrum.model, subspectrum.vars)
-        #         for subspectrum in self.subspectra)
-        return [(subspectrum.model, subspectrum.vars)
-                for subspectrum in self.subspectra]
+        """Return a list of all subspectra (model, vars) data.
 
+        :return: [(str, dict)...] list of (model name, model variables)
+        """
+        return [(subspectrum.model, subspectrum.vars)
+                for subspectrum in self._subspectra]
+
+    # coverage : currently only used by a test
     def current_toolbar(self):
-        # if history.toolbar is being set elsewhere--.back(), .forward() etc--
+        # if history._toolbar is being set elsewhere--.back(), .forward() etc--
         # then this should not be needed.
         return self.current_subspectrum().toolbar
 
+    # coverage :
     def change_toolbar(self, toolbar):
         """schedule for removal? Still used atm"""
-        self.toolbar = toolbar
+        self._toolbar = toolbar
         self.save()
 
     def delete(self):
@@ -115,14 +176,14 @@ class History:
 
         :return: (bool) True if deletion performed; False if not.
         """
-        if len(self.subspectra) == 1:
+        if len(self._subspectra) == 1:
             print("Can't delete subspectrum: only one left!")
             return False
         if self.current_subspectrum().active:
             self.remove_current_from_total()
-        del self.subspectra[self.current]
-        if self.current >= len(self.subspectra):
-            self.current = len(self.subspectra) - 1
+        del self._subspectra[self.current]
+        if self.current >= len(self._subspectra):
+            self.current = len(self._subspectra) - 1
         self.restore()
         return True
 
@@ -130,25 +191,25 @@ class History:
         return self.current == 0
 
     def at_end(self):
-        return self.current == len(self.subspectra) - 1
+        return self.current == len(self._subspectra) - 1
 
     def length(self):
-        return len(self.subspectra)
+        return len(self._subspectra)
 
     def save(self):
         """Saves the current simulation state"""
         try:
-            self.current_subspectrum().toolbar = self.toolbar
-            self.update_vars(self.toolbar.model, self.toolbar.vars)
+            self.current_subspectrum().toolbar = self._toolbar
+            self.update_vars(self._toolbar.model, self._toolbar.vars)
         except AttributeError:
             print('HISTORY TOOLBAR ERROR: Tried to save a state for a '
                   'non-existent toolbar!!!')
 
     def restore(self):
-        """restores the history.toolbar to that recorded in the subspectrum"""
-        self.toolbar = self.current_subspectrum().toolbar
-        self.toolbar.reset(self.current_subspectrum().vars)
-        print('toolbar reset with vars: ', self.toolbar.vars)
+        """restores the history._toolbar to that recorded in the subspectrum"""
+        self._toolbar = self.current_subspectrum().toolbar
+        self._toolbar.reset(self.current_subspectrum().vars)
+        print('_toolbar reset with vars: ', self._toolbar.vars)
 
     def back(self):
         """Point history towards the previous subspectrum and return True if it
@@ -161,7 +222,7 @@ class History:
             print('back!')
             self.save()
             self.current -= 1
-            # self.toolbar = self.current_subspectrum().toolbar
+            # self._toolbar = self.current_subspectrum()._toolbar
             print('history.current now: ', self.current)
             self.restore()
             return True
@@ -175,11 +236,11 @@ class History:
 
         :return: (bool) whether action was taken or not.
         """
-        if self.current_subspectrum() is not self.subspectra[-1]:
+        if self.current_subspectrum() is not self._subspectra[-1]:
             print('forward!')
             self.save()
             self.current += 1
-            # self.toolbar = self.current_subspectrum().toolbar
+            # self._toolbar = self.current_subspectrum()._toolbar
             print('history.current is now: ', self.current)
             self.restore()
             return True
@@ -212,25 +273,24 @@ class History:
     def update_vars(self, model, vars_):
         """Replaces current subpectrum's model and vars, using a deep copy
         of the latter. Deep copy should be required for second order sims."""
-        subspectrum = self.subspectra[self.current]
+        subspectrum = self._subspectra[self.current]
         subspectrum.model = model
         subspectrum.vars = copy.deepcopy(vars_)
-        print('Subspectrum ', self.current, model, ' updated with vars: ', vars_)
 
     def update_frequency(self, freq):
         """Updates all subspectra to use a different spectrometer frequency;
         updates all subspectra; and updates total plot"""
-        for subspectrum in self.subspectra:
+        for subspectrum in self._subspectra:
             subspectrum.toolbar.spec_freq = freq
 
     def update_all_spectra(self, lineshapes):
         """Recompute all subspectra lineshape data, and total spectrum."""
 
-        if len(self.subspectra) != len(lineshapes):
+        if len(self._subspectra) != len(lineshapes):
             print('MISMATCH IN NUMBER OF SUBSPECTRA AND OF LINESHAPES')
             return
         # rezero total spectrum and then
-        for subspectrum, lineshape in zip(self.subspectra, lineshapes):
+        for subspectrum, lineshape in zip(self._subspectra, lineshapes):
 
             # print(type(lineshape))
             x, y = lineshape
@@ -239,14 +299,13 @@ class History:
             if subspectrum.active:
                 self.total_y += y
 
-
     # Debugging routines below:
 
     def dump(self):
         """for debugging"""
         ss_current = self.current_subspectrum()
         if self.current > 0:
-            ss_prev = self.subspectra[self.current - 1]
+            ss_prev = self._subspectra[self.current - 1]
         else:
             ss_prev = None
         print('=' * 10)

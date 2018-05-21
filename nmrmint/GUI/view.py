@@ -497,7 +497,7 @@ class View(Frame):
         self._currentbar = self._first_order_bar
         self._currentbar.grid(sticky=W)
         self._active_bar_dict = {'first-order': self._first_order_bar,
-                                'second-order': self._spinbars[0]}
+                                 'second-order': self._spinbars[0]}
         history.change_toolbar(self._currentbar)
 
     #########################################################################
@@ -557,7 +557,11 @@ class View(Frame):
 # Debugging routines:
 
 # following is taken from PyMOTW: https://pymotw.com/2/sys/tracing.html
+
+
 def trace_calls(frame, event, arg):
+    if arg:
+        print('arg passed to trace_calls')  # need to recheck why arg is needed
     if event != 'call':
         return
     co = frame.f_code

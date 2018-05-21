@@ -193,7 +193,7 @@ def test_history_instantiates_with_blank_subspectrum():
 
 def test_add_subspectrum():
     """Test that a new, different subspectrum is added to the
-    history.subspectra list."""
+    history._subspectra list."""
     # GIVEN a newly instantiated History object
     history = History()
 
@@ -201,7 +201,7 @@ def test_add_subspectrum():
     initial_counter = history.current
     history.add_subspectrum()
     final_counter = history.current
-    assert history.subspectra[final_counter] is not history.subspectra[
+    assert history._subspectra[final_counter] is not history._subspectra[
         initial_counter]
 
     # THEN its counter is incremented by 1
@@ -228,7 +228,7 @@ def test_subspectrum_data(ss1, vars_1):
     """
     # GIVEN a history with a non-default subspectrum
     history = History()
-    history.subspectra[0] = ss1
+    history._subspectra[0] = ss1
 
     # WHEN history is asked for subspectrum model data
     # THEN the subspectrum's (model, vars) data are returned as a tuple
@@ -243,13 +243,13 @@ def test_all_spec_data(ss1, ss2, vars_1, vars_2):
     # and lineshape data
     # toolbar = FirstOrderBar(controller=fake_controller)
     history = History()
-    # history.toolbar = toolbar
-    history.subspectra[history.current] = ss1
+    # history._toolbar = _toolbar
+    history._subspectra[history.current] = ss1
     history.restore()
-    history.subspectra.append(ss2)
-    assert history.toolbar is history.current_subspectrum().toolbar
+    history._subspectra.append(ss2)
+    assert history._toolbar is history.current_subspectrum().toolbar
     assert history.current_subspectrum() is ss1
-    assert history.subspectra[history.current + 1] is ss2
+    assert history._subspectra[history.current + 1] is ss2
     assert ss1 is not ss2
 
     # WHEN asked for subspectra data
@@ -266,7 +266,7 @@ def test_current_toolbar():
     # GIVEN a history with a toolbar assigned to its subspectrum
     history = History()
     bar = FirstOrderBar()
-    history.subspectra[history.current].toolbar = bar
+    history._subspectra[history.current].toolbar = bar
 
     # WHEN history is asked for its current toolbar
     # THEN the current subspectrum's bar is returned
@@ -302,8 +302,8 @@ def test_change_toolbar():
     # WHEN given a toolbar and told to change to it
     history.change_toolbar(toolbar)
 
-    # THEN history.toolbar now points to that toolbar
-    assert history.toolbar is toolbar
+    # THEN history._toolbar now points to that _toolbar
+    assert history._toolbar is toolbar
 
 # def test_change_toolbar_to_second_order_bar():
 #     """Test to see if change_toolbar works with SecondOrderBar."""
@@ -324,22 +324,22 @@ def test_change_toolbar():
 
 def test_delete(ss1, ss2):
     """Test that, when a non-last subspectrum is deleted, it is removed from
-    history.subspectra."""
+    history._subspectra."""
     # GIVEN a history instance with two complete subspectra objects and
     # pointing to the first subspectrum
     toolbar = FirstOrderBar(controller=fake_controller)
     history = History()
-    history.toolbar = toolbar
-    history.subspectra[history.current] = ss1
+    history._toolbar = toolbar
+    history._subspectra[history.current] = ss1
     # history.current = 1
-    history.subspectra.append(ss2)
+    history._subspectra.append(ss2)
     assert history.current_subspectrum() is ss1
 
     # WHEN history is told to delete the subspectrum
     action = history.delete()
 
     # THEN current subspectrum set to next subspectrum
-    assert history.subspectra == [ss2]
+    assert history._subspectra == [ss2]
     assert history.current_subspectrum() is ss2
     assert action
 
@@ -361,23 +361,23 @@ def test_delete_stops_at_one_subspectrum():
 
 def test_delete_last_subspectrum(ss1, ss2):
     """Test that, when a last subspectrum is deleted, it is removed from
-    history.subspectra and history is reset to the previous subspectrum.
+    history._subspectra and history is reset to the previous subspectrum.
     """
     # GIVEN a history instance with two complete subspectra objects and
     # pointing to the second subspectrum
     toolbar = FirstOrderBar(controller=fake_controller)
     history = History()
-    history.toolbar = toolbar
-    history.subspectra[history.current] = ss1
+    history._toolbar = toolbar
+    history._subspectra[history.current] = ss1
     history.current = 1
-    history.subspectra.append(ss2)
+    history._subspectra.append(ss2)
     assert history.current_subspectrum() is ss2
 
     # WHEN history is told to delete the subspectrum
     history.delete()
 
     # THEN current subspectrum set to previous subspectrum
-    assert history.subspectra == [ss1]
+    assert history._subspectra == [ss1]
     assert history.current_subspectrum() is ss1
 
 
@@ -387,7 +387,7 @@ def test_save(vars_default):
     """
     # GIVEN a history with a toolbar reference and a blank subspectrum
     history = History()
-    history.toolbar = FirstOrderBar(controller=fake_controller)
+    history._toolbar = FirstOrderBar(controller=fake_controller)
 
     # WHEN told to save state
     history.save()
@@ -396,8 +396,8 @@ def test_save(vars_default):
     ss = history.current_subspectrum()
     assert ss.model == 'first_order'
     assert ss.vars == vars_default
-    assert ss.vars is not history.toolbar.vars  # must be a copy to save state
-    assert ss.toolbar is history.toolbar
+    assert ss.vars is not history._toolbar.vars  # must be a copy to save state
+    assert ss.toolbar is history._toolbar
 
 
 def test_save_alerts_if_no_toolbar(capsys):
@@ -424,21 +424,21 @@ def test_restore(ss1):
     # GIVEN a history instance with a toolbar attribute,
     # and with a subspectrum containing a toolbar attribute
     history = History()
-    history.toolbar = FirstOrderBar(controller=fake_controller)
-    history.subspectra[0] = ss1
-    assert ss1.toolbar is not history.toolbar
+    history._toolbar = FirstOrderBar(controller=fake_controller)
+    history._subspectra[0] = ss1
+    assert ss1.toolbar is not history._toolbar
     assert isinstance(ss1.toolbar, FirstOrderBar)
 
     # WHEN history restored
     history.restore()
 
-    # THEN history.toolbar is updated to point to the current subspectrum
+    # THEN history._toolbar is updated to point to the current subspectrum
     # toolbar
-    assert history.toolbar is ss1.toolbar
+    assert history._toolbar is ss1.toolbar
 
 
 def test_back():
-    """Test to see if history.back moves back 1 subspectrum in subspectra
+    """Test to see if history.back moves back 1 subspectrum in _subspectra
     list.
     """
     # GIVEN a history with two subspectra, set to the more recent subspectrum
@@ -446,11 +446,11 @@ def test_back():
     testbar = FirstOrderBar()
     history.change_toolbar(testbar)
     ss1 = history.current_subspectrum()
-    assert ss1.toolbar is history.toolbar
+    assert ss1.toolbar is history._toolbar
     history.add_subspectrum()
     ss2 = history.current_subspectrum()
     history.save()
-    assert ss2.toolbar is history.toolbar
+    assert ss2.toolbar is history._toolbar
     assert ss1 is not ss2
 
     # WHEN the history is told to move back one step
@@ -475,7 +475,7 @@ def test_back_stops_at_beginning():
         history.save()
         assert history.current == i + 1
         subspectra.append(history.current_subspectrum())
-        assert history.current_subspectrum() is not history.subspectra[i]
+        assert history.current_subspectrum() is not history._subspectra[i]
 
     # WHILE the history is told to move backwards
     action = history.back()
@@ -505,12 +505,12 @@ def test_back_restores_toolbar_state(ss1, vars_1, ss2):
     # pointing to the more recent subspectrum
     toolbar = FirstOrderBar(controller=fake_controller)
     history = History()
-    history.toolbar = toolbar
-    history.subspectra[history.current] = ss1
+    history._toolbar = toolbar
+    history._subspectra[history.current] = ss1
     history.current = 1
-    history.subspectra.append(ss2)
+    history._subspectra.append(ss2)
     assert history.current_subspectrum() is ss2
-    assert history.subspectra[history.current - 1] is not ss2
+    assert history._subspectra[history.current - 1] is not ss2
 
     # WHEN history is told to go back
     history.back()
@@ -529,19 +529,19 @@ def test_back_saves_toolbar_first(ss1, ss2, vars_2, vars_default):
     # pointing to the more recent subspectrum
     toolbar = FirstOrderBar(controller=fake_controller)
     history = History()
-    history.toolbar = toolbar
-    history.subspectra[history.current] = ss1
+    history._toolbar = toolbar
+    history._subspectra[history.current] = ss1
     history.current = 1
-    history.subspectra.append(ss2)
-    assert history.current_subspectrum().toolbar is not history.toolbar
+    history._subspectra.append(ss2)
+    assert history.current_subspectrum().toolbar is not history._toolbar
     assert history.current_subspectrum().vars == vars_2
-    assert history.toolbar.vars == vars_default
+    assert history._toolbar.vars == vars_default
 
     # WHEN history is told to go back
     history.back()
 
     # THEN the subspectrum was updated
-    ss = history.subspectra[history.current + 1]
+    ss = history._subspectra[history.current + 1]
     assert ss is ss2
     assert ss.vars == vars_default
 
@@ -553,23 +553,23 @@ def test_back_updates_history_toolbar(ss1, ss2):
     # pointing to the more recent subspectrum
     toolbar = FirstOrderBar(controller=fake_controller)
     history = History()
-    history.toolbar = toolbar
-    history.subspectra[history.current] = ss1
+    history._toolbar = toolbar
+    history._subspectra[history.current] = ss1
     history.current = 1
-    history.subspectra.append(ss2)
+    history._subspectra.append(ss2)
 
-    previous_ss = history.subspectra[history.current - 1]
-    assert previous_ss.toolbar is not history.toolbar
+    previous_ss = history._subspectra[history.current - 1]
+    assert previous_ss.toolbar is not history._toolbar
 
     # WHEN history is told to go back
     history.back()
 
-    # THEN history.toolbar was updated
-    assert history.toolbar is history.current_subspectrum().toolbar
+    # THEN history._toolbar was updated
+    assert history._toolbar is history.current_subspectrum().toolbar
 
 
 def test_forward():
-    """Test to see if history.forward moves forward 1 subspectrum in subspectra
+    """Test to see if history.forward moves forward 1 subspectrum in _subspectra
     list.
     """
     # GIVEN a history with two subspectra, set to the first subspectrum
@@ -629,19 +629,19 @@ def test_forward_updates_history_toolbar(ss1, ss2):
     # pointing to the first subspectrum
     toolbar = FirstOrderBar(controller=fake_controller)
     history = History()
-    history.toolbar = toolbar
-    history.subspectra[history.current] = ss1
+    history._toolbar = toolbar
+    history._subspectra[history.current] = ss1
     # history.current = 1
-    history.subspectra.append(ss2)
+    history._subspectra.append(ss2)
 
-    next_ss = history.subspectra[history.current + 1]
-    assert next_ss.toolbar is not history.toolbar
+    next_ss = history._subspectra[history.current + 1]
+    assert next_ss.toolbar is not history._toolbar
 
     # WHEN history is told to go forward
     history.forward()
 
-    # THEN history.toolbar was updated
-    assert history.toolbar is history.current_subspectrum().toolbar
+    # THEN history._toolbar was updated
+    assert history._toolbar is history.current_subspectrum().toolbar
 
 
 def test_current_lineshape(ss1, x1, y1):
@@ -650,7 +650,7 @@ def test_current_lineshape(ss1, x1, y1):
     """
     # GIVEN a history instance, with a subspectrum having lineshape data
     history = History()
-    history.subspectra[0] = ss1
+    history._subspectra[0] = ss1
     ss1.x, ss1.y = x1, y1
     assert np.array_equal(history.current_subspectrum().x, x1)
     assert np.array_equal(history.current_subspectrum().y, y1)
