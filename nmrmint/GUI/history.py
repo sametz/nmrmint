@@ -277,12 +277,6 @@ class History:
         subspectrum.model = model
         subspectrum.vars = copy.deepcopy(vars_)
 
-    def update_frequency(self, freq):
-        """Updates all subspectra to use a different spectrometer frequency;
-        updates all subspectra; and updates total plot"""
-        for subspectrum in self._subspectra:
-            subspectrum.toolbar.spec_freq = freq
-
     def update_all_spectra(self, lineshapes):
         """Recompute all subspectra lineshape data, and total spectrum."""
 

@@ -86,8 +86,7 @@ class View(Frame):
     def _initialize_first_order_bar(self):
         """Instantiate the toolbar for first-order model."""
         bar_kwargs = {'parent': self._top_frame,
-                      'controller': self.update_current_plot,
-                      'spec_freq': self.spectrometer_frequency}
+                      'controller': self.update_current_plot}
         self._first_order_bar = FirstOrderBar(**bar_kwargs)
 
     def _initialize_spinbars(self):
@@ -202,7 +201,6 @@ class View(Frame):
     def _set_spec_freq(self):
         """Set the spectrometer frequency."""
         self.spectrometer_frequency = self._spec_freq_widget.current_value
-        history.update_frequency(self.spectrometer_frequency)
         self._update_all_spectra()
 
     def _update_all_spectra(self):
