@@ -124,9 +124,24 @@ class History:
         self.current = 0  # Used by View to change subspectrum label
         self._subspectra.append(Subspectrum())
 
+    def _update_vars(self, model, vars_):
+        """Replace the current subpectrum's model and vars, using a deep copy
+        of the latter (Deep copy should be required for second order
+        simulations).
+
+        :param model: (str) 'first_order' or 'nspin'
+        :param vars_: (dict) of simulation parameters
+        """
+        self.current_subspectrum().model = model
+        self.current_subspectrum().vars = copy.deepcopy(vars_)
+
     #########################################################################
     # Methods below provide the interface to the controller
     #########################################################################
+
+    def current_subspectrum(self):
+        """Return the current Subspectrum object."""
+        return self._subspectra[self.current]
 
     def add_subspectrum(self):
         """Add a new subspectrum object to the list of stored subspectra.
@@ -138,9 +153,6 @@ class History:
         self._subspectra.append(Subspectrum())
         self.current = len(self._subspectra) - 1
 
-    def current_subspectrum(self):
-        """Return the current Subspectrum object."""
-        return self._subspectra[self.current]
 
     def subspectrum_data(self):
         """Return the simulation data from the current Subspectrum.
@@ -157,20 +169,9 @@ class History:
         return [(subspectrum.model, subspectrum.vars)
                 for subspectrum in self._subspectra]
 
-    # coverage : currently only used by a test
-    def current_toolbar(self):
-        # if history._toolbar is being set elsewhere--.back(), .forward() etc--
-        # then this should not be needed.
-        return self.current_subspectrum().toolbar
-
-    # coverage :
-    def change_toolbar(self, toolbar):
-        """schedule for removal? Still used atm"""
-        self._toolbar = toolbar
-        self.save()
 
     def delete(self):
-        """Deletes the current subspectrum. History will reset to the next
+        """Delete the current subspectrum. History will reset to the next
         more recent subspectrum, or the previous subspectrum if it was the
         last subspectrum that was deleted.
 
@@ -187,20 +188,11 @@ class History:
         self.restore()
         return True
 
-    def at_beginning(self):
-        return self.current == 0
-
-    def at_end(self):
-        return self.current == len(self._subspectra) - 1
-
-    def length(self):
-        return len(self._subspectra)
-
     def save(self):
-        """Saves the current simulation state"""
+        """Save the current simulation state"""
         try:
             self.current_subspectrum().toolbar = self._toolbar
-            self.update_vars(self._toolbar.model, self._toolbar.vars)
+            self._update_vars(self._toolbar.model, self._toolbar.vars)
         except AttributeError:
             print('HISTORY TOOLBAR ERROR: Tried to save a state for a '
                   'non-existent toolbar!!!')
@@ -209,25 +201,18 @@ class History:
         """restores the history._toolbar to that recorded in the subspectrum"""
         self._toolbar = self.current_subspectrum().toolbar
         self._toolbar.reset(self.current_subspectrum().vars)
-        print('_toolbar reset with vars: ', self._toolbar.vars)
 
     def back(self):
-        """Point history towards the previous subspectrum and return True if it
-        exists, or else return False.
+        """Point history towards the previous subspectrum, if possible.
 
-        :return: (bool) whether action was taken or not.
+        :return: (bool) True if moved back; False if already at beginning.
         """
-        # self.dump('BACK')
         if self.current > 0:
-            print('back!')
             self.save()
             self.current -= 1
-            # self._toolbar = self.current_subspectrum()._toolbar
-            print('history.current now: ', self.current)
             self.restore()
             return True
         else:
-            print('at beginning')
             return False
 
     def forward(self):
@@ -236,50 +221,67 @@ class History:
 
         :return: (bool) whether action was taken or not.
         """
-        if self.current_subspectrum() is not self._subspectra[-1]:
-            print('forward!')
+        if self.current_subspectrum() is self._subspectra[-1]:
+            return False
+        else:
             self.save()
             self.current += 1
-            # self._toolbar = self.current_subspectrum()._toolbar
-            print('history.current is now: ', self.current)
             self.restore()
             return True
-        else:
-            print('at end')
-            return False
+
+    def change_toolbar(self, toolbar):
+        """Change the history's current toolbar and save the current state.
+
+        :param toolbar: a subclass of toolbars.ToolBar."""
+        self._toolbar = toolbar
+        self.save()
 
     def current_lineshape(self):
+        """Return the current subspectrum's lineshape data.
+
+        :return: (numpy.ndarray, numpy.ndarray) tuple of x, y data.
+        """
         ss = self.current_subspectrum()
         return ss.x, ss.y
 
-    def save_current_linshape(self, x, y):
+    def save_current_lineshape(self, x, y):
+        """Record the x, y lineshape data of the current subspectrum plot to
+        the current subspectrum object.
+
+        :param x: (numpy.ndarray)
+        :param y: (numpy ndarray)
+        """
         subspectrum = self.current_subspectrum()
         subspectrum.x, subspectrum.y = x, y
-        # print('saved current linshape for subspectrum ', self.current,
-        #       ' of size: x ', subspectrum.x.size, ' y ', subspectrum.y.size)
 
-    def save_total_linshape(self, x, y):
+    def save_total_lineshape(self, x, y):
+        """Record the x, y lineshape data for the total plot.
+
+        :param x: (numpy.ndarray)
+        :param y: (numpy ndarray)
+        """
         self.total_x, self.total_y = x, y
-        # print('saved total linshape for subspectrum ', self.current)
 
     def add_current_to_total(self):
-        """probably have controller call pre-built model routine for this"""
-        # print(type(self.total_y), type(self.current_subspectrum().y))
+        """Add the current plot to the total plot.
+
+        Assumes that the x linspaces match between plots.
+        """
         self.total_y += self.current_subspectrum().y
 
     def remove_current_from_total(self):
+        """Subtract the current plot from the total plot.
+
+        Assumes that the x linspaces match between plots.
+        """
         self.total_y -= self.current_subspectrum().y
 
-    def update_vars(self, model, vars_):
-        """Replaces current subpectrum's model and vars, using a deep copy
-        of the latter. Deep copy should be required for second order sims."""
-        subspectrum = self._subspectra[self.current]
-        subspectrum.model = model
-        subspectrum.vars = copy.deepcopy(vars_)
-
     def update_all_spectra(self, lineshapes):
-        """Recompute all subspectra lineshape data, and total spectrum."""
+        """Recompute all subspectra lineshape data, and the total spectrum.
 
+        :param lineshapes: [(numpy.ndarray, numpy.ndarray)...] all the (x,
+        y) plot data for all the subspectra.
+        """
         if len(self._subspectra) != len(lineshapes):
             print('MISMATCH IN NUMBER OF SUBSPECTRA AND OF LINESHAPES')
             return

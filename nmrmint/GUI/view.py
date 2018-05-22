@@ -374,8 +374,7 @@ class View(Frame):
 
         Used when resetting the GUI after switching subspectra.
         """
-        subspectrum = history.current_subspectrum()
-        if subspectrum.active:
+        if history.current_subspectrum().active:
             self._set_active_button_color('green')
         else:
             self._set_active_button_color('red')
@@ -519,6 +518,7 @@ class View(Frame):
         history.save()
         model, vars_ = history.subspectrum_data()
         self._controller.update_current_plot(model, vars_)
+
         if active:
             history.add_current_to_total()
             self.clear_total()
@@ -536,7 +536,7 @@ class View(Frame):
             x, y: (numpy.ndarray, numpy.ndarray) x and y coordinates
         """
         self.current_x, self.current_y = x, y
-        history.save_current_linshape(x, y)
+        history.save_current_lineshape(x, y)
         self.canvas.plot_current(x, y)
 
     def clear_total(self):
@@ -549,7 +549,7 @@ class View(Frame):
         Arguments:
             x, y: (numpy.ndarray, numpy.ndarray) x and y coordinates
         """
-        history.save_total_linshape(x, y)
+        history.save_total_lineshape(x, y)
         self.canvas.plot_total(x, y)
 
 # Debugging routines:

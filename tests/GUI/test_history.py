@@ -261,16 +261,16 @@ def test_all_spec_data(ss1, ss2, vars_1, vars_2):
     assert all_spec_data == expected_data
 
 
-def test_current_toolbar():
-    """Test that current_bar returns the bar for the current subspectrum."""
-    # GIVEN a history with a toolbar assigned to its subspectrum
-    history = History()
-    bar = FirstOrderBar()
-    history._subspectra[history.current].toolbar = bar
-
-    # WHEN history is asked for its current toolbar
-    # THEN the current subspectrum's bar is returned
-    assert history.current_toolbar() is bar
+# def test_current_toolbar():
+#     """Test that current_bar returns the bar for the current subspectrum."""
+#     # GIVEN a history with a toolbar assigned to its subspectrum
+#     history = History()
+#     bar = FirstOrderBar()
+#     history._subspectra[history.current].toolbar = bar
+#
+#     # WHEN history is asked for its current toolbar
+#     # THEN the current subspectrum's bar is returned
+#     assert history.current_toolbar() is bar
 
 
 # def test_change_toolbar(vars_2):
@@ -353,7 +353,7 @@ def test_delete_stops_at_one_subspectrum():
     action = history.delete()
 
     # THEN no change occurs
-    assert history.length() == 1
+    assert len(history._subspectra) == 1
     assert history.current == 0
     assert history.current_subspectrum() is current_ss
     assert not action
@@ -493,7 +493,6 @@ def test_back_stops_at_beginning():
     # UNTIL it reaches the beginning of the history, in which case there
     # is no change.
     action = history.back()
-    assert history.at_beginning()
     assert history.current == 0
     assert history.current_subspectrum() is subspectra[0]
     assert not action
@@ -617,7 +616,6 @@ def test_forward_stops_at_end():
     ss_2 = history.current_subspectrum()
     action = history.forward()
     assert history.current == 2
-    assert history.at_end()
     assert history.current_subspectrum() is ss_2
     assert not action
 
@@ -668,7 +666,7 @@ def test_save_current_linshape(x1, y1):
     history = History()
 
     # WHEN history is told to save lineshape data
-    history.save_current_linshape(x1, y1)
+    history.save_current_lineshape(x1, y1)
 
     # THEN this data is added to the subspectrum object
     x, y = history.current_subspectrum().x, history.current_subspectrum().y
@@ -683,7 +681,7 @@ def test_save_total_linshape():
     history = History()
 
     # WHEN history is told to save lineshape data for the total spectrum
-    history.save_total_linshape(x2, y2)
+    history.save_total_lineshape(x2, y2)
 
     # THEN the lineshape x and y data are stored by the history object
     x, y = history.total_x, history.total_y
@@ -698,8 +696,8 @@ def test_add_current_to_total(x1, x2, y1, y2, y_total):
     # GIVEN a history with total spectrum lineshape data, and a subspectrum
     # with current lineshape data
     history = History()
-    history.save_current_linshape(x1, y1)
-    history.save_total_linshape(x2, y2)
+    history.save_current_lineshape(x1, y1)
+    history.save_total_lineshape(x2, y2)
     old_y1 = np.copy(history.current_subspectrum().y)
     old_y2 = np.copy(history.total_y)
     print('old_y1', old_y1)
@@ -727,8 +725,8 @@ def test_remove_current_from_total(x1, y1, x2, y2, y_total):
     # GIVEN a history with total spectrum lineshape data,
     # and a subspectrum with current lineshape data
     history = History()
-    history.save_current_linshape(x1, y1)
-    history.save_total_linshape(x2, y_total)
+    history.save_current_lineshape(x1, y1)
+    history.save_total_lineshape(x2, y_total)
     old_y1 = np.copy(history.current_subspectrum().y)
     old_total_y = np.copy(history.total_y)
     print('old_y1', old_y1)
@@ -759,7 +757,7 @@ def test_update_vars(vars_1):
     assert history.current_subspectrum().vars is None
 
     # WHEN history asked to update data with supplied model and vars
-    history.update_vars('first_order', vars_1)
+    history._update_vars('first_order', vars_1)
 
     # THEN the history object has its .model and .vars correctly updated
     assert history.current_subspectrum().model == 'first_order'
