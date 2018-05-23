@@ -302,7 +302,7 @@ class History:
 
     # Debugging routines below:
 
-    def dump(self):
+    def dump(self):  # pragma: no cover
         """for debugging"""
         ss_current = self.current_subspectrum()
         if self.current > 0:

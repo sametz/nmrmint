@@ -38,11 +38,22 @@ def vars_1():
 
 @pytest.fixture()
 def vars_2():
-    """Return the modified vars for the first custom subspectrum, where
+    """Return the modified vars for the second custom subspectrum, where
     #B has been changed to 0, and Vcentr to 1.0."""
     _vars = vars_default()
     _vars['#B'] = 0
     _vars['Vcentr'] = 1.0
+    return _vars
+
+
+@pytest.fixture()
+def vars_3():
+    """Return modified vars for the third custom subspectrum, where #D has
+    been changed to 3.
+
+    Created for ss3 and update_all_spectra testing."""
+    _vars = vars_default()
+    _vars['#D'] = 3
     return _vars
 
 
@@ -79,6 +90,13 @@ def y2():
     # If this is refactored, y_total() must also be refactored!
     return np.linspace(100.0, 1000.0, 10)
 
+@pytest.fixture()
+def y3():
+    """Return an array of same length as y1 and y2 but with different values.
+
+    Used to test update_all_spectra as the data for an inactive subspectrum
+    that should be skipped over when creating the total spectrum."""
+    return np.linspace(5, 50, 10)
 
 @pytest.fixture()
 def y_total():
@@ -136,6 +154,15 @@ def ss2(vars_2):
     return ss2
 
 
+@pytest.fixture()
+def ss3(vars_3):
+    """Create a third subspectrum for testing update_all_spectra."""
+    bar3 = FirstOrderBar(controller=fake_controller)
+    bar3.reset(vars_3)
+    ss3 = create_ss(bar3)
+    return ss3
+
+
 def test_vars_default_matches_FirstOrderBar_default(vars_default):
     """Check that the test's default toolbar data matches FirstOrderBar's
     default data.
@@ -182,8 +209,7 @@ def test_create_ss2(ss2):
     assert ss2.vars['Vcentr'] == 1.0
 
 
-def test_history_instantiates_with_blank_subspectrum():
-    """Test that when history instantiates it has no assigned subspectra."""
+def test_history_instantiates_with_inactive_subspectrum():
     # WHEN a History object is newly instantiated
     history = History()
 
@@ -344,11 +370,48 @@ def test_delete(ss1, ss2):
     assert action
 
 
-def test_delete_updates_total():
-    """Test that deleting a subspectrum also deletes its contribution from
-    the total spectrum--but only if subspectrum is active.
+def test_delete_updates_total(ss1, ss2, x1, x2, y1, y2, y_total):
+    """Test that deleting an active subspectrum also deletes its contribution
+    from the total spectrum.
     """
-    assert 1 == 2  # Finish the test!
+    # GIVEN a history instance with two active subspectra objects  pointing
+    # to the second subspectrum, and with .total_y of their sum:
+    ss1.x, ss1.y = x1, y1
+    ss1.active = True
+    ss2.x, ss2.y = x2, y2
+    ss2.active = True
+    history = History()
+    history._subspectra = [ss1, ss2]
+    history.total_y = y_total
+    history.current = 1
+    assert np.array_equal(history.current_subspectrum().y, y2)
+
+    # IF told to delete the current spectrum
+    history.delete()
+
+    # THEN history.total_y has had the deleted spectrum's y subtracted from it
+    assert np.allclose(history.total_y, y1)
+
+
+def test_delete_inactive_does_not_change_total(ss1, ss2, x1, x2, y1, y2,
+                                                y_total):
+    # GIVEN a history instance with two subspectra objects (the first active,
+    # the second inactive) pointing to the second subspectrum, and with
+    # .total_y only equal to the first subspectrum's y
+    ss1.x, ss1.y = x1, y1
+    ss1.active = True
+    ss2.x, ss2.y = x2, y2
+    ss2.active = False
+    history = History()
+    history._subspectra = [ss1, ss2]
+    history.total_y = y1
+    history.current = 1
+
+    # IF told to delete the current spectrum
+    history.delete()
+
+    # THEN history.total_y has not changed
+    assert np.allclose(history.total_y, y1)
 
 
 def test_delete_stops_at_one_subspectrum():
@@ -681,9 +744,18 @@ def test_save_current_linshape(x1, y1):
     assert np.array_equal(y, y1)
 
 
-def test_total_lineshape():
+def test_total_lineshape(x1, y_total):
     """Finish the test!"""
-    assert 1 == 2
+    # GIVEN a history instance with total lineshape data
+    history = History()
+    history.total_x, history.total_y = x1, y_total
+
+    # WHEN asked for the total lineshape
+    x, y = history.total_lineshape()
+
+    # THEN the correct data is returned
+    assert np.array_equal(x, x1)
+    assert np.array_equal(y, y_total)
 
 
 def test_save_total_linshape():
@@ -775,6 +847,27 @@ def test_update_vars(vars_1):
     assert history.current_subspectrum().model == 'first_order'
     assert history.current_subspectrum().vars == vars_1
 
-def test_update_all_spectra():
-    """Finish the tests!"""
-    assert 1 == 2
+def test_update_all_spectra(ss1, ss2, ss3, x1, x2, y1, y2, y3, y_total):
+    """Test that subspectra and total spectrum are correctly replaced."""
+    # GIVEN a history object with three subspectra, the second of which is
+    # inactive
+    history = History()
+    ss1.active = True
+    ss2.active = True
+    history._subspectra = [ss1, ss3, ss2]
+    history._toolbar = FirstOrderBar(controller=fake_controller)
+
+    # WHEN told to update all spectra using a blank spectrum and a list of
+    # lineshape data
+    blank_spectrum = (x1, [0] * 10)
+    lineshapes = [(x1, y1), (x1, y3), (x2, y2)]
+    history.update_all_spectra(blank_spectrum, lineshapes)
+
+    # THEN all stored lineshapes are updated appropriately
+    new_lineshapes = [(ss1.x, ss1.y), (ss3.x, ss3.y), (ss2.x, ss2.y)]
+    assert np.allclose(lineshapes, new_lineshapes)
+    assert np.allclose(history.total_y, y_total)
+
+
+
+
