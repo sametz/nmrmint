@@ -205,21 +205,15 @@ class View(Frame):
 
     def _update_all_spectra(self):
         """Recompute all lineshape data, store in history, and refresh."""
-        history.save()
-        history.total_x, history.total_y = \
-            self._controller.blank_total_spectrum()
-
-        subspectra_data = history.all_spec_data()
         subspectra_lineshapes = [self._controller.lineshape_data(model, vars_)
-                                 for model, vars_ in subspectra_data]
-        history.update_all_spectra(subspectra_lineshapes)
+                                 for model, vars_ in history.all_spec_data()]
+        history.update_all_spectra(self._controller.blank_total_spectrum(),
+                                   subspectra_lineshapes)
 
-        x, y = history.current_lineshape()
         self.clear_current()
-        self.plot_current(x, y)
-        x_total, y_total = history.total_x, history.total_y
+        self.plot_current(*history.current_lineshape())
         self.clear_total()
-        self.plot_total(x_total, y_total)
+        self.plot_total(*history.total_lineshape())
 
     def _add_minmax_entries(self):
         """Add entries for minimum and maximum frequency to display."""
@@ -366,7 +360,7 @@ class View(Frame):
             history.remove_current_from_total()
 
         self.clear_total()
-        self.plot_total(history.total_x, history.total_y)
+        self.plot_total(*history.total_lineshape())
 
     def _reset_active_button_color(self):
         """Set the color of the "Add to Spectrum" button according to the
@@ -448,7 +442,7 @@ class View(Frame):
         if history.delete():
             self._refresh_current_GUI()
             self.clear_total()
-            self.plot_total(history.total_x, history.total_y)
+            self.plot_total(*history.total_lineshape())
 
     def _add_subspectrum_navigation(self):
         """Add subspectrum navigation tools to the GUI."""
@@ -522,7 +516,7 @@ class View(Frame):
         if active:
             history.add_current_to_total()
             self.clear_total()
-            self.plot_total(history.total_x, history.total_y)
+            self.plot_total(*history.total_lineshape())
 
     def clear_current(self):
         """Erase the current (top) spectrum plot."""

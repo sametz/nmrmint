@@ -153,7 +153,6 @@ class History:
         self._subspectra.append(Subspectrum())
         self.current = len(self._subspectra) - 1
 
-
     def subspectrum_data(self):
         """Return the simulation data from the current Subspectrum.
 
@@ -168,7 +167,6 @@ class History:
         """
         return [(subspectrum.model, subspectrum.vars)
                 for subspectrum in self._subspectra]
-
 
     def delete(self):
         """Delete the current subspectrum. History will reset to the next
@@ -254,6 +252,13 @@ class History:
         subspectrum = self.current_subspectrum()
         subspectrum.x, subspectrum.y = x, y
 
+    def total_lineshape(self):
+        """Return the current subspectrum's lineshape data.
+
+        :return: (numpy.ndarray, numpy.ndarray) tuple of x, y data.
+        """
+        return self.total_x, self.total_y
+
     def save_total_lineshape(self, x, y):
         """Record the x, y lineshape data for the total plot.
 
@@ -276,21 +281,21 @@ class History:
         """
         self.total_y -= self.current_subspectrum().y
 
-    def update_all_spectra(self, lineshapes):
+    def update_all_spectra(self, blank_spectrum, lineshapes):
         """Recompute all subspectra lineshape data, and the total spectrum.
 
+        :param blank_spectrum: (numpy.ndarray, numpy.ndarray) for blank total
+        spectrum plot.
         :param lineshapes: [(numpy.ndarray, numpy.ndarray)...] all the (x,
         y) plot data for all the subspectra.
         """
+        self.save()
+        self.save_total_lineshape(*blank_spectrum)
         if len(self._subspectra) != len(lineshapes):
             print('MISMATCH IN NUMBER OF SUBSPECTRA AND OF LINESHAPES')
             return
-        # rezero total spectrum and then
         for subspectrum, lineshape in zip(self._subspectra, lineshapes):
-
-            # print(type(lineshape))
             x, y = lineshape
-            # print(type(x), type(y))
             subspectrum.x, subspectrum.y = x, y
             if subspectrum.active:
                 self.total_y += y

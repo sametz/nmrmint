@@ -344,6 +344,13 @@ def test_delete(ss1, ss2):
     assert action
 
 
+def test_delete_updates_total():
+    """Test that deleting a subspectrum also deletes its contribution from
+    the total spectrum--but only if subspectrum is active.
+    """
+    assert 1 == 2  # Finish the test!
+
+
 def test_delete_stops_at_one_subspectrum():
     """Test that no delete occurs if there is only one subspectrum left."""
     # GIVEN a history instance with only one subspectrum
@@ -674,6 +681,11 @@ def test_save_current_linshape(x1, y1):
     assert np.array_equal(y, y1)
 
 
+def test_total_lineshape():
+    """Finish the test!"""
+    assert 1 == 2
+
+
 def test_save_total_linshape():
     """Test that two linspaces are saved as history.total_x, history.total_y.
     """
@@ -762,3 +774,7 @@ def test_update_vars(vars_1):
     # THEN the history object has its .model and .vars correctly updated
     assert history.current_subspectrum().model == 'first_order'
     assert history.current_subspectrum().vars == vars_1
+
+def test_update_all_spectra():
+    """Finish the tests!"""
+    assert 1 == 2
