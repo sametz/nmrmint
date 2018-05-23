@@ -55,7 +55,7 @@ class Subspectrum:
         subspectrum.
         :param x: (numpy.ndarray) of x coordinates for the simulation result
         :param y: (numpy.ndarray) of y coordinates for the simulation result
-        :param toolbar: (GUI.toolbar.ToolBar subclass) associated with
+        :param toolbar: (GUI.toolbar._ToolBar subclass) associated with
         subspectrum calculation
         :param activity: (bool) True if the subspectrum has been selected
         for addition to the total spectrum.
@@ -230,7 +230,7 @@ class History:
     def change_toolbar(self, toolbar):
         """Change the history's current toolbar and save the current state.
 
-        :param toolbar: a subclass of toolbars.ToolBar."""
+        :param toolbar: a subclass of toolbars._ToolBar."""
         self._toolbar = toolbar
         self.save()
 

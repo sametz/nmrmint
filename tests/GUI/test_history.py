@@ -4,6 +4,7 @@ import pytest
 from nmrmint.GUI.history import Subspectrum, History
 from nmrmint.GUI.toolbars import FirstOrderBar, SecondOrderBar
 
+
 # Before writing these tests, the program was being manually debugged (with
 # first-order simulations) .
 # First #C was changed to 2, and the current plot was added to the total.
@@ -27,7 +28,7 @@ def vars_default():
             'width': 0.5}
 
 
-@ pytest.fixture()
+@pytest.fixture()
 def vars_1():
     """Return the modified vars for the first custom subspectrum, where
     #C has been changed to 2."""
@@ -90,6 +91,7 @@ def y2():
     # If this is refactored, y_total() must also be refactored!
     return np.linspace(100.0, 1000.0, 10)
 
+
 @pytest.fixture()
 def y3():
     """Return an array of same length as y1 and y2 but with different values.
@@ -97,6 +99,7 @@ def y3():
     Used to test update_all_spectra as the data for an inactive subspectrum
     that should be skipped over when creating the total spectrum."""
     return np.linspace(5, 50, 10)
+
 
 @pytest.fixture()
 def y_total():
@@ -106,11 +109,11 @@ def y_total():
     """
     # If this is refactored, y1() and y2() must be as well!
     return np.array([100.1, 200.2, 300.3, 400.4, 500.5, 600.6, 700.7, 800.8,
-                    900.9, 1001.0])
+                     900.9, 1001.0])
 
 
-def fake_controller(*args):
-    """For mocking out Toolbar controller calls."""
+def fake_callback(*args):
+    """For mocking out Toolbar callback calls."""
     print('Controller was passed: ', *args)
     pass
 
@@ -118,7 +121,7 @@ def fake_controller(*args):
 def create_ss(bar):
     """Given a toolbar, instantiate a subspectrum with that toolbar.
 
-    :param bar: a GUI.ToolBar subclass
+    :param bar: a GUI._ToolBar subclass
     :return: Subspectrum
     """
     ss = Subspectrum()
@@ -135,7 +138,7 @@ def ss1(vars_1):
         with .toolbar FirstorderBar,
         with .vars VARS_1
     """
-    bar1 = FirstOrderBar(controller=fake_controller)
+    bar1 = FirstOrderBar(callback=fake_callback)
     bar1.reset(vars_1)
     ss1 = create_ss(bar1)
     return ss1
@@ -148,7 +151,7 @@ def ss2(vars_2):
         with .toolbar FirstorderBar,
         with .vars VARS_2
     """
-    bar2 = FirstOrderBar(controller=fake_controller)
+    bar2 = FirstOrderBar(callback=fake_callback)
     bar2.reset(vars_2)
     ss2 = create_ss(bar2)
     return ss2
@@ -157,7 +160,7 @@ def ss2(vars_2):
 @pytest.fixture()
 def ss3(vars_3):
     """Create a third subspectrum for testing update_all_spectra."""
-    bar3 = FirstOrderBar(controller=fake_controller)
+    bar3 = FirstOrderBar(callback=fake_callback)
     bar3.reset(vars_3)
     ss3 = create_ss(bar3)
     return ss3
@@ -267,7 +270,7 @@ def test_all_spec_data(ss1, ss2, vars_1, vars_2):
     """
     # Given a history with two subspectra, each with references to toolbars
     # and lineshape data
-    # toolbar = FirstOrderBar(controller=fake_controller)
+    # toolbar = FirstOrderBar(callback=fake_callback)
     history = History()
     # history._toolbar = _toolbar
     history._subspectra[history.current] = ss1
@@ -303,11 +306,11 @@ def test_all_spec_data(ss1, ss2, vars_1, vars_2):
 #     """Test to see if the current subspectrum's toolbar can be replaced."""
 #     # GIVEN an initialized history with default toolbar
 #     history = History()
-#     bar_1 = FirstOrderBar(controller=fake_controller)
+#     bar_1 = FirstOrderBar(callback=fake_callback)
 #     history.current_subspectrum().toolbar = bar_1
 #
 #     # WHEN a new toolbar is added
-#     bar_2 = FirstOrderBar(controller=fake_controller)
+#     bar_2 = FirstOrderBar(callback=fake_callback)
 #     bar_2.reset(vars_2)
 #     history.change_toolbar(bar_2)
 #
@@ -323,7 +326,7 @@ def test_change_toolbar():
     """
     # Given a history instance and a toolbar instance
     history = History()
-    toolbar = FirstOrderBar(controller=fake_controller)
+    toolbar = FirstOrderBar(callback=fake_callback)
 
     # WHEN given a toolbar and told to change to it
     history.change_toolbar(toolbar)
@@ -331,15 +334,16 @@ def test_change_toolbar():
     # THEN history._toolbar now points to that _toolbar
     assert history._toolbar is toolbar
 
+
 # def test_change_toolbar_to_second_order_bar():
 #     """Test to see if change_toolbar works with SecondOrderBar."""
 #     # GIVEN an initialized history with default first-order toolbar
 #     history = History()
-#     bar_1 = FirstOrderBar(controller=fake_controller)
+#     bar_1 = FirstOrderBar(callback=fake_callback)
 #     history.current_subspectrum().toolbar = bar_1
 #
 #     # WHEN a SecondOrderBar is added
-#     bar_2 = SecondOrderBar(controller=fake_controller)
+#     bar_2 = SecondOrderBar(callback=fake_callback)
 #     history.change_toolbar(bar_2)
 #
 #     # THEN the current_toolbar is updated
@@ -353,7 +357,7 @@ def test_delete(ss1, ss2):
     history._subspectra."""
     # GIVEN a history instance with two complete subspectra objects and
     # pointing to the first subspectrum
-    toolbar = FirstOrderBar(controller=fake_controller)
+    toolbar = FirstOrderBar(callback=fake_callback)
     history = History()
     history._toolbar = toolbar
     history._subspectra[history.current] = ss1
@@ -393,8 +397,10 @@ def test_delete_updates_total(ss1, ss2, x1, x2, y1, y2, y_total):
     assert np.allclose(history.total_y, y1)
 
 
-def test_delete_inactive_does_not_change_total(ss1, ss2, x1, x2, y1, y2,
-                                                y_total):
+def test_delete_inactive_does_not_change_total(ss1, ss2, x1, x2, y1, y2):
+    """Test that deleting an inactive subspectrum does not change
+    history.total_y.
+    """
     # GIVEN a history instance with two subspectra objects (the first active,
     # the second inactive) pointing to the second subspectrum, and with
     # .total_y only equal to the first subspectrum's y
@@ -435,7 +441,7 @@ def test_delete_last_subspectrum(ss1, ss2):
     """
     # GIVEN a history instance with two complete subspectra objects and
     # pointing to the second subspectrum
-    toolbar = FirstOrderBar(controller=fake_controller)
+    toolbar = FirstOrderBar(callback=fake_callback)
     history = History()
     history._toolbar = toolbar
     history._subspectra[history.current] = ss1
@@ -457,7 +463,7 @@ def test_save(vars_default):
     """
     # GIVEN a history with a toolbar reference and a blank subspectrum
     history = History()
-    history._toolbar = FirstOrderBar(controller=fake_controller)
+    history._toolbar = FirstOrderBar(callback=fake_callback)
 
     # WHEN told to save state
     history.save()
@@ -494,7 +500,7 @@ def test_restore(ss1):
     # GIVEN a history instance with a toolbar attribute,
     # and with a subspectrum containing a toolbar attribute
     history = History()
-    history._toolbar = FirstOrderBar(controller=fake_controller)
+    history._toolbar = FirstOrderBar(callback=fake_callback)
     history._subspectra[0] = ss1
     assert ss1.toolbar is not history._toolbar
     assert isinstance(ss1.toolbar, FirstOrderBar)
@@ -572,7 +578,7 @@ def test_back_restores_toolbar_state(ss1, vars_1, ss2):
     """Test that the previous subspectrum is restored."""
     # GIVEN a history instance with two complete subspectra objects and
     # pointing to the more recent subspectrum
-    toolbar = FirstOrderBar(controller=fake_controller)
+    toolbar = FirstOrderBar(callback=fake_callback)
     history = History()
     history._toolbar = toolbar
     history._subspectra[history.current] = ss1
@@ -596,7 +602,7 @@ def test_back_saves_toolbar_first(ss1, ss2, vars_2, vars_default):
     """
     # GIVEN a history instance with two complete subspectra objects and
     # pointing to the more recent subspectrum
-    toolbar = FirstOrderBar(controller=fake_controller)
+    toolbar = FirstOrderBar(callback=fake_callback)
     history = History()
     history._toolbar = toolbar
     history._subspectra[history.current] = ss1
@@ -620,7 +626,7 @@ def test_back_updates_history_toolbar(ss1, ss2):
     reference is updated."""
     # GIVEN a history instance with two complete subspectra objects and
     # pointing to the more recent subspectrum
-    toolbar = FirstOrderBar(controller=fake_controller)
+    toolbar = FirstOrderBar(callback=fake_callback)
     history = History()
     history._toolbar = toolbar
     history._subspectra[history.current] = ss1
@@ -695,7 +701,7 @@ def test_forward_updates_history_toolbar(ss1, ss2):
     reference is updated."""
     # GIVEN a history instance with two complete subspectra objects and
     # pointing to the first subspectrum
-    toolbar = FirstOrderBar(controller=fake_controller)
+    toolbar = FirstOrderBar(callback=fake_callback)
     history = History()
     history._toolbar = toolbar
     history._subspectra[history.current] = ss1
@@ -847,6 +853,7 @@ def test_update_vars(vars_1):
     assert history.current_subspectrum().model == 'first_order'
     assert history.current_subspectrum().vars == vars_1
 
+
 def test_update_all_spectra(ss1, ss2, ss3, x1, x2, y1, y2, y3, y_total):
     """Test that subspectra and total spectrum are correctly replaced."""
     # GIVEN a history object with three subspectra, the second of which is
@@ -855,7 +862,7 @@ def test_update_all_spectra(ss1, ss2, ss3, x1, x2, y1, y2, y3, y_total):
     ss1.active = True
     ss2.active = True
     history._subspectra = [ss1, ss3, ss2]
-    history._toolbar = FirstOrderBar(controller=fake_controller)
+    history._toolbar = FirstOrderBar(callback=fake_callback)
 
     # WHEN told to update all spectra using a blank spectrum and a list of
     # lineshape data
@@ -867,7 +874,3 @@ def test_update_all_spectra(ss1, ss2, ss3, x1, x2, y1, y2, y3, y_total):
     new_lineshapes = [(ss1.x, ss1.y), (ss3.x, ss3.y), (ss2.x, ss2.y)]
     assert np.allclose(lineshapes, new_lineshapes)
     assert np.allclose(history.total_y, y_total)
-
-
-
-

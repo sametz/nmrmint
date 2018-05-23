@@ -14,7 +14,7 @@ def dummy_frame():
 
 
 def dummy_controller(*args):
-    """For mocking out Toolbar controller calls."""
+    """For mocking out Toolbar callback calls."""
     print('Controller was passed: ', *args)
     pass
 
@@ -36,7 +36,7 @@ def default_nspin_vars():
 def testbar(dummy_frame):
     """A default 2-spin SecondOrderBar to be tested."""
     return SecondOrderBar(dummy_frame,
-                          controller=dummy_controller,
+                          callback=dummy_controller,
                           n=2)
 
 
@@ -49,7 +49,7 @@ class TestSecondOrderBar:
         """
         # GIVEN a default 2-spin SecondOrderBar
         # testbar = SecondOrderBar(dummy_frame,
-        #                          controller=dummy_controller,
+        #                          callback=dummy_controller,
         #                          n=2)
 
         # THEN it is instantiated with the expected .vars

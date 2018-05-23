@@ -12,7 +12,7 @@ been committed.
 an Entry widget.
 
 * VarBox: Similar to BaseEntryFrame, but is not provided a data structure or
-controller callback in its arguments. Instead, it assumes the parent has the
+callback callback in its arguments. Instead, it assumes the parent has the
 necessary attribute and method. TODO: refactor this out of the first-order
 toolbars and use ArrayBox instead.
 
@@ -39,7 +39,7 @@ right_arrow = u"\u21e8"
 
 class BaseEntryFrame(Frame):
     """A tkinter Frame that holds a labeled entry widget, takes a function
-    ('controller') as an argument, and calls that function when a change is
+    ('callback') as an argument, and calls that function when a change is
     committed to the Entry's value.
 
     BaseEntryFrame is intended as a new base class that will be inherited from.
@@ -73,7 +73,7 @@ class BaseEntryFrame(Frame):
     """
 
     def __init__(self, parent=None, name='', color='white',
-                 controller=None,
+                 callback=None,
                  **options):
         """
         __init__ is broken into multiple method references, to allow
@@ -84,7 +84,7 @@ class BaseEntryFrame(Frame):
         :param name: (str) Optional name. Used as Label text as well as
         widget identification.
         :param color: (str) Default color for widget and contents.
-        :param controller: function to be called when change in Entry contents
+        :param callback: function to be called when change in Entry contents
         committed.
         :param options: (dict) Standard kwargs for a tkinter Frame
         """
@@ -92,7 +92,7 @@ class BaseEntryFrame(Frame):
                        background=color, **options)
         self.name = name
         self.color = color
-        self.controller = controller
+        self.callback = callback
 
         # How the initial value for the widget depends on subclass, so:
         # Uncomment the code below to test BaseEntryFrame
@@ -161,7 +161,7 @@ class BaseEntryFrame(Frame):
         #     print('W debug')
         if self.entry_is_changed():
             self.save_entry()
-            self.controller()
+            self.callback()
 
     def entry_is_changed(self):
         """Check if the current Entry value differs from the last saved
@@ -177,7 +177,7 @@ class BaseEntryFrame(Frame):
         """Saves widget's entry as self.stored_value , filling the entry with
         0.00 if it was empty.
         Subclasses should overwrite save_entry to suit needs of their data
-        type and call to controller
+        type and call to callback
         """
         if not self.value_var.get():  # if entry left blank,
             self.value_var.set(0.00)  # fill it with zero
@@ -329,7 +329,7 @@ class ArraySpinBox(ArrayBox):
         from_, to, increment: SpinBox arguments (minimum and maximum values,
         and incremental change on each arrow click)
 
-        realtime: True if data/controller should be refreshed as the SpinBox
+        realtime: True if data/callback should be refreshed as the SpinBox
         arrow button is held down.
     """
     def __init__(self, parent=None, from_=0.00, to=100.00, increment=1,
@@ -342,7 +342,7 @@ class ArraySpinBox(ArrayBox):
         :param to: (float) Maximum value for the SpinBox entry.
         :param increment: (float) size of increment/decrement to SpinBox
         entry when a SpinBox arrow is clicked.
-        :param realtime: (boolean) True if data/controller should be refreshed
+        :param realtime: (boolean) True if data/callback should be refreshed
         as the SpinBox arrow button is held down."""
         self.realtime = realtime
         self.spinbox_kwargs = {'from_': from_,
@@ -583,12 +583,12 @@ class VarButtonBox(VarBox):
             current_float = float(self.value_var.get())
             new_float = current_float + increment
             self.value_var.set(str(new_float))
-            self.on_tab()  # store value, call controller
+            self.on_tab()  # store value, call callback
 
             # Delay was originally set to 10, but after MVC refactor this
             #  caused an infinite loop (apparently a race condition where
             #  stop action never fired. Testing with the two singlet DNMR
-            #  controller: still loops at 30 ms; 40 works but uneven; 50 works
+            #  callback: still loops at 30 ms; 40 works but uneven; 50 works
             #  fine.
             # May want to refactor how up/down arrows work
             self.after(50, lambda: self.change_value(increment))
@@ -738,7 +738,7 @@ if __name__ == '__main__':
             print('plot requested')
 
     def dummy_controller():
-        print('controller called')
+        print('callback called')
 
     dummy_array = np.array([[1, 42, 99]])
     dummy_dict = {'VarBox example': 11.00,

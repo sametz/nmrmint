@@ -1,88 +1,65 @@
 """Custom tkinter frames that hold multiple widgets plus capabilities to
-store data and send it to a controller.
+store data and send it to a callback.
 
 Provides the following classes:
-* ToolBar: A base class for creating toolbars, intended to be subclassed and
+* _ToolBar: A base class for creating toolbars, intended to be subclassed and
 extended.
 
-* AB_Bar, AB2_Bar, ABX_Bar, ABX3_Bar, AAXX_Bar, AABB_Bar: hold numerical inputs
-required for simulating AB, AB2, ABX, ABX3, AA'XX', and AA'BB' spin systems.
-
-* FirstOrder_Bar: holds numerical inputs required for first-order simulation
+* FirstOrderBar: holds numerical inputs required for first-order simulation
 
 * SecondOrderBar: holds numerical inputs, plus a button with a pop-up 2D
 array for entering chemical shifts and J coupling constants, for second-order
 simulations of up to 8 coupled spins.
 
-* DNMR_TwoSingletBar: holds "custom SpinBox" numerical inputs for the
-simulation of a DNMR lineshape for two uncoupled spins.
-
-* DNMR_AB: holds "custom spinbox" numerical inputs for the simulation of a
-DNMR lineshape for two coupled spins (AB quartet at the slow exchange limit).
-
-TODO:
-* Many of these classes for 'Multiplet' non-QM calculations can be reduced to
-a single class, with the exact widget layouts specified by a dict argument.
-* DNMR bar code can be simplified
+*SecondOrderSpinBar: Subclass of SecondOrderBar that uses spinbox widgets.
 """
 
 import copy
-
 from tkinter import *
 
 import numpy as np
 
-from nmrmint.GUI.widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox,
-                                 VarButtonBox)
+from nmrmint.GUI.widgets import (ArrayBox, ArraySpinBox, VarBox, IntBox)
 from nmrmint.initialize import nspin_defaults
 
 
-class ToolBar(Frame):
-    """Extend tkinter.Frame with a controller reference, a model
-    name, and a function to call the controller.
+class _ToolBar(Frame):
+    """Extend tkinter.Frame with a callback reference, a model
+    name, a _vars property, a reset button, and methods for the reset callback.
 
     Intended to be subclassed, and not instantiated itself.
 
     methods:
-        request_plot: sends model type and data to the controller. Assumes
-        controller has an update_current_plot function.
-        add_spectra: adds the spectrum the ToolBar is currently modeling to
-        the total spectrum.
 
     Attributes:
         controller: the Controller object of the Model-View-Controller
         architecture.
         model (str): the type of calculation requested (interpreted by the
-        controller). To be overwritten by subclass.
-        vars (dict): holds the kwargs that the controller is called with.
+        callback). To be overwritten by subclass.
+        vars (dict): holds the kwargs that the callback is called with.
         Intent is that child widgets will store and update their data to this
         dict. Intended to be overwritten by subclass.
     """
 
-    def __init__(self, parent=None, controller=None, **options):
-        """Initialize the ToolBar object with a reference to a controller.
+    def __init__(self, parent=None, callback=None, **options):
+        """Initialize the _ToolBar object with a reference to a callback.
 
         Keyword arguments:
         :param parent: the parent tkinter object
-        :param controller: the Controller object of the MVC application
+        :param callback: the Controller object of the MVC application
         :param options: standard optional kwargs for a tkinter Frame
         """
         Frame.__init__(self, parent, **options)
-        self.controller = controller
+        self.callback = callback
         self.model = 'model'  # must be overwritten by subclasses
         self.defaults = {}  # overwrite for subclasses
         self._vars = {}
-        # self.add_spectra_button = Button(self,
-        #                                  name='addbutton',
-        #                                  text='Add To Total',
-        #                                  command=lambda: self.add_spectra())
-        # self.add_spectra_button.pack(side=RIGHT)
-        # for testing:
+
         self.reset_button = Button(self,
                                    name='reset_button',
                                    text='Reset',
                                    command=lambda:
-                                   self.restore_defaults_and_refresh())
+                                   self._restore_defaults_and_refresh())
         self.reset_button.pack(side=RIGHT)
 
     @property
@@ -97,22 +74,9 @@ class ToolBar(Frame):
     def vars(self):
         return self._vars
 
-    # def request_plot(self):
-    #     """Send request to controller to recalculate and refresh the view's
-    #     plot.
-    #     """
-    #     # self.controller.update_current_plot(self.model, **self.vars)
-    #     self.controller(self.model, **self.vars)
-
-    # def add_spectra(self):
-    #     """Send request to controller to add the current spectrum to the
-    #     total spectrum.
-    #     """
-    #     self.master.master.request_add_plot(self.model, **self.vars)
-
-    def restore_defaults_and_refresh(self):
+    def _restore_defaults_and_refresh(self):
         self.restore_defaults()
-        self.controller()
+        self.callback()
 
     def restore_defaults(self):
         self.reset(self.defaults)
@@ -121,13 +85,13 @@ class ToolBar(Frame):
         pass
 
 
-class FirstOrderBar(ToolBar):
-    """A subclass of ToolBar designed for use with first-order (single-signal)
+class FirstOrderBar(_ToolBar):
+    """A subclass of _ToolBar designed for use with first-order (single-signal)
     simulations.
 
-    Extends ToolBar with the following methods:
+    Extends _ToolBar with the following methods:
         make_kwargs: converts toolbar data to appropriate kwargs for calling
-        the controller. Includes conversion from ppm to Hz.
+        the callback. Includes conversion from ppm to Hz.
 
     Overrides the following methods, to make use of make_kwargs:
         request_plot
@@ -135,10 +99,10 @@ class FirstOrderBar(ToolBar):
     """
 
     def __init__(self, parent=None, **options):
-        """Instantiate the ToolBar with appropriate widgets for first-order
+        """Instantiate the _ToolBar with appropriate widgets for first-order
         calculations.
         """
-        ToolBar.__init__(self, parent, **options)
+        _ToolBar.__init__(self, parent, **options)
         self.model = 'first_order'
         self.defaults = {'JAX': 7.00,
                          '#A': 2,
@@ -154,7 +118,7 @@ class FirstOrderBar(ToolBar):
         self._vars = self.defaults.copy()
         self.fields = {}
         kwargs = {'dict_': self.vars,
-                  'controller': self.controller}
+                  'callback': self.callback}
         for key in ['# of nuclei', 'JAX', '#A', 'JBX', '#B', 'JCX', '#C',
                     'JDX', '#D', 'Vcentr', 'width']:
             if '#' not in key:
@@ -178,7 +142,7 @@ class FirstOrderBar(ToolBar):
         #     widget.set_value(val)
 
 
-class SecondOrderBar(ToolBar):
+class SecondOrderBar(_ToolBar):
     """
     Extends Frame to hold n frequency entry boxes, an entry box for peak
     width (default 0.5 Hz), a 2-D numpy array for frequencies (see below),
@@ -200,16 +164,16 @@ class SecondOrderBar(ToolBar):
         frequencies.
         * update_v: converts the current ppm values (v_ppm) to Hz and
         overwrites v with them (provides interface between the ppm-using
-        toolbar and the Hz-using controller/model)
-        * request_plot: sends model type and data to the controller
-        * add_spectra: adds the spectrum the ToolBar is currently modeling to
+        toolbar and the Hz-using callback/model)
+        * request_plot: sends model type and data to the callback
+        * add_spectra: adds the spectrum the _ToolBar is currently modeling to
         the total spectrum.
 
     Attributes:
         * controller: the Controller object of the Model-View-Controller
-        architecture. Assumes controller has an update_current_plot method.
+        architecture. Assumes callback has an update_current_plot method.
         model (str): the type of calculation requested (interpreted by the
-        controller).
+        callback).
         * v (numpy 2D array): the frequency list (located in v[0, :]
         * j (numpy 2D array): the symmetric matrix of J coupling constants
         (j[m, n] = j[n, m] = coupling between nuclei m and n)
@@ -218,12 +182,12 @@ class SecondOrderBar(ToolBar):
         * v_ppm: The conversion of v (in Hz) to ppm.
     """
 
-    def __init__(self, parent=None, controller=None, n=4, **options):
+    def __init__(self, parent=None, callback=None, n=4, **options):
         """Initialize the frame with necessary widgets and attributes.
 
         Keyword arguments:
         :param parent: the parent tkinter object
-        :param controller: the Controller object of the MVC application
+        :param callback: the Controller object of the MVC application
         :param n: the number of nuclei in the spin system
         :param options: standard optional kwargs for a tkinter Frame
         """
@@ -232,7 +196,7 @@ class SecondOrderBar(ToolBar):
         # at 0. This is first detected when a second-order subspectrum is
         # reloaded.
         # Need to be clear about what the "official record" for subspectra
-        # saves and controller calls should be--vars with v in ppm. v in Hz
+        # saves and callback calls should be--vars with v in ppm. v in Hz
         # should really just be an artefact carried over from previous uses.
         # Once default vars are translated into v_ppm, v in Hz should no
         # longer be needed by toolbar.
@@ -241,8 +205,8 @@ class SecondOrderBar(ToolBar):
         # toolbars and held in Subspectrum. For now, concentrate on fixing
         # data corruption issue.
 
-        ToolBar.__init__(self, parent, **options)
-        self.controller = controller
+        _ToolBar.__init__(self, parent, **options)
+        self.callback = callback
         self.model = 'nspin'
         # self.v, self.j = nspin_defaults(n)
         self.v_ppm, self.j = nspin_defaults(n)
@@ -264,10 +228,11 @@ class SecondOrderBar(ToolBar):
         self.add_peakwidth_widget()
         self.add_J_button(n)
         # self.add_addspectra_button()
-        self.reset_button = Button(self,
-                                   name='reset_button',
-                                   text='Reset',
-                                   command=lambda: self.restore_defaults_and_refresh())
+        self.reset_button = Button(
+            self,
+            name='reset_button',
+            text='Reset',
+            command=lambda: self._restore_defaults_and_refresh())
         self.reset_button.pack(side=RIGHT)
 
     @property
@@ -300,14 +265,14 @@ class SecondOrderBar(ToolBar):
             # print('add_frequency_units working with name ', name)
             vbox = ArrayBox(self, array=self.v_ppm, coord=(0, freq),
                             name=name,
-                            controller=self.controller)
+                            callback=self.callback)
             self.fields[name] = vbox
             vbox.pack(side=LEFT)
 
     def add_peakwidth_widget(self):
         """Add peak width-entry widget to the toolbar."""
         wbox = ArrayBox(self, array=self.w_array, coord=(0, 0), name="W",
-                        controller=self.controller)
+                        callback=self.callback)
         self.fields['W'] = wbox
         wbox.pack(side=LEFT)
 
@@ -355,7 +320,7 @@ class SecondOrderBar(ToolBar):
             v = ArrayBox(datagrid, array=self.v_ppm,
                          coord=(0, row - 1),  # V1 stored in v[0, 0], etc.
                          name=vtext, color='gray90',
-                         controller=self.controller)
+                         callback=self.callback)
             v.grid(row=row, column=0, sticky=NSEW, padx=1, pady=1)
             for col in range(1, n + 1):
                 if col < row:
@@ -363,7 +328,7 @@ class SecondOrderBar(ToolBar):
                                  # J12 stored in j[0, 1] (and j[1, 0]) etc
                                  coord=(col - 1, row - 1),
                                  name="J%d%d" % (col, row),
-                                 controller=self.controller)
+                                 callback=self.callback)
                     j.grid(row=row, column=col, sticky=NSEW, padx=1, pady=1)
                 else:
                     Label(datagrid, bg='grey').grid(
@@ -403,8 +368,8 @@ class SecondOrderBar(ToolBar):
         # print('W was set to: ', width_widget.array)
         print('W field was set to: ', width_widget.get_value())
 
-        # self.controller('nspin', self.vars)
-        self.controller()
+        # self.callback('nspin', self.vars)
+        self.callback()
 
 
 # TODO: most recent changes have used SecondOrderBar. If SecondOrderSpinBar
@@ -428,7 +393,7 @@ class SecondOrderSpinBar(SecondOrderBar):
         :param to: (float) the maximum value for the spinboxes
         :param increment: (float) the amount to increment/decrement the SpinBox
         contents per arrow click.
-        :param realtime: (bool) True if controller should be repeatedly called
+        :param realtime: (bool) True if callback should be repeatedly called
         as a SpinBox arrow is being held down.
         """
         self.spinbox_kwargs = {'from_': from_,
@@ -441,7 +406,7 @@ class SecondOrderSpinBar(SecondOrderBar):
         for freq in range(n):
             vbox = ArraySpinBox(self, array=self.v_ppm, coord=(0, freq),
                                 name='V' + str(freq + 1),
-                                controller=self.request_plot,
+                                callback=self.request_plot,
                                 **self.spinbox_kwargs)
             vbox.pack(side=LEFT)
 
@@ -452,16 +417,13 @@ class SecondOrderSpinBar(SecondOrderBar):
         """
         wbox = ArraySpinBox(self, array=self.w_array, coord=(0, 0),
                             name="W",
-                            controller=self.request_plot,
+                            callback=self.request_plot,
                             from_=0.01, to=100, increment=0.1,
                             realtime=self.spinbox_kwargs['realtime'])
         wbox.pack(side=LEFT)
 
 
 if __name__ == '__main__':
-
-    from nmrmint.windnmr_defaults import multiplet_bar_defaults
-
 
     class DummyController:
         @staticmethod
@@ -477,7 +439,7 @@ if __name__ == '__main__':
 
     toolbars = [FirstOrderBar, SecondOrderBar, SecondOrderSpinBar]
     for toolbar in toolbars:
-        toolbar(root, controller=dummy_controller).pack(side=TOP)
+        toolbar(root, callback=dummy_controller).pack(side=TOP)
 
     # workaround fix for Tk problems and mac mouse/trackpad:
     while True:

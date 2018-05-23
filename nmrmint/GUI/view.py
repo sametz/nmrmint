@@ -86,14 +86,14 @@ class View(Frame):
     def _initialize_first_order_bar(self):
         """Instantiate the toolbar for first-order model."""
         bar_kwargs = {'parent': self._top_frame,
-                      'controller': self.update_current_plot}
+                      'callback': self.update_current_plot}
         self._first_order_bar = FirstOrderBar(**bar_kwargs)
 
     def _initialize_spinbars(self):
         """Instantiate all of the toolbars used for the 'nspin' second-order
         calculations, and store references to them.
         """
-        kwargs = {'controller': self.update_current_plot,
+        kwargs = {'callback': self.update_current_plot,
                   'realtime': True}
         spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self._spinbars = [SecondOrderSpinBar(self._top_frame, n=spins, **kwargs)
@@ -103,7 +103,7 @@ class View(Frame):
         """Instantiate all of the toolbars used for the 'nspin' second-order
         calculations, and store references to them.
         """
-        kwargs = {'controller': self.update_current_plot}
+        kwargs = {'callback': self.update_current_plot}
         spin_range = range(2, 9)  # hardcoded for only 2-8 spins
         self._spinbars = [SecondOrderBar(self._top_frame, n=spins, **kwargs)
                           for spins in spin_range]
@@ -163,7 +163,7 @@ class View(Frame):
             parent=self._calc_type_frame,
             name='Number of nuclei:',
             value=self._nuclei_number,
-            controller=self._set_nuc_number)
+            callback=self._set_nuc_number)
         self._nuc_number_frame.pack(side=TOP)
         for child in self._nuc_number_frame.winfo_children():
             child.configure(state='disable')
@@ -193,7 +193,7 @@ class View(Frame):
         self._spec_freq_widget = SimpleVariableBox(
             self._specfreq_frame,
             name='Spectrometer Frequency',
-            controller=self._set_spec_freq,
+            callback=self._set_spec_freq,
             value=self.spectrometer_frequency,
             min_=1, )
         self._spec_freq_widget.pack(side=TOP)
@@ -222,12 +222,12 @@ class View(Frame):
             parent=self._specfreq_frame,
             name='v min',
             value=self._v_min,
-            controller=self._set_v_min)
+            callback=self._set_v_min)
         self._v_max_frame = HorizontalEntryFrame(
             parent=self._specfreq_frame,
             name='v max',
             value=self._v_max,
-            controller=self._set_v_max)
+            callback=self._set_v_max)
         self._v_min_frame.pack(side=TOP)
         self._v_max_frame.pack(side=TOP)
 
@@ -308,12 +308,12 @@ class View(Frame):
             parent=self._side_frame,
             name='Plot Width (inches)',
             value=self._plot_width,
-            controller=self._set_plot_width)
+            callback=self._set_plot_width)
         self._plot_height_entry = HorizontalEntryFrame(
             parent=self._side_frame,
             name='Plot Height(inches)',
             value=self._plot_height,
-            controller=self._set_plot_height)
+            callback=self._set_plot_height)
         self._plot_width_entry.pack(side=TOP)
         self._plot_height_entry.pack(side=TOP)
 

@@ -26,7 +26,7 @@ def dummy_toolbar():
 def base_entry(dummy_toolbar):
     base_entry = BaseEntryFrame(parent=dummy_toolbar,
                                 name='base_entry',
-                                controller=dummy_controller)
+                                callback=dummy_controller)
     # The base class has no initial_value itself (supplied by subclasses), so:
     base_entry.initial_value = 0.00
     return base_entry
@@ -46,7 +46,7 @@ def array_entry_1d(dummy_toolbar):
     chemical_shifts = np.array([[1.0, 2.0]])
     widget = ArrayBox(parent=dummy_toolbar,
                       name='base_entry',
-                      controller=dummy_controller,
+                      callback=dummy_controller,
                       array=chemical_shifts,
                       coord=(0, 1)  # set to second entry (2.0)
                       )
@@ -60,7 +60,7 @@ def array_entry_1d(dummy_toolbar):
 
 
 def dummy_controller(*args):
-    """For mocking out Toolbar controller calls."""
+    """For mocking out Toolbar callback calls."""
     print('Controller was passed: ', *args)
     pass
 
@@ -82,7 +82,7 @@ def dummy_controller(*args):
 # def testbar(dummy_frame):
 #     """A default 2-spin SecondOrderBar to be tested."""
 #     return SecondOrderBar(dummy_frame,
-#                           controller=dummy_controller,
+#                           callback=dummy_controller,
 #                           n=2)
 
 
