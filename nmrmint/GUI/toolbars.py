@@ -68,6 +68,7 @@ class _ToolBar(Frame):
 
     @vars.setter
     def vars(self, value):
+        print('base vars given: ', value)
         self._vars = value
 
     @vars.getter
@@ -79,7 +80,8 @@ class _ToolBar(Frame):
         self.callback()
 
     def restore_defaults(self):
-        self.reset(self.defaults)
+        # deepcopy to prevent corruption of defaults by reset
+        self.reset(copy.deepcopy(self.defaults))
 
     def reset(self, _vars):
         pass
