@@ -1,6 +1,6 @@
 """Test the core functions of classes in widgets.py.
 
-Note: for BaseEntryFrame to be tested, uncomment the code in its init to let
+Note: for _BaseEntryFrame to be tested, uncomment the code in its init to let
 it set its .initial_value.
 """
 
@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 # from nmrmint.GUI.toolbars import SecondOrderBar
-from nmrmint.GUI.widgets import BaseEntryFrame, ArrayBox
+from nmrmint.GUI.widgets import _BaseEntryFrame, ArrayBox
 
 
 # from nmrmint.initialize import getWINDNMRdefault
@@ -24,9 +24,9 @@ def dummy_toolbar():
 
 @pytest.fixture()
 def base_entry(dummy_toolbar):
-    base_entry = BaseEntryFrame(parent=dummy_toolbar,
-                                name='base_entry',
-                                callback=dummy_controller)
+    base_entry = _BaseEntryFrame(parent=dummy_toolbar,
+                                 name='base_entry',
+                                 callback=dummy_controller)
     # The base class has no initial_value itself (supplied by subclasses), so:
     base_entry.initial_value = 0.00
     return base_entry
@@ -60,7 +60,7 @@ def array_entry_1d(dummy_toolbar):
 
 
 def dummy_controller(*args):
-    """For mocking out Toolbar callback calls."""
+    """For mocking out Toolbar _callback calls."""
     print('Controller was passed: ', *args)
     pass
 
@@ -89,17 +89,17 @@ def dummy_controller(*args):
 class TestBaseEntryFrame:
     def test_widget_instantiates(self, base_entry):
         """Test that TestBaseEntryFrame instantiates."""
-        # GIVEN a BaseEntryFrame widget supplied by the fixture
+        # GIVEN a _BaseEntryFrame widget supplied by the fixture
         # THEN it should be instantiated with these defaults
         assert base_entry.initial_value == 0.00
         assert base_entry.current_value == 0.00
         assert type(base_entry.initial_value) is float
         assert type(base_entry.current_value) is float
-        assert base_entry.name == 'base_entry'
+        assert base_entry._name == 'base_entry'
 
     def test_base_entry_get_value(self, base_entry):
         """Test that .get_value() returns the expected value."""
-        # GIVEN a BaseEntryFrame widget
+        # GIVEN a _BaseEntryFrame widget
         # WHEN it is asked for its current value
         returned_value = base_entry.get_value()
 
@@ -109,7 +109,7 @@ class TestBaseEntryFrame:
 
     def test_base_entry_set_value(self, base_entry):
         """Test that .set_value() updates the widget properly."""
-        # GIVEN a BaseEntryFrame widget and a new value
+        # GIVEN a _BaseEntryFrame widget and a new value
         new_value = 1.0
         assert new_value != float(base_entry.get_value())
 
@@ -155,8 +155,8 @@ class TestArrayBox:
         widget.value_var.set(val)
         assert widget.array[0, 1] != val
 
-        # THEN .refresh() will make expected changes
-        widget.refresh()
+        # THEN ._refresh() will make expected changes
+        widget._refresh()
         assert widget.array[0, 1] == val
         assert widget.current_value == val
 

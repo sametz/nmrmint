@@ -136,7 +136,7 @@ class History:
         self.current_subspectrum().vars = copy.deepcopy(vars_)
 
     #########################################################################
-    # Methods below provide the interface to the controller
+    # Methods below provide the public API
     #########################################################################
 
     def current_subspectrum(self):
