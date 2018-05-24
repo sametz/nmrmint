@@ -85,3 +85,5 @@ class TestSecondOrderBar:
         # THEN the toolbar.vars will be equal to the new_vars, but NOT the same
         np.testing.assert_equal(testbar.vars, new_vars)
         assert testbar.vars is not new_vars
+
+# TODO: add tests for SecondOrderSpinBar if you decide to use it

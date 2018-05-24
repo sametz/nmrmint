@@ -2,8 +2,8 @@
 store data and send it to a callback.
 
 Provides the following classes:
-    * _ToolBar: A base class for creating toolbars, intended to be subclassed and
-extended.
+    * _ToolBar: A base class for creating toolbars, intended to be subclassed
+and extended.
     * FirstOrderBar: holds numerical inputs required for first-order simulation
     * SecondOrderBar: holds numerical inputs, plus a button with a pop-up 2D
 array for entering chemical shifts and J coupling constants, for second-order
@@ -44,8 +44,8 @@ class _ToolBar(Frame):
 
         Keyword arguments:
         :param parent: the parent tkinter object
-        :param callback: the function to be called when a change to the toolbar's
-    widgets is detected
+        :param callback: the function to be called when a change to the
+        toolbar's widgets is detected
         :param options: standard optional kwargs for a tkinter Frame
         """
         Frame.__init__(self, parent, **options)
@@ -58,7 +58,7 @@ class _ToolBar(Frame):
                                     name='reset_button',
                                     text='Reset',
                                     command=lambda:
-                                   self._restore_defaults_and_refresh())
+                                    self._restore_defaults_and_refresh())
         self._reset_button.pack(side=RIGHT)
 
     @property
@@ -106,16 +106,16 @@ class FirstOrderBar(_ToolBar):
         _ToolBar.__init__(self, parent, **options)
         self.model = 'first_order'
         self._defaults = {'JAX': 7.00,
-                         '#A': 2,
-                         'JBX': 3.00,
-                         '#B': 1,
-                         'JCX': 2.00,
-                         '#C': 0,
-                         'JDX': 7,
-                         '#D': 0,
-                         'Vcentr': 0.5,
-                         '# of nuclei': 1,
-                         'width': 0.5}
+                          '#A': 2,
+                          'JBX': 3.00,
+                          '#B': 1,
+                          'JCX': 2.00,
+                          '#C': 0,
+                          'JDX': 7,
+                          '#D': 0,
+                          'Vcentr': 0.5,
+                          '# of nuclei': 1,
+                          'width': 0.5}
         self._vars = self._defaults.copy()
         self._fields = {}
         kwargs = {'dict_': self.vars,
@@ -307,10 +307,12 @@ class SecondOrderSpinBar(SecondOrderBar):
     toolbar.
 
     Overrides _add_frequency_widgets and _add_peakwidth_widget.
+
+    Extends SecondOrderBar with _spinbox_kwargs for spinbox instantiation.
     """
 
     def __init__(self, parent=None,
-                 from_=-10000.00, to=10000.00, increment=10, realtime=False,
+                 from_=-1.0, to=15.0, increment=0.01, realtime=False,
                  **options):
         """Initialize subclass of SecondOrderBar with extra arguments for the
         SpinBox minimum and maximum values, standard increment, and realtime
@@ -323,18 +325,22 @@ class SecondOrderSpinBar(SecondOrderBar):
         :param realtime: (bool) True if callback should be repeatedly called
         as a SpinBox arrow is being held down.
         """
-        self.spinbox_kwargs = {'from_': from_,
-                               'to': to,
-                               'increment': increment,
-                               'realtime': realtime}
+        self._spinbox_kwargs = {'from_': from_,
+                                'to': to,
+                                'increment': increment,
+                                'realtime': realtime}
         SecondOrderBar.__init__(self, parent, **options)
 
     def _add_frequency_widgets(self, n):
+        """Add frequency-entry widgets to the toolbar.
+
+        :param n: (int) The number of nuclei being simulated.
+        """
         for freq in range(n):
             vbox = ArraySpinBox(self, array=self._v_ppm, coord=(0, freq),
                                 name='V' + str(freq + 1),
-                                callback=self.request_plot,
-                                **self.spinbox_kwargs)
+                                callback=self.callback,
+                                **self._spinbox_kwargs)
             vbox.pack(side=LEFT)
 
     def _add_peakwidth_widget(self):
@@ -344,9 +350,9 @@ class SecondOrderSpinBar(SecondOrderBar):
         """
         wbox = ArraySpinBox(self, array=self._w_array, coord=(0, 0),
                             name="W",
-                            callback=self.request_plot,
+                            callback=self.callback,
                             from_=0.01, to=100, increment=0.1,
-                            realtime=self.spinbox_kwargs['realtime'])
+                            realtime=self._spinbox_kwargs['realtime'])
         wbox.pack(side=LEFT)
 
 
