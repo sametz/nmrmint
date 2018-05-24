@@ -48,7 +48,6 @@ if __name__ == '__main__':
     def button_callback(response):
         print(response)
 
-
     buttons = (
         ('A', lambda: button_callback('You picked A!')),
         ('B', lambda: button_callback('You picked B!')),

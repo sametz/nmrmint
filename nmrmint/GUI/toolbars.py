@@ -358,21 +358,16 @@ class SecondOrderSpinBar(SecondOrderBar):
 
 if __name__ == '__main__':
 
-    class DummyController:
-        @staticmethod
-        def update_view_plot(*args, **kwargs):
-            print(args)
-            print(kwargs)
-
-
-    dummy_controller = DummyController()
+    def dummy_callback(*args, **kwargs):
+        print(args)
+        print(kwargs)
 
     root = Tk()
     root.title('test toolbars')
 
     toolbars = [FirstOrderBar, SecondOrderBar, SecondOrderSpinBar]
     for toolbar in toolbars:
-        toolbar(root, callback=dummy_controller).pack(side=TOP)
+        toolbar(root, callback=dummy_callback).pack(side=TOP)
 
     # workaround fix for Tk problems and mac mouse/trackpad:
     while True:
