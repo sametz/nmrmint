@@ -1,0 +1,6 @@
+When adding a series of first and second-order subspectra and flipping back and
+forth, at some point a new subspectrum doesn't default to the default
+first-order or nspins toolbar settings, but to the state they were last in. e.g
+spectrum 1 changed to 1st order triplet; second spectrum an ABq at 1ppm and
+2ppm; add a 3rd spectrum; flip back and forth; go to add a new spectrum and
+first-order defaults to the triplet, second-order to the 1ppm/2ppm system.

@@ -186,7 +186,10 @@ def getWINDNMRdefault(n):
 
 
 def nspin_defaults(n):
-    """Convert getWINDNMRdefault to ppm, assuming 300 MHz spectrometer."""
+    """Convert getWINDNMRdefault to ppm, assuming 300 MHz spectrometer.
+
+    :return: np.array[[float...]], np.array[[float...]...]
+    """
     v, J = getWINDNMRdefault(n)
     v_ppm = v / 300
     return v_ppm, J

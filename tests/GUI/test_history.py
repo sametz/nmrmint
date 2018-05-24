@@ -223,8 +223,10 @@ def test_history_instantiates_with_inactive_subspectrum():
 def test_add_subspectrum():
     """Test that a new, different subspectrum is added to the
     history._subspectra list."""
+    # TODO need multiple tests
     # GIVEN a newly instantiated History object
     history = History()
+    history._toolbar = FirstOrderBar(callback=fake_callback)
 
     # WHEN a new subspectrum is added to it
     initial_counter = history.current

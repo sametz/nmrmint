@@ -71,11 +71,11 @@ def dummy_controller(*args):
 #     with.
 #     """
 #     v, j = getWINDNMRdefault(2)
-#     w_array = np.array([[0.5]])
-#     v_ppm = v / 300.0  # Using default spectrometer frequency of 300 MHz
-#     return {'v': v_ppm,
+#     _w_array = np.array([[0.5]])
+#     _v_ppm = v / 300.0  # Using default spectrometer frequency of 300 MHz
+#     return {'v': _v_ppm,
 #             'j': j,
-#             'w': w_array}
+#             'w': _w_array}
 #
 #
 # @pytest.fixture()

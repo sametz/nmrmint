@@ -390,9 +390,11 @@ class View(Frame):
 
         # Slightly hacky: here, we don't want the old toolbar to deactivate
         # regardless of its activate status. _calc_type_frame.click() will
-        # normally deactiate an active bar. Adding the new subspectrum first
+        # normally deactivate an active bar. Adding the new subspectrum first
         # will point the .click() to it, see it as default deactive, and not
         # take action.
+        # TODO: this may no longer be true. If so, restore_defaults() could
+        # be a part of history.add_subspectrum
         history.add_subspectrum()
 
         # Reset current toolbar to default settings before leaving it
