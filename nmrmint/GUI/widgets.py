@@ -29,6 +29,8 @@ identical to those in ArraySpinBox.
 minimum-value argument, instantiates the Entry with the initial value,
 and defaults to the custom minimum value when empty.
 """
+# TODO: keep implementing composition over inheritance for customizing widgets
+
 from tkinter import *
 
 up_arrow = u"\u21e7"
@@ -278,32 +280,7 @@ class ArrayBox(_BaseEntryFrame):
 
 
 class ArraySpinBox(ArrayBox):
-    """
-    A subclass of ArrayBox using a SpinBox instead of an Entry widget.
-
-    Methods:
-        add_spinbox: Adds a SpinBox widget to the ArraySpinBox frame.
-        on_press: Callback for <ButtonPress-1>
-        loop_refresh: Constantly update the view until cancelled
-        on_release: Callback for <ButtonRelease-1>
-
-    Methods overridden:
-        __init__
-        _add_entry
-        _bind_entry
-
-    Attributes:
-        realtime: (bool) Determines if view should be constantly updated
-        while the mouse button is held down (e.g. as an up/down widget arrow
-        is depressed)
-
-    Arguments (in addition to standard ArrayBox options):
-        from_, to, increment: SpinBox arguments (minimum and maximum values,
-        and incremental change on each arrow click)
-
-        realtime: True if data/callback should be refreshed as the SpinBox
-        arrow button is held down.
-    """
+    """A subclass of ArrayBox using a SpinBox instead of an Entry widget."""
 
     def __init__(self, parent=None, from_=0.00, to=100.00, increment=1,
                  realtime=False,
@@ -315,20 +292,22 @@ class ArraySpinBox(ArrayBox):
         :param to: (float) Maximum value for the SpinBox entry.
         :param increment: (float) size of increment/decrement to SpinBox
         entry when a SpinBox arrow is clicked.
-        :param realtime: (boolean) True if data/callback should be refreshed
-        as the SpinBox arrow button is held down."""
-        self.realtime = realtime
-        self.spinbox_kwargs = {'from_': from_,
-                               'to': to,
-                               'increment': increment}
+        :param realtime: (boolean) True if view should be constantly updated
+        while the mouse button is held down (e.g. as an up/down widget arrow
+        is depressed).
+        """
+        self._realtime = realtime
+        self._spinbox_kwargs = {'from_': from_,
+                                'to': to,
+                                'increment': increment}
         ArrayBox.__init__(self, parent, **options)
 
     def _add_entry(self):
         """Override ArrayEntry method to add a SpinBox widget rather than an
         Entry widget."""
-        self.add_spinbox(**self.spinbox_kwargs)
+        self._add_spinbox(**self._spinbox_kwargs)
 
-    def add_spinbox(self, **kwargs):
+    def _add_spinbox(self, **kwargs):
         """Add a SpinBox widget to the ArraySpinBox frame."""
         self._entry = Spinbox(self, width=7,
                               validate='key',  # check for number on keypress
@@ -345,25 +324,25 @@ class ArraySpinBox(ArrayBox):
         self._entry.bind('<FocusOut>', lambda event: self._refresh())
         self._entry.bind('<FocusIn>',
                          lambda event: self._entry.selection('range', 0, END))
-        self._entry.bind('<ButtonPress-1>', lambda event: self.on_press())
-        self._entry.bind('<ButtonRelease-1>', lambda event: self.on_release())
+        self._entry.bind('<ButtonPress-1>', lambda event: self._on_press())
+        self._entry.bind('<ButtonRelease-1>', lambda event: self._on_release())
 
-    def on_press(self):
+    def _on_press(self):
         """Trigger the 'update view' loop if 'realtime' behavior was
         specified."""
-        if self.realtime:
-            self.loop_refresh()
+        if self._realtime:
+            self._loop_refresh()
 
-    def loop_refresh(self):
-        """Refresh the view every 50 ms until cancelled by the on_release
+    def _loop_refresh(self):
+        """Refresh the view every 50 ms until cancelled by the _on_release
         method.
         """
         self._refresh()
-        self.button_held_job = self._root().after(50, self.loop_refresh)
+        self.button_held_job = self._root().after(50, self._loop_refresh)
 
-    def on_release(self):
-        """Cancel the loop_refresh loop if 'realtime' behavior was specified."""
-        if self.realtime:
+    def _on_release(self):
+        """Cancel _loop_refresh if 'realtime' behavior was specified."""
+        if self._realtime:
             self._root().after_cancel(self.button_held_job)
 
         # A 1-ms delay allows the StringVar to be updated prior to the
@@ -380,57 +359,33 @@ class VarBox(_BaseEntryFrame):
     Requirements:
         The dict must use the 'name' kwarg as the key, and have a val of the
         same type as the Entry widget.
-
-    Overrides:
-        _save_entry
-
-    Attributes:
-        dict: (dict) Reference to 'dict' kwarg
-        initial_value: the initial val of dict[name]
-    TODO:
-        * refactor code so that this class (which is largely redundant with
-        EntryBox and its subclasses) can be eliminated.
-        * review all code and learn appropriate use of private
-        methods to refactor.
     """
 
     def __init__(self, parent=None, name='', dict_=None, **options):
-        """Associate a name with the VarBox widget, and read the default
-        value for its Entry.
+        """Initialize, with the initial Entry value as dict_[name].
 
-        Keyword arguments:
-            parent: the parent tkinter object
-            name: used as text for the Label widget, plus used as a dict key
-            and as a name for identifying the widget.
-            default: The default value to initiate the Entry widget with
-            **options: the standard optional kwargs for a Frame object
+        :param parent: the parent tkinter object
+        :param name: used as text for the Label widget, plus used as a dict key
+        and as a name for identifying the widget.
+        :param **options: the standard optional kwargs for a Frame object
         """
-        self.dict = dict_
-        self._initial_value = self.dict[name]
+        self._dict = dict_
+        self._initial_value = self._dict[name]
         _BaseEntryFrame.__init__(self, parent, name, **options)
 
     def _save_entry(self):
         """Saves widget's entry in the parent's dict, filling the entry with
         0.00 if it was empty.
         """
-        if not self._value_var.get():  # if entry left blank,
-            self._value_var.set(0.00)  # fill it with zero
-        value = float(self._value_var.get())
-        self.current_value = value
-        # Add the widget's status to the container's dictionary
-        self.dict[self._name] = value
+        if not self._value_var.get():
+            self._value_var.set(0.00)
+        self.current_value = float(self._value_var.get())
+        self._dict[self._name] = self.current_value
 
 
 class IntBox(VarBox):
-    """Overrides VarBox so that the Entry is restricted to integers only.
+    """Subclass of VarBox where Entry is restricted to integers only."""
 
-    Method overwritten:
-        _is_valid
-    """
-
-    # Future refactor options: either create a base class for an input box
-    # that varies in its input restriction (float, int, str etc), and/or
-    # look into tkinter built-in entry boxes as component.
     def __init__(self, parent=None, **options):
         VarBox.__init__(self, parent, **options)
 
@@ -443,7 +398,7 @@ class IntBox(VarBox):
         value = int(self._value_var.get())
         self.current_value = value
         # Add the widget's status to the container's dictionary
-        self.dict[self._name] = value
+        self._dict[self._name] = value
 
     @staticmethod
     def _is_valid(entry):
