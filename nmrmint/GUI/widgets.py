@@ -73,9 +73,9 @@ class _BaseEntryFrame(Frame):
         # The initial value type for the widget depends on subclass, so:
         # Uncomment the code below to test _BaseEntryFrame
         try:
-            assert self.initial_value is not None
+            assert self._initial_value is not None
         except AttributeError:
-            self.initial_value = 0.00  # Should be overridden by subclass
+            self._initial_value = 0.00  # Should be overridden by subclass
 
         self._initialize()
         self._add_label()
@@ -92,9 +92,9 @@ class _BaseEntryFrame(Frame):
         accomodate
         however initial values are passed into them.
         """
-        self.value_var = StringVar()
-        self.current_value = self.initial_value
-        self.value_var.set(self.current_value)
+        self._value_var = StringVar()
+        self._current_value = self._initial_value
+        self._value_var.set(self._current_value)
 
     def _add_label(self):
         """Add self._name to a Label at the top of the frame."""
@@ -109,7 +109,7 @@ class _BaseEntryFrame(Frame):
         self.entry = Entry(self, width=7,
                            validate='key')  # check for number on keypress)
         self.entry.pack(side=TOP, fill=X)
-        self.entry.config(textvariable=self.value_var)
+        self.entry.config(textvariable=self._value_var)
 
     def _bind_entry(self):
         """Define behavior when the Entry widget loses focus.
@@ -144,8 +144,8 @@ class _BaseEntryFrame(Frame):
 
         :return: True if changed, False if not.
         """
-        get_value = self.value_var.get()  # for debugging
-        return self.current_value != float(get_value)
+        get_value = self._value_var.get()  # for debugging
+        return self._current_value != float(get_value)
 
     def _save_entry(self):
         """Saves widget's entry as self.stored_value , filling the entry with
@@ -153,10 +153,10 @@ class _BaseEntryFrame(Frame):
         Subclasses should overwrite _save_entry to suit needs of their data
         type and call to _callback.
         """
-        if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(0.00)  # fill it with zero
-        value = float(self.value_var.get())
-        self.current_value = value
+        if not self._value_var.get():  # if entry left blank,
+            self._value_var.set(0.00)  # fill it with zero
+        value = float(self._value_var.get())
+        self._current_value = value
 
     def _find_next_entry(self, current_widget):
         """Return the next Entry-like widget in tkinter's widget traversal.
@@ -211,19 +211,19 @@ class _BaseEntryFrame(Frame):
         e.g. if set with 0.00, becomes '0.0'.
         :return: (str)
         """
-        return self.value_var.get()
+        return self._value_var.get()
 
     def set_value(self, val):
         """Sets the contents of the Entry widget to val, and updates
         self.current_val.
         """
-        self.value_var.set(val)
+        self._value_var.set(val)
 
         # Tentatively, the fix to issues with toolbars detecting refreshes when
         # subspectra are reloaded is to not update current_val directly here,
         # but call _save_entry:
         self._save_entry()
-        # self.current_value = val
+        # self._current_value = val
 
 
 class ArrayBox(_BaseEntryFrame):
@@ -237,7 +237,7 @@ class ArrayBox(_BaseEntryFrame):
 
     Attributes:
         array: the 2D array to read/write from/to.
-        row, col: the row and column of the array to read/write the Entry
+        _row, _col: the row and column of the array to read/write the Entry
         value from/to.
         initial_value: used to instantiate the Entry value
 
@@ -251,9 +251,9 @@ class ArrayBox(_BaseEntryFrame):
         :param array: a 2-D numpy array.
         :param coord: (int, int) tuple for the (row, column) of the array to
         associate the Entry with."""
-        self.array = array
-        self.row, self.col = coord
-        self.initial_value = self.array[self.row, self.col]
+        self._array = array
+        self._row, self._col = coord
+        self._initial_value = self._array[self._row, self._col]
         _BaseEntryFrame.__init__(self, parent, **options)
 
     def _save_entry(self):
@@ -264,23 +264,23 @@ class ArrayBox(_BaseEntryFrame):
         to be a symmetric matrix, and updates the cross-diagonal element
         as well.
         """
-        if not self.value_var.get():
-            self.value_var.set(0.00)
-        self.value = float(self.value_var.get())
-        self.array[self.row, self.col] = self.value
+        if not self._value_var.get():
+            self._value_var.set(0.00)
+        self.value = float(self._value_var.get())
+        self._array[self._row, self._col] = self.value
         # if more than one row, assume J matrix and fill cross-diagonal element
-        if self.array.shape[0] > 1:
-            self.array[self.col, self.row] = self.value
+        if self._array.shape[0] > 1:
+            self._array[self._col, self._row] = self.value
         # potential fix to refresh problem: forgot next line?
-        self.current_value = self.value
+        self._current_value = self.value
 
     def set_value(self, val):
-        self.value_var.set(val)
+        self._value_var.set(val)
         self._save_entry()
-        # self.current_value = val
-        # self.array[self.row, self.col] = val
-        # if self.array.shape[0] > 1:
-        #     self.array[self.col, self.row] = val
+        # self._current_value = val
+        # self._array[self._row, self._col] = val
+        # if self._array.shape[0] > 1:
+        #     self._array[self._col, self._row] = val
 
 
 class ArraySpinBox(ArrayBox):
@@ -339,7 +339,7 @@ class ArraySpinBox(ArrayBox):
                              validate='key',  # check for number on keypress
                              **kwargs)
         self.entry.pack(side=TOP, fill=X)
-        self.entry.config(textvariable=self.value_var)
+        self.entry.config(textvariable=self._value_var)
 
     def _bind_entry(self):
         """Extend the ArrayFrame method to include bindings for mouse button
@@ -410,16 +410,16 @@ class VarBox(_BaseEntryFrame):
             **options: the standard optional kwargs for a Frame object
         """
         self.dict = dict_
-        self.initial_value = self.dict[name]
+        self._initial_value = self.dict[name]
         _BaseEntryFrame.__init__(self, parent, name, **options)
 
     def _save_entry(self):
         """Saves widget's entry in the parent's dict, filling the entry with
         0.00 if it was empty.
         """
-        if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(0.00)  # fill it with zero
-        value = float(self.value_var.get())
+        if not self._value_var.get():  # if entry left blank,
+            self._value_var.set(0.00)  # fill it with zero
+        value = float(self._value_var.get())
         self.current_value = value
         # Add the widget's status to the container's dictionary
         self.dict[self._name] = value
@@ -441,9 +441,9 @@ class IntBox(VarBox):
         """Saves widget's entry in the parent's dict, filling the entry with
         0.00 if it was empty.
         """
-        if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(0)  # fill it with zero
-        value = int(self.value_var.get())
+        if not self._value_var.get():  # if entry left blank,
+            self._value_var.set(0)  # fill it with zero
+        value = int(self._value_var.get())
         self.current_value = value
         # Add the widget's status to the container's dictionary
         self.dict[self._name] = value
@@ -529,16 +529,16 @@ class VarButtonBox(VarBox):
 
     def increase(self):
         """Increases ent by inc"""
-        current = float(self.value_var.get())
+        current = float(self._value_var.get())
         increment = float(self.increment_var.get())
-        self.value_var.set(str(current + increment))
+        self._value_var.set(str(current + increment))
         self._on_tab()
 
     def decrease(self):
         """Decreases ent by inc"""
-        current = float(self.value_var.get())
+        current = float(self._value_var.get())
         decrement = float(self.increment_var.get())
-        self.value_var.set(str(current - decrement))
+        self._value_var.set(str(current - decrement))
         self._on_tab()
 
     def zoom_up(self):
@@ -558,9 +558,9 @@ class VarButtonBox(VarBox):
         :param increment: (float) the change to be made to the float value of
         the current Entry contents."""
         if self.mouse1:
-            current_float = float(self.value_var.get())
+            current_float = float(self._value_var.get())
             new_float = current_float + increment
-            self.value_var.set(str(new_float))
+            self._value_var.set(str(new_float))
             self._on_tab()  # store value, call _callback
 
             # Delay was originally set to 10, but after MVC refactor this
@@ -588,7 +588,7 @@ class SimpleVariableBox(_BaseEntryFrame):
         :param value: (float) Value to instantiate Entry with.
         :param min_: (float) Minimum value the Entry is allowed to hold.
         """
-        self.initial_value = value
+        self._initial_value = value
         self.minimum_value = min_
         _BaseEntryFrame.__init__(self, parent, **options)
 
@@ -596,9 +596,9 @@ class SimpleVariableBox(_BaseEntryFrame):
         """Overrides parent method so that an empty Entry field is filled
         with min value.
         """
-        if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(self.minimum_value)
-        value = float(self.value_var.get())
+        if not self._value_var.get():  # if entry left blank,
+            self._value_var.set(self.minimum_value)
+        value = float(self._value_var.get())
         self.current_value = value
 
 
@@ -615,7 +615,7 @@ class MixinHorizontal:
         self.entry = Entry(self, width=7,
                            validate='key')  # check for number on keypress)
         self.entry.pack(side=LEFT, fill=X)
-        self.entry.config(textvariable=self.value_var)
+        self.entry.config(textvariable=self._value_var)
 
 
 class MixinInt:
