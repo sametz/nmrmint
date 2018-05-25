@@ -94,9 +94,9 @@ class TestBaseEntryFrame:
         # GIVEN a _BaseEntryFrame widget supplied by the fixture
         # THEN it should be instantiated with these defaults
         assert base_entry._initial_value == 0.00
-        assert base_entry._current_value == 0.00
+        assert base_entry.current_value == 0.00
         assert type(base_entry._initial_value) is float
-        assert type(base_entry._current_value) is float
+        assert type(base_entry.current_value) is float
         assert base_entry._name == 'base_entry'
 
     def test_base_entry_get_value(self, base_entry):
@@ -107,7 +107,7 @@ class TestBaseEntryFrame:
 
         # THEN it is the expected value of 0.0
         assert returned_value == '0.0'  # note loss of a decimal place
-        assert float(returned_value) == base_entry._current_value
+        assert float(returned_value) == base_entry.current_value
 
     def test_base_entry_set_value(self, base_entry):
         """Test that .set_value() updates the widget properly."""
@@ -120,7 +120,7 @@ class TestBaseEntryFrame:
 
         # THEN the correct updates have been made
         assert new_value == float(base_entry.get_value())
-        assert new_value == base_entry._current_value
+        assert new_value == base_entry.current_value
 
 
 class TestArrayBox:
@@ -132,7 +132,7 @@ class TestArrayBox:
         # THEN its _initial_value and _current_value are instantiated to the
         # expected value
         assert widget._initial_value == 2.0
-        assert widget._current_value == 2.0
+        assert widget.current_value == 2.0
 
     def test_set_value(self, array_entry_1d):
         """Test that .set_value(val) makes the expected changes"""
@@ -143,8 +143,8 @@ class TestArrayBox:
         val = 3.0
         widget.set_value(val)
 
-        # THEN ._current_value, ._array are properly set
-        assert widget._current_value == val
+        # THEN .current_value, ._array are properly set
+        assert widget.current_value == val
         assert widget._array[0, 1] == val
         assert float(widget.get_value()) == val
 
@@ -160,4 +160,4 @@ class TestArrayBox:
         # THEN ._refresh() will make expected changes
         widget._refresh()
         assert widget._array[0, 1] == val
-        assert widget._current_value == val
+        assert widget.current_value == val

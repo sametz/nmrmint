@@ -46,6 +46,9 @@ class _BaseEntryFrame(Frame):
     Methods:
         * get_value: return the contents of the Entry as a str.
         * set_value: set the contents of the entry to a supplied argument
+
+    Attributes:
+        * current_value: the current value stored in the entry-like widget.
     """
 
     def __init__(self, parent=None, name='', color='white',
@@ -93,8 +96,8 @@ class _BaseEntryFrame(Frame):
         however initial values are passed into them.
         """
         self._value_var = StringVar()
-        self._current_value = self._initial_value
-        self._value_var.set(self._current_value)
+        self.current_value = self._initial_value
+        self._value_var.set(self.current_value)
 
     def _add_label(self):
         """Add self._name to a Label at the top of the frame."""
@@ -106,10 +109,10 @@ class _BaseEntryFrame(Frame):
         Subclasses of EntryBox that use a different entry widget (e.g. SpinBox)
         should overwrite this function.
         """
-        self.entry = Entry(self, width=7,
-                           validate='key')  # check for number on keypress)
-        self.entry.pack(side=TOP, fill=X)
-        self.entry.config(textvariable=self._value_var)
+        self._entry = Entry(self, width=7,
+                            validate='key')  # check for number on keypress)
+        self._entry.pack(side=TOP, fill=X)
+        self._entry.config(textvariable=self._value_var)
 
     def _bind_entry(self):
         """Define behavior when the Entry widget loses focus.
@@ -119,16 +122,17 @@ class _BaseEntryFrame(Frame):
         outside the widget.
         Subclasses may overwrite/extend _bind_entry to tailor behavior.
         """
-        self.entry.bind('<Return>', lambda event: self._on_return(event))
-        self.entry.bind('<Tab>', lambda event: self._on_tab(event))
-        self.entry.bind('<FocusOut>', lambda event: self._refresh())
-        self.entry.bind('<FocusIn>',
-                        lambda event: self.entry.select_range(0, END))
+        self._entry.bind('<Return>', lambda event: self._on_return(event))
+        self._entry.bind('<Tab>', lambda event: self._on_tab(event))
+        self._entry.bind('<FocusOut>', lambda event: self._refresh())
+        self._entry.bind('<FocusIn>',
+                         lambda event: self._entry.select_range(0, END))
 
+    # noinspection PyUnusedLocal
     def _on_return(self, event):
         """Refresh the view and shift focus when Return key is hit."""
         self._refresh()
-        self._find_next_entry(self.entry).focus()
+        self._find_next_entry(self._entry).focus()
 
     def _refresh(self):
         """Save the Entry value to the data structure then request a view
@@ -145,7 +149,7 @@ class _BaseEntryFrame(Frame):
         :return: True if changed, False if not.
         """
         get_value = self._value_var.get()  # for debugging
-        return self._current_value != float(get_value)
+        return self.current_value != float(get_value)
 
     def _save_entry(self):
         """Saves widget's entry as self.stored_value , filling the entry with
@@ -156,7 +160,7 @@ class _BaseEntryFrame(Frame):
         if not self._value_var.get():  # if entry left blank,
             self._value_var.set(0.00)  # fill it with zero
         value = float(self._value_var.get())
-        self._current_value = value
+        self.current_value = value
 
     def _find_next_entry(self, current_widget):
         """Return the next Entry-like widget in tkinter's widget traversal.
@@ -182,9 +186,9 @@ class _BaseEntryFrame(Frame):
     def _validate_entry(self):
         """Restrict Entry inputs to a valid type"""
         # check on each keypress if new result will be valid
-        self.entry['validatecommand'] = (self.register(self._is_valid), '%P')
+        self._entry['validatecommand'] = (self.register(self._is_valid), '%P')
         # sound 'bell' if bad keypress
-        self.entry['invalidcommand'] = 'bell'
+        self._entry['invalidcommand'] = 'bell'
 
     @staticmethod
     def _is_valid(entry):
@@ -223,7 +227,7 @@ class _BaseEntryFrame(Frame):
         # subspectra are reloaded is to not update current_val directly here,
         # but call _save_entry:
         self._save_entry()
-        # self._current_value = val
+        # self.current_value = val
 
 
 class ArrayBox(_BaseEntryFrame):
@@ -231,17 +235,10 @@ class ArrayBox(_BaseEntryFrame):
     Overrides _BaseEntryFrame to accept a numpy 2D-array, and a coordinate to a
     specific cell in the array to read to/write from.
 
-    Methods overridden:
-        __init__
-        _save_entry
-
-    Attributes:
-        array: the 2D array to read/write from/to.
-        _row, _col: the row and column of the array to read/write the Entry
-        value from/to.
-        initial_value: used to instantiate the Entry value
-
+    Methods overridden: (public)
+        * set_value
     """
+
     def __init__(self, parent=None,
                  array=None, coord=(0, 0),
                  **options):
@@ -266,21 +263,18 @@ class ArrayBox(_BaseEntryFrame):
         """
         if not self._value_var.get():
             self._value_var.set(0.00)
-        self.value = float(self._value_var.get())
-        self._array[self._row, self._col] = self.value
+        self.current_value = float(self._value_var.get())
+        self._array[self._row, self._col] = self.current_value
         # if more than one row, assume J matrix and fill cross-diagonal element
         if self._array.shape[0] > 1:
-            self._array[self._col, self._row] = self.value
-        # potential fix to refresh problem: forgot next line?
-        self._current_value = self.value
+            self._array[self._col, self._row] = self.current_value
 
     def set_value(self, val):
+        """Set the Entry contents to val, and save it to the associated
+        array.
+        """
         self._value_var.set(val)
         self._save_entry()
-        # self._current_value = val
-        # self._array[self._row, self._col] = val
-        # if self._array.shape[0] > 1:
-        #     self._array[self._col, self._row] = val
 
 
 class ArraySpinBox(ArrayBox):
@@ -310,6 +304,7 @@ class ArraySpinBox(ArrayBox):
         realtime: True if data/callback should be refreshed as the SpinBox
         arrow button is held down.
     """
+
     def __init__(self, parent=None, from_=0.00, to=100.00, increment=1,
                  realtime=False,
                  **options):
@@ -335,23 +330,23 @@ class ArraySpinBox(ArrayBox):
 
     def add_spinbox(self, **kwargs):
         """Add a SpinBox widget to the ArraySpinBox frame."""
-        self.entry = Spinbox(self, width=7,
-                             validate='key',  # check for number on keypress
-                             **kwargs)
-        self.entry.pack(side=TOP, fill=X)
-        self.entry.config(textvariable=self._value_var)
+        self._entry = Spinbox(self, width=7,
+                              validate='key',  # check for number on keypress
+                              **kwargs)
+        self._entry.pack(side=TOP, fill=X)
+        self._entry.config(textvariable=self._value_var)
 
     def _bind_entry(self):
         """Extend the ArrayFrame method to include bindings for mouse button
         press/release.
         """
-        self.entry.bind('<Return>', lambda event: self._on_return(event))
-        self.entry.bind('<Tab>', lambda event: self._on_tab(event))
-        self.entry.bind('<FocusOut>', lambda event: self._refresh())
-        self.entry.bind('<FocusIn>',
-                        lambda event: self.entry.selection('range', 0, END))
-        self.entry.bind('<ButtonPress-1>', lambda event: self.on_press())
-        self.entry.bind('<ButtonRelease-1>', lambda event: self.on_release())
+        self._entry.bind('<Return>', lambda event: self._on_return(event))
+        self._entry.bind('<Tab>', lambda event: self._on_tab(event))
+        self._entry.bind('<FocusOut>', lambda event: self._refresh())
+        self._entry.bind('<FocusIn>',
+                         lambda event: self._entry.selection('range', 0, END))
+        self._entry.bind('<ButtonPress-1>', lambda event: self.on_press())
+        self._entry.bind('<ButtonRelease-1>', lambda event: self.on_release())
 
     def on_press(self):
         """Trigger the 'update view' loop if 'realtime' behavior was
@@ -398,6 +393,7 @@ class VarBox(_BaseEntryFrame):
         * review all code and learn appropriate use of private
         methods to refactor.
     """
+
     def __init__(self, parent=None, name='', dict_=None, **options):
         """Associate a name with the VarBox widget, and read the default
         value for its Entry.
@@ -431,6 +427,7 @@ class IntBox(VarBox):
     Method overwritten:
         _is_valid
     """
+
     # Future refactor options: either create a base class for an input box
     # that varies in its input restriction (float, int, str etc), and/or
     # look into tkinter built-in entry boxes as component.
@@ -606,28 +603,30 @@ class MixinHorizontal:
     """Override _add_label and _add_entry methods to provide a horizontal
     arrangement instead of vertical.
     """
+
     def _add_label(self):
         """Add self._name to a Label at the left of the frame."""
         Label(self, text=self._name, bg=self._color, bd=0).pack(side=LEFT)
 
     def _add_entry(self):
         """Add an Entry widget."""
-        self.entry = Entry(self, width=7,
-                           validate='key')  # check for number on keypress)
-        self.entry.pack(side=LEFT, fill=X)
-        self.entry.config(textvariable=self._value_var)
+        self._entry = Entry(self, width=7,
+                            validate='key')  # check for number on keypress)
+        self._entry.pack(side=LEFT, fill=X)
+        self._entry.config(textvariable=self._value_var)
 
 
 class MixinInt:
     """Override _save_entry and _is_valid methods to restrict Entry values to
     integers."""
+
     def _save_entry(self):
         """Saves widget's entry in the parent's dict, filling the entry with
         0.00 if it was empty.
         """
-        if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(0)  # fill it with zero
-        value = int(self.value_var.get())
+        if not self._value_var.get():  # if entry left blank,
+            self._value_var.set(0)  # fill it with zero
+        value = int(self._value_var.get())
         self.current_value = value
 
     @staticmethod
@@ -651,13 +650,14 @@ class MixinIntRange:
     min/max values.
 
     Currently hardcoded to 2-8 range."""
+
     def _save_entry(self):
         """Saves widget's entry in the parent's dict, filling the entry with
         0.00 if it was empty.
         """
-        if not self.value_var.get():  # if entry left blank,
-            self.value_var.set(0)  # fill it with zero
-        value = int(self.value_var.get())
+        if not self._value_var.get():  # if entry left blank,
+            self._value_var.set(0)  # fill it with zero
+        value = int(self._value_var.get())
         self.current_value = value
 
     @staticmethod
@@ -676,12 +676,14 @@ class MixinIntRange:
 
 class HorizontalIntBox(MixinHorizontal, IntBox):
     """An IntBox with a horizontal layout."""
+
     def __init__(self, **kwargs):
         super(HorizontalIntBox, self).__init__(**kwargs)
 
 
 class HorizontalEntryFrame(MixinHorizontal, SimpleVariableBox):
     """A SimpleVariableBox with a horizontal layout."""
+
     def __init__(self, **kwargs):
         super(HorizontalEntryFrame, self).__init__(**kwargs)
 
@@ -689,6 +691,7 @@ class HorizontalEntryFrame(MixinHorizontal, SimpleVariableBox):
 class HorizontalIntEntryFrame(MixinHorizontal, MixinInt, SimpleVariableBox):
     """A SimpleVariableBox with a horizontal layout, and with Entry values
     limited to integers."""
+
     def __init__(self, **kwargs):
         super(HorizontalIntEntryFrame, self).__init__(**kwargs)
 
@@ -699,6 +702,7 @@ class HorizontalRangeEntryFrame(MixinHorizontal, MixinIntRange,
     limited to integers in the 2-8 range (currently hardcoded in
     MixinIntRange).
     """
+
     def __init__(self, **kwargs):
         super(HorizontalRangeEntryFrame, self).__init__(**kwargs)
 
@@ -706,13 +710,16 @@ class HorizontalRangeEntryFrame(MixinHorizontal, MixinIntRange,
 if __name__ == '__main__':
     import numpy as np
 
+
     class DummyFrame(Frame):
         def __init__(self, parent, **options):
             Frame.__init__(self, parent, **options)
             self.vars = {}
 
+
     def dummy_callback():
         print('callback called')
+
 
     dummy_array = np.array([[1, 42, 99]])
     dummy_dict = {'VarBox example': 11.00,
@@ -730,7 +737,7 @@ if __name__ == '__main__':
                'IntBox': IntBox}
     widget_list = [val(parent=mainwindow, name=key, array=dummy_array,
                        callback=dummy_callback) if 'Array' in key
-                   else val(parent=mainwindow, name=key+' example',
+                   else val(parent=mainwindow, name=key + ' example',
                             dict_=dummy_dict, callback=dummy_callback)
                    for key, val in widgets.items()]
     simple_variable_box = SimpleVariableBox(parent=mainwindow,
