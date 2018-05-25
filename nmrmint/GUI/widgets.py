@@ -30,6 +30,7 @@ minimum-value argument, instantiates the Entry with the initial value,
 and defaults to the custom minimum value when empty.
 """
 # TODO: keep implementing composition over inheritance for customizing widgets
+# TODO: better names, e.g. VarBox, SimpleVariableBox
 
 from tkinter import *
 
@@ -389,6 +390,8 @@ class IntBox(VarBox):
     def __init__(self, parent=None, **options):
         VarBox.__init__(self, parent, **options)
 
+    # The only thing keeping Intbox from just using MixinInt is that
+    # _save_entry needs to save to a dict. TODO: refactor for composition
     def _save_entry(self):
         """Saves widget's entry in the parent's dict, filling the entry with
         0.00 if it was empty.
@@ -407,6 +410,8 @@ class IntBox(VarBox):
         """
         if not entry:
             return True  # Empty string: OK if entire entry deleted
+        if entry == '-':
+            return True  # OK to try and enter a negative value
         try:
             int(entry)
             return True
@@ -414,6 +419,7 @@ class IntBox(VarBox):
             return False
 
 
+# TODO: decide if VarButtonBox will be useful in this project; delete if not
 class VarButtonBox(VarBox):
     """
     A deluxe VarBox that is closer to WINDNMR-style entry boxes.
@@ -525,12 +531,8 @@ class VarButtonBox(VarBox):
 
 
 class SimpleVariableBox(_BaseEntryFrame):
-    """Subclass of _BaseEntryFrame that takes a variable as an argument and
-    rewrites it with the Entry's contents when changes are committed.
-
-    Method overwritten:
-    _save_entry: If entry left blank, it is filled with the minimum value
-    specified by new kwarg 'min'.
+    """Subclass of _BaseEntryFrame that stores the entry value as its
+    current_value argument and has a minimum value limit.
     """
 
     def __init__(self, parent=None, value=0.5, min_=0, **options):
@@ -541,7 +543,7 @@ class SimpleVariableBox(_BaseEntryFrame):
         :param min_: (float) Minimum value the Entry is allowed to hold.
         """
         self._initial_value = value
-        self.minimum_value = min_
+        self._min_value = min_
         _BaseEntryFrame.__init__(self, parent, **options)
 
     def _save_entry(self):
@@ -549,9 +551,8 @@ class SimpleVariableBox(_BaseEntryFrame):
         with min value.
         """
         if not self._value_var.get():  # if entry left blank,
-            self._value_var.set(self.minimum_value)
-        value = float(self._value_var.get())
-        self.current_value = value
+            self._value_var.set(self._min_value)
+        self.current_value = float(self._value_var.get())
 
 
 class MixinHorizontal:
@@ -576,8 +577,8 @@ class MixinInt:
     integers."""
 
     def _save_entry(self):
-        """Saves widget's entry in the parent's dict, filling the entry with
-        0.00 if it was empty.
+        """Saves widget's entry as current_value, filling the entry with
+        0 if it was empty.
         """
         if not self._value_var.get():  # if entry left blank,
             self._value_var.set(0)  # fill it with zero
@@ -605,6 +606,7 @@ class MixinIntRange:
     min/max values.
 
     Currently hardcoded to 2-8 range."""
+    # TODO: make general, with min_ and max_ args
 
     def _save_entry(self):
         """Saves widget's entry in the parent's dict, filling the entry with
