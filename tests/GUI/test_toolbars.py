@@ -9,12 +9,13 @@ from nmrmint.initialize import getWINDNMRdefault
 
 @pytest.fixture()
 def dummy_frame():
+    """A dummy tk.Frame to pack things into."""
     dummy_frame = tk.Frame()
     return dummy_frame
 
 
 def dummy_controller(*args):
-    """For mocking out Toolbar controller calls."""
+    """For mocking out Toolbar callback calls."""
     print('Controller was passed: ', *args)
     pass
 
@@ -36,7 +37,7 @@ def default_nspin_vars():
 def testbar(dummy_frame):
     """A default 2-spin SecondOrderBar to be tested."""
     return SecondOrderBar(dummy_frame,
-                          controller=dummy_controller,
+                          callback=dummy_controller,
                           n=2)
 
 
@@ -47,11 +48,7 @@ class TestSecondOrderBar:
         """Confirm a SecondOrderBar can be instantiated with a default frame
         as parent.
         """
-        # GIVEN a default 2-spin SecondOrderBar
-        # testbar = SecondOrderBar(dummy_frame,
-        #                          controller=dummy_controller,
-        #                          n=2)
-
+        # GIVEN a default 2-spin SecondOrderBar (testbar)
         # THEN it is instantiated with the expected .vars
         np.testing.assert_equal(testbar.vars, default_nspin_vars)
 
@@ -85,3 +82,5 @@ class TestSecondOrderBar:
         # THEN the toolbar.vars will be equal to the new_vars, but NOT the same
         np.testing.assert_equal(testbar.vars, new_vars)
         assert testbar.vars is not new_vars
+
+# TODO: add tests for SecondOrderSpinBar if you decide to use it

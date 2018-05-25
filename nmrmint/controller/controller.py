@@ -1,53 +1,45 @@
 """
 The controller for the nmrmint app.
 
-Assumes a tkinter view.
+Currently, the controller is actually more of an Adapter to connect a View to
+the Model. For example, it can potentially allow other Views to be
+substituted at some point (PyQt; web interface). Currently, the controller
+assumes a tkinter view.
 
 Provides the following class:
 * Controller    Class that handles data and requests to/from the model and 
                 the view.
 """
+# TODO: move GUI.history and functions out of the View and into here
+# TODO: simplify toolbar/widget APIs and transfer data management
+# responsibilities here.
 
 import tkinter as tk
 
 from nmrmint.GUI.view import View
-from nmrmint.model.nmrmath import (nspinspec, AB, AB2, ABX, ABX3, AABB, AAXX,
-                                   first_order, add_spectra)
-from nmrmint.model.nmrplot import tkplot_current, tkplot_total
+from nmrmint.model.nmrmath import (nspinspec, first_order)
+from nmrmint.model.nmrplot import tkplot
 
 
 class Controller:
-    """Instantiate nmrmint's view, and pass data and requests to/from
-    the model and the view.
+    """Pass data and requests to/from the model and the view.
     
     The controller assumes the view offers the following methods:
-    * initialize: Initialize the view (some initialization methods have to
-    be moved outside of View.__init__ to avoid circular reference).
-    * clear_current: clear the currently-modeled (top) spectral plot
-    * plot_current: plot the currently-modeled (top) spectrum
-    * clear_total: clear the total (bottom) spectral plot
-    * plot_total: plot the total (bottom) spectrum
-    * clear: clear all spectral plots and instantiate the total plot with a
-    blank spectrum
-    * update_total_spectrum: adds the most recent total spectrum data to the
-    history.
+        * clear_current
+        * plot_current
+        *update_current_plot (TODO: bad code smell--only used once, during
+    initialization)
+        * clear_total
+        * plot_total
 
     The controller assumes the View has the following attribute:
-    * spectrometer_frequency (float) The frequency of the simulated
-    spectrometer.
+        * spectrometer_frequency (float) The frequency of the simulated
+    spectrometer (i.e. the MHz at which TMS protons resonate).
 
     The controller provides the following methods:
-    * update_current_plot: update the current (top) spectrum of the View.
-    * update_total_plot: update the total (summation, bottom) spectrum of the
-    View.
-    * add_view_plots: adds the current (top) plot to the total (bottom) plot
-    * call_nspins_model: provide an interface that allows the model to be
-    called with the view's second-order data.
-
-
+        * update_current_plot: update the current (top) spectrum of the View.
+        * lineshape_data: calculate a lineshape for a given model and variables
     """
-
-    # TODO: refactor to reduce code redundancy
 
     def __init__(self, root):
         """Instantiate the view as a child of root, and then initializes it.
@@ -57,18 +49,24 @@ class Controller:
         """
         self.counter = 0  # for debugging
         self.models = {'first_order': first_order,
-                       'nspin': self.call_nspins_model}
-
+                       'nspin': self._call_nspins_model}
         self.view = View(root, self)
         self.view.pack(expand=tk.YES, fill=tk.BOTH)
-        self.view.initialize()
+
+        self._initialize_view()
+
+    def _initialize_view(self):
+        self.view.clear_total()
+        self.view.plot_total(*self.blank_total_spectrum())
+
+        self.view.update_current_plot()
         # sys.settrace(self.update_current_plot)
 
     # Model uses frequencies in Hz, but desired View plots are in ppm.
     # The following methods convert frequency domains for lineshapes (defined
-    #  with an x, y tuple of numpy arrays) and spectra (defined as lists of
+    #  with an x, y tuple of numpy ndarrays) and spectra (defined as lists of
     # (frequency, intensity) tuples).
-    def lineshape_to_ppm(self, plotdata):
+    def _lineshape_to_ppm(self, plotdata):
         """Convert a lineshape (an x, y tuple of arrays) from x in units of
         Hz to x in units of ppm.
 
@@ -79,7 +77,7 @@ class Controller:
         x = x / self.view.spectrometer_frequency
         return x, y
 
-    def spectrum_from_ppm(self, spectrum):
+    def _spectrum_from_ppm(self, spectrum):
         """Convert a spectrum (a list of (frequency, intensity) tuples) from
         frequencies in ppm to frequencies in Hz.
 
@@ -91,22 +89,8 @@ class Controller:
                       [y for x, y in spectrum])
         return list(zip(freq, int_))
 
-    def spectrum_to_ppm(self, spectrum):
-        """Convert a spectrum (a list of (frequency, intensity) tuples) from
-        frequencies in Hz to frequencies in ppm.
-
-        Assumes access to self.view.spectrometer_frequency.
-        :param spectrum: [(frequency, intensity)...] A list of frequency,
-        intensity tuples with the frequency in Hz."""
-        freq, int_ = ([x / self.view.spectrometer_frequency
-                       for x, y in spectrum],
-                      [y for x, y in spectrum])
-        return list(zip(freq, int_))
-
-    # TODO: does this adapter belong here or in View? Controller should
-    # define a clear API.
     @staticmethod
-    def call_nspins_model(v, j, w, **kwargs):
+    def _call_nspins_model(v, j, w):
         """Provide an interface between the controller/view data model (use
         of **kwargs) and the functions for second-order calculations (which
         use *args).
@@ -118,12 +102,6 @@ class Controller:
         :return: a (spectrum, linewidth) tuple, where spectrum is a list of
         (frequency, intensity) tuples
         """
-        # **kwargs to catch unimplemented features
-        # The difference between first- and second-order models right now
-        # from the controller's perspective is just the added linewidth
-        # argument. If more features are added to first- and second-order
-        # models, this distinction may be lost, and all requests will have to
-        #  be parsed for extra kwargs.
         if not (v.any() and j.any() and w.any()):
             print('invalid kwargs:')
             if not v.any():
@@ -135,153 +113,135 @@ class Controller:
         else:
             return nspinspec(v, j), w
 
-    # The methods below provide the interface to the View.
+    def _convert_first_order(self, vars_):
+        """Convert the dictionary of widget entries from the FirstOrderBar to
+        the data (a (signal, couplings) tuple) required by the controller.
 
-    def update_current_plot(self, model, data):
+        :param vars_: {} where 'JnX', 'Vcentr' and 'width' keys are floats
+        (Hz/ppm/Hz respectively), and '#n' keys are ints.
+        :return: {'signal': (float, float) of frequency in Hz, intensity;
+                  'couplings': [(float, int)...] of J, #nuclei;
+                  'w': (float) of peak width}
+        """
+        _Jax = vars_['JAX']
+        _a = vars_['#A']
+        _Jbx = vars_['JBX']
+        _b = vars_['#B']
+        _Jcx = vars_['JCX']
+        _c = vars_['#C']
+        _Jdx = vars_['JDX']
+        _d = vars_['#D']
+        _Vcentr = vars_['Vcentr'] * self.view.spectrometer_frequency
+        _integration = vars_['# of nuclei']
+        singlet = (_Vcentr, _integration)
+        allcouplings = [(_Jax, _a), (_Jbx, _b), (_Jcx, _c), (_Jdx, _d)]
+        couplings = [coupling for coupling in allcouplings if coupling[1] != 0]
+        width = vars_['width']
+        return {'signal': singlet, 'couplings': couplings, 'w': width}
+
+    def _convert_second_order(self, vars_):
+        """Convert the dictionary of widget entries from the FirstOrderBar to
+        the dict of v/j/w data required by the controller.
+
+        :param vars_: {'v': [[float...]] of chemical shifts in ppm;
+                       'j': (2d numpy ndarray) of coupling constants in Hz;
+                       'w': [[(float)]] for peak width in Hz}
+        :return: {'v': [[float...]] of chemical shifts in Hz;
+                  'j': (2d numpy ndarray) of coupling constants in Hz;
+                  'w': (float) for peak width in Hz}
+        """
+        v_ppm = vars_['v'][0, :]
+        v_Hz = v_ppm * self.view.spectrometer_frequency
+        return {
+            'v': v_Hz,
+            'j': vars_['j'],
+            'w': vars_['w'][0, 0]}
+
+    def _first_order_spectrum(self, vars_):
+        """Return a (spectrum, line width) tuple for use in calculating a
+        lineshape for a first-order model.
+
+        :param vars_: {} where 'JnX' and 'width' keys are floats and '#n'
+        keys are ints.
+        :return: a spectrum, w tuple where:
+            spectrum: [(float, float)...] of frequency (Hz), intensity tuples
+        """
+        data = self._convert_first_order(vars_)
+        signal = data['signal']
+        couplings = data['couplings']
+        w = data['w']
+        spectrum = self.models['first_order'](signal=signal,
+                                              couplings=couplings)
+        return spectrum, w
+
+    def _second_order_spectrum(self, vars_):
+        """Return a (spectrum, line width) tuple for use in calculating a
+        lineshape for a second-order model.
+
+        :param vars_: {'v': [[float...]] of chemical shifts in ppm;
+                       'j': (2d numpy ndarray) of coupling constants in Hz;
+                       'w': [[(float)]] for peak width in Hz}
+        :return: a spectrum, w tuple where:
+            spectrum: [(float, float)...] of frequency (Hz), intensity tuples
+        """
+        data = self._convert_second_order(vars_)
+        spectrum, w = self.models['nspin'](**data)
+        return spectrum, w
+
+    #########################################################################
+    # Methods below provide the interface to the view
+    #########################################################################
+
+    def update_current_plot(self, model, vars_):
         """
         Pass the View's current (top) plot data to the appropriate
         model; simulate spectral data; and tell the view to plot the data.
 
         :param model: (str) The type of calculation to be performed.
-        :param data: kwargs for the requested model.
+        :param vars_: kwargs for the requested model.
 
         :return: None (including when model is not recognized)
         """
-        # multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
-        #                     'first_order']
-
-        # if model in multiplet_models:
-        # print('controller received ', model)
-        if model == 'first_order':
-            signal = data['signal']
-            couplings = data['couplings']
-            w = data['w']
-            spectrum = self.models[model](signal=signal, couplings=couplings)
-            plotdata = tkplot_current(
-                spectrum, w,
-                spectrometer_frequency=self.view.spectrometer_frequency)
-        elif model == 'nspin':
-            spectrum, w = self.models[model](**data)
-            plotdata = tkplot_current(
-                spectrum, w,
-                spectrometer_frequency=self.view.spectrometer_frequency)
-        else:
-            print('model not recognized')
-            return
-
-        plotdata = self.lineshape_to_ppm(plotdata)
+        plotdata = self.lineshape_data(model, vars_)
         self.view.clear_current()
         self.view.plot_current(*plotdata)
 
-    def lineshape_data(self, model, data):
+    def lineshape_data(self, model, vars_):
+        """Return simulated lineshape data for a given model and its
+        variables.
+
+        :param model: (str) The type of calculation to be performed (
+        'first_order' for first-order simulation, 'nspin' for second-order.
+        :param vars_: kwargs for the requested model.
+        :return: (numpy ndarray, numpy ndarray) tuple of x, y lineshape data.
+        """
         if model == 'first_order':
-            signal = data['signal']
-            couplings = data['couplings']
-            w = data['w']
-            spectrum = self.models[model](signal=signal, couplings=couplings)
-            plotdata = tkplot_current(
-                spectrum, w,
-                spectrometer_frequency=self.view.spectrometer_frequency)
+            spectrum, w = self._first_order_spectrum(vars_)
         elif model == 'nspin':
-            spectrum, w = self.models[model](**data)
-            plotdata = tkplot_current(
-                spectrum, w,
-                spectrometer_frequency=self.view.spectrometer_frequency)
+            spectrum, w = self._second_order_spectrum(vars_)
         else:
             print('model not recognized')
             return None
-        return self.lineshape_to_ppm(plotdata)
 
-    def create_lineshape(self, spectrum, *w):
-        """Currently used to create blank spectra for history, but in future
-        many of the Controller methods will be refactored for reuse and
-        clarity.
-        """
-        # print('controller.create_lineshape received ', spectrum)
-        spectrum = self.spectrum_from_ppm(spectrum)
-        plotdata = tkplot_total(
-            spectrum, *w,
+        plotdata = tkplot(
+            spectrum, w,
             spectrometer_frequency=self.view.spectrometer_frequency)
-        plotdata = self.lineshape_to_ppm(plotdata)
-        # print('create_lineshape created plotdata: ', plotdata)
+        return self._lineshape_to_ppm(plotdata)
 
+    def blank_total_spectrum(self):
+        """Return lineshape data for a blank total spectrum with a 0.05H TMS
+        peak at 0 ppm.
+
+        :return: (numpy.ndarray, numpy.ndarray) tuple of x, y plot data
+        """
+        # Initial/blank spectra will have a "TMS" peak at 0 that integrates
+        # to 0.05 H.
+        self.blank_spectrum = [(0, 0.05)]
+        plotdata = tkplot(
+            self.blank_spectrum,
+            spectrometer_frequency=self.view.spectrometer_frequency)
+        plotdata = self._lineshape_to_ppm(plotdata)
         return plotdata
-
-    def update_total_plot(self, spectrum, *w):
-        """Call model to calculate plot data from the provided spectrum,
-        then call View to plot the result.
-
-        :param spectrum: [(float, float)...] The spectrum to be plotted as
-        the total (bottom) spectrum in the View.
-        :param w: optional peak width at half height.
-        """
-        spectrum = self.spectrum_from_ppm(spectrum)
-        plotdata = tkplot_total(
-            spectrum,
-            *w,
-            spectrometer_frequency=self.view.spectrometer_frequency)
-        plotdata = self.lineshape_to_ppm(plotdata)
-        # self.view.canvas.clear_total()
-        self.view.clear_total()
-        self.view.plot_total(*plotdata)
-
-    def total_plot(self, spectrum, *w):
-        """Call model to calculate lineshape from provided spectrum,
-        and return it.
-
-        :param spectrum: [(float, float)...] The lineshape data for a total
-        spectrum plot.
-        :param w: optional peak width at half height.
-        :return: (np.linspace, np.array) of x, y- lineshape data.
-        """
-        spectrum = self.spectrum_from_ppm(spectrum)
-        plotdata = tkplot_total(
-            spectrum,
-            *w,
-            spectrometer_frequency=self.view.spectrometer_frequency)
-        plotdata = self.lineshape_to_ppm(plotdata)
-        return plotdata
-
-    def add_view_plots(self, model, total_spectrum, **data):
-        """Compute a spectrum from model, **data, add it to another spectrum,
-        and refresh the View's plots plus total_spectrum/history.
-
-        :param model: (str) The type of calculation to be performed.
-        :param total_spectrum: [(float, float)...] The spectrum that the new
-        spectral data will be added to.
-        :param data: kwargs required by the model.
-
-        :return: None (including when model is not recognized)
-        """
-        # TODO: The one-line description of add_view_plots indicates that this
-        # should not be one function, but several.
-
-        multiplet_models = ['AB', 'AB2', 'ABX', 'ABX3', 'AABB', 'AAXX',
-                            'first_order']
-        total_spectrum_copy = total_spectrum[:]
-
-        total_spectrum_Hz = self.spectrum_from_ppm(total_spectrum_copy)
-
-        if model in multiplet_models:
-            spectrum = self.models[model](**data)
-            add_spectra(total_spectrum_Hz, spectrum)
-            plotdata = tkplot_total(spectrum)
-            total_plotdata = tkplot_total(total_spectrum_Hz)
-        elif model == 'nspin':
-            spectrum, w = self.models[model](**data)
-            add_spectra(total_spectrum_Hz, spectrum)
-            plotdata = tkplot_total(spectrum, w)
-            total_plotdata = tkplot_total(total_spectrum_Hz, w)
-        else:
-            print('model not recognized')
-            return
-        plotdata = self.lineshape_to_ppm(plotdata)
-        total_plotdata = self.lineshape_to_ppm(total_plotdata)
-        total_spectrum_ppm = self.spectrum_to_ppm(total_spectrum_Hz)
-        self.view.clear()
-        self.view.update_total_spectrum(total_spectrum_ppm)
-        self.view.plot_current(*plotdata)
-        self.view.plot_total(*total_plotdata)
 
 
 if __name__ == '__main__':

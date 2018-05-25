@@ -185,6 +185,16 @@ def getWINDNMRdefault(n):
     return freq2D, J
 
 
+def nspin_defaults(n):
+    """Convert getWINDNMRdefault to ppm, assuming 300 MHz spectrometer.
+
+    :return: np.array[[float...]], np.array[[float...]...]
+    """
+    v, J = getWINDNMRdefault(n)
+    v_ppm = v / 300
+    return v_ppm, J
+
+
 if __name__ == '__main__':
     from ReichDNMR.model.nmrmath import nspinspec
     from ReichDNMR.model.nmrplot import nmrplot as nmrplt

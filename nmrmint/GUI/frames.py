@@ -28,8 +28,8 @@ class RadioFrame(Frame):
         self.buttons = []
         for button in buttons:
             widget = Radiobutton(self, text=button[0], command=button[1],
-                        variable=self.var,
-                        value=button[0])
+                                 variable=self.var,
+                                 value=button[0])
             self.buttons.append(widget)
             widget.pack(anchor=NW)
         self.var.set(buttons[0][0])  # turns the top button on

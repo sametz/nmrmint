@@ -3,7 +3,12 @@ Passing defaults as ordereddict might allow for a concise refactoring of
 toolbars, because widgets could be added in the same order as in the
 ordereddict. However, Wa, Right-Hz and WdthHz are not implemented yet. This
 file is being retained for now, just in case.
+
+Update 2018-05-10: Latest python has dicts ordered by default. Consider
+revising these types of default dicts throughout NMR projects.
 """
+# TODO: currently unused; consider deleting
+
 from collections import OrderedDict
 
 ABdict = OrderedDict([('Jab', 12.0),

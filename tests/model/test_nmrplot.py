@@ -3,7 +3,6 @@ from pytest import approx
 from nmrmint.model.nmrplot import (lorentz, add_signals)
 from . import testdata
 from .accepted_data import ADD_SIGNALS_DATASET
-from .plottools import popplot
 
 
 def test_lorentz_width():
@@ -25,6 +24,7 @@ def test_lorentz_standard_max_height():
     w = 0.5
 
     assert lorentz(v0, v0, I, w) == approx(1.0)
+
 
 def test_lorentz_broadening():
     """If the width is doubled from the standard 0.5 Hz, then the max height
@@ -54,56 +54,3 @@ def test_add_signals():
     print(Y)
     assert np.array_equal(x, X)
     assert np.array_equal(y, Y)
-
-
-# def test_dnmrplot_2spin_slowexchange():
-#
-#     WINDNMR_DEFAULT = (165.00, 135.00, 1.50, 0.50, 0.50, 0.50)
-#     x, y = dnmrplot_2spin(*WINDNMR_DEFAULT)
-#     accepted_x, accepted_y = testdata.TWOSPIN_SLOW
-#     np.testing.assert_array_almost_equal(x, accepted_x)
-#     np.testing.assert_array_almost_equal(y, accepted_y)
-#
-#
-# def test_dnmrplot_2spin_coalesce():
-#
-#     WINDNMR_DEFAULT = (165.00, 135.00, 65.9, 0.50, 0.50, 0.50)
-#     x, y = dnmrplot_2spin(*WINDNMR_DEFAULT)
-#     accepted_x, accepted_y = testdata.TWOSPIN_COALESCE
-#     np.testing.assert_array_almost_equal(x, accepted_x)
-#     np.testing.assert_array_almost_equal(y, accepted_y)
-#
-#
-# def test_dnmrplot_2spin_fastexchange():
-#
-#     WINDNMR_DEFAULT = (165.00, 135.00, 1000.00, 0.50, 0.50, 0.50)
-#     x, y = dnmrplot_2spin(*WINDNMR_DEFAULT)
-#     accepted_x, accepted_y = testdata.TWOSPIN_FAST
-#     np.testing.assert_array_almost_equal(x, accepted_x)
-#     np.testing.assert_array_almost_equal(y, accepted_y)
-#
-#
-# def test_dnmrplot_2spin_frequencies_commute():
-#
-#     freqorder_ab = dnmrplot_2spin(165.00, 135.00, 1.50, 2.50, 0.50, 0.75)
-#     freqorder_ba = dnmrplot_2spin(135.00, 165.00, 1.50, 0.50, 2.50, 0.25)
-#     popplot(*freqorder_ab)
-#     popplot(*freqorder_ba)
-#     np.testing.assert_array_almost_equal(freqorder_ab, freqorder_ba)
-#
-#
-# def test_dnmrplot_AB():
-#
-#     WINDNMR_DEFAULT = (165.00, 135.00, 12.00, 12.00, 0.50)
-#     x, y = dnmrplot_AB(*WINDNMR_DEFAULT)
-#     accepted_x, accepted_y = testdata.AB_WINDNMR
-#     np.testing.assert_array_almost_equal(x, accepted_x)
-#     np.testing.assert_array_almost_equal(y, accepted_y)
-#
-#
-# def test_dnmrplot_AB_frequencies_commute():
-#     freqorder_ab = dnmrplot_AB(165.00, 135.00, 12.00, 12.00, 0.50)
-#     freqorder_ba = dnmrplot_AB(135.00, 165.00, 12.00, 12.00, 0.50)
-#     popplot(*freqorder_ab)
-#     popplot(*freqorder_ba)
-#     np.testing.assert_array_almost_equal(freqorder_ab, freqorder_ba)
