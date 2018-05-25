@@ -152,7 +152,7 @@ class _BaseEntryFrame(Frame):
         :return: True if changed, False if not.
         """
         get_value = self._value_var.get()  # for debugging
-        return self.current_value != float(get_value)
+        return str(self.current_value) != get_value
 
     def _save_entry(self):
         """Saves widget's entry as self.stored_value , filling the entry with

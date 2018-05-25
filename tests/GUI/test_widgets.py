@@ -10,11 +10,7 @@ from contextlib import contextmanager
 import numpy as np
 import pytest
 
-# from nmrmint.GUI.toolbars import FirstOrderBar
 from nmrmint.GUI.widgets import _BaseEntryFrame, ArrayBox
-
-
-# from nmrmint.initialize import getWINDNMRdefault
 
 
 @pytest.fixture()
@@ -54,37 +50,10 @@ def array_entry_1d(dummy_toolbar):
     return widget
 
 
-# @pytest.fixture()
-# def dummy_frame():
-#     dummy_frame = tk.Frame()
-#     return dummy_frame
-
-
 def dummy_controller(*args):
     """For mocking out Toolbar _callback calls."""
     print('Controller was passed: ', *args)
     pass
-
-
-# @pytest.fixture()
-# def default_nspin_vars():
-#     """A copy of the default vars that SecondOrderBar should be instantiated
-#     with.
-#     """
-#     v, j = getWINDNMRdefault(2)
-#     _w_array = np.array([[0.5]])
-#     _v_ppm = v / 300.0  # Using default spectrometer frequency of 300 MHz
-#     return {'v': _v_ppm,
-#             'j': j,
-#             'w': _w_array}
-#
-#
-# @pytest.fixture()
-# def testbar(dummy_frame):
-#     """A default 2-spin SecondOrderBar to be tested."""
-#     return SecondOrderBar(dummy_frame,
-#                           callback=dummy_controller,
-#                           n=2)
 
 
 class TestBaseEntryFrame:

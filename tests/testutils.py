@@ -4,6 +4,7 @@ For now this is a hack that involves instantiating the app so that Controller
 can create data. Should instead save test data in some form for later
 retrieval.
 """
+# TODO: currently unused; consider deleting
 
 import tkinter as tk
 

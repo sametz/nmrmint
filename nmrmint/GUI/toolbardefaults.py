@@ -7,6 +7,8 @@ file is being retained for now, just in case.
 Update 2018-05-10: Latest python has dicts ordered by default. Consider
 revising these types of default dicts throughout NMR projects.
 """
+# TODO: currently unused; consider deleting
+
 from collections import OrderedDict
 
 ABdict = OrderedDict([('Jab', 12.0),

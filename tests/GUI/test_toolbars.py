@@ -9,6 +9,7 @@ from nmrmint.initialize import getWINDNMRdefault
 
 @pytest.fixture()
 def dummy_frame():
+    """A dummy tk.Frame to pack things into."""
     dummy_frame = tk.Frame()
     return dummy_frame
 
@@ -47,11 +48,7 @@ class TestSecondOrderBar:
         """Confirm a SecondOrderBar can be instantiated with a default frame
         as parent.
         """
-        # GIVEN a default 2-spin SecondOrderBar
-        # testbar = SecondOrderBar(dummy_frame,
-        #                          callback=dummy_controller,
-        #                          n=2)
-
+        # GIVEN a default 2-spin SecondOrderBar (testbar)
         # THEN it is instantiated with the expected .vars
         np.testing.assert_equal(testbar.vars, default_nspin_vars)
 

@@ -21,6 +21,7 @@ def dummy_callback(*args, **kwargs):
     print(kwargs)
 
 
+# noinspection PyProtectedMember
 def focus_next_entry():
     global current_entry
     next_entry = current_entry.master._find_next_entry(current_entry)
@@ -40,6 +41,7 @@ if __name__ == '__main__':
     # Note: immediately packing testbar broke things
     testbar = FirstOrderBar(root, callback=dummy_callback)  # .pack(side=tk.TOP)
     print(type(testbar))
+    # noinspection PyProtectedMember
     first_widget = testbar._fields['# of nuclei']
     first_entry = first_widget.entry
     current_entry = first_entry

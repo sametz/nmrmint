@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 
 from nmrmint.GUI.history import Subspectrum, History
-from nmrmint.GUI.toolbars import FirstOrderBar, SecondOrderBar
-
+from nmrmint.GUI.toolbars import FirstOrderBar
 
 # Before writing these tests, the program was being manually debugged (with
 # first-order simulations) .
@@ -272,9 +271,7 @@ def test_all_spec_data(ss1, ss2, vars_1, vars_2):
     """
     # Given a history with two subspectra, each with references to toolbars
     # and lineshape data
-    # toolbar = FirstOrderBar(callback=fake_callback)
     history = History()
-    # history._toolbar = _toolbar
     history._subspectra[history.current] = ss1
     history.restore()
     history._subspectra.append(ss2)
@@ -290,34 +287,6 @@ def test_all_spec_data(ss1, ss2, vars_1, vars_2):
 
     # THEN the correct data is yielded
     assert all_spec_data == expected_data
-
-
-# def test_current_toolbar():
-#     """Test that current_bar returns the bar for the current subspectrum."""
-#     # GIVEN a history with a toolbar assigned to its subspectrum
-#     history = History()
-#     bar = FirstOrderBar()
-#     history._subspectra[history.current].toolbar = bar
-#
-#     # WHEN history is asked for its current toolbar
-#     # THEN the current subspectrum's bar is returned
-#     assert history.current_toolbar() is bar
-
-
-# def test_change_toolbar(vars_2):
-#     """Test to see if the current subspectrum's toolbar can be replaced."""
-#     # GIVEN an initialized history with default toolbar
-#     history = History()
-#     bar_1 = FirstOrderBar(callback=fake_callback)
-#     history.current_subspectrum().toolbar = bar_1
-#
-#     # WHEN a new toolbar is added
-#     bar_2 = FirstOrderBar(callback=fake_callback)
-#     bar_2.reset(vars_2)
-#     history.change_toolbar(bar_2)
-#
-#     # THEN the current_toolbar is updated
-#     assert history.current_toolbar() is bar_2
 
 
 def test_change_toolbar():
@@ -337,23 +306,6 @@ def test_change_toolbar():
     assert history._toolbar is toolbar
 
 
-# def test_change_toolbar_to_second_order_bar():
-#     """Test to see if change_toolbar works with SecondOrderBar."""
-#     # GIVEN an initialized history with default first-order toolbar
-#     history = History()
-#     bar_1 = FirstOrderBar(callback=fake_callback)
-#     history.current_subspectrum().toolbar = bar_1
-#
-#     # WHEN a SecondOrderBar is added
-#     bar_2 = SecondOrderBar(callback=fake_callback)
-#     history.change_toolbar(bar_2)
-#
-#     # THEN the current_toolbar is updated
-#     _, _vars = history.subspectrum_data()
-#     assert _ == 'nspin'
-#     assert _vars['w'][0][0] == 0.5
-
-
 def test_delete(ss1, ss2):
     """Test that, when a non-last subspectrum is deleted, it is removed from
     history._subspectra."""
@@ -363,7 +315,6 @@ def test_delete(ss1, ss2):
     history = History()
     history._toolbar = toolbar
     history._subspectra[history.current] = ss1
-    # history.current = 1
     history._subspectra.append(ss2)
     assert history.current_subspectrum() is ss1
 
@@ -392,7 +343,7 @@ def test_delete_updates_total(ss1, ss2, x1, x2, y1, y2, y_total):
     history.current = 1
     assert np.array_equal(history.current_subspectrum().y, y2)
 
-    # IF told to delete the current spectrum
+    # WHEN told to delete the current spectrum
     history.delete()
 
     # THEN history.total_y has had the deleted spectrum's y subtracted from it
@@ -485,6 +436,7 @@ def test_save_alerts_if_no_toolbar(capsys):
     """
     # GIVEN a History instance with no toolbar recorded
     history = History()
+    # noinspection PyUnusedLocal
     out, err = capsys.readouterr()  # capture any print statements before save
 
     # WHEN told to save toolbar state
