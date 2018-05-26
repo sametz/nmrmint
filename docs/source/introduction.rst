@@ -2,16 +2,13 @@ Introduction to nmrmint v0.35.0 (beta)
 ======================================
 
 
-**nmrmint** is an applicaiton for creating simulated, complete NMR spectra
+**nmrmint** is an application for creating simulated, complete NMR spectra
 for use in chemical education. Currently, the application is limited to \ :sup:`1`\ H NMR only, but expanding this to other nuclei such as \ :sup:`13`\ C is feasible.
 
-The current version of pyDNMR will simulate spectra for the two-site
-exchange of two spin-1/2 nuclei, either uncoupled (two singlets at the
-slow-exchange limit), or coupled (two doublets, or AB quartet, at the
-slow-exchange limit).
+The total spectrum is 'minted' from a series of subspectrum simulations for individual signals or groups of signals. These subspectra are added to the total spectrum, and the resulting spectrum can be exported as a PDF or EPS file.
 
-The short-term goal of this project is to create platform-specific executable files ("apps") for educational use. For example, the rate constant for nuclear exchange can be adjusted up and down to demonstrate coalescence of signals.
+Individual first-order signals can be simulated, as well as second-order systems of up to 8 nuclei. Currently the simulation is capped at 8 nuclei for performance reasons, but if the code for the quantum-mechanical routines can be further optimized this may be expanded.
 
-The longer-term goal of this project is to add simulations for more complex systems, and to provide additional tools (e.g. importation of NMR spectra, and matching experimental to simulated lineshapes) that would result in an application suitable for researchers as well as educators.
+Individual subspectra can have their own peak width setting, allowing for broadened signals such as for OH/NH.
 
-A secondary purpose of this project is to provide a test case for the author to learn how to properly test, package, and distribute software.
+The frequency of the spectometer in MHz can also be adjusted, e.g. simulating a 100 MHz spectrometer results in a horizontal scale of 1 ppm = 100 Hz.
