@@ -1,8 +1,9 @@
-Introduction to pyDNMR v0.5.0 (beta)
-=====================================
+Introduction to nmrmint v0.35.0 (beta)
+======================================
 
 
-pyDNMR simulates dynamic nuclear magnetic resonance (DNMR) spectra. A graphical user interface provides inputs for simulation parameters (frequencies, rate constants, line widths, and the population of various states), and displays the resulting spectrum.
+**nmrmint** is an applicaiton for creating simulated, complete NMR spectra
+for use in chemical education. Currently, the application is limited to \ :sup:`1`\ H NMR only, but expanding this to other nuclei such as \ :sup:`13`\ C is feasible.
 
 The current version of pyDNMR will simulate spectra for the two-site
 exchange of two spin-1/2 nuclei, either uncoupled (two singlets at the
