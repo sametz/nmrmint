@@ -350,7 +350,10 @@ class View(Frame):
         """Toggle whether the current subspectrum plot is added to the total
         spectrum or not.
 
-        Callback for the "Add to Spectrum" button. """
+        Callback for the "Add to Spectrum" button.
+        """
+        # TODO: change color and/or behavior to accomodate red-green color
+        # blindness
         subspectrum_active = history.current_subspectrum().toggle_active()
         if subspectrum_active:
             self._set_active_button_color('green')

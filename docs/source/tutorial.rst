@@ -1,9 +1,13 @@
 Tutorial: 1H NMR Simulation of Tyrosine
 =======================================
 
+.. image:: _static/tyr.png
+   :scale: 50 %
+   :align: center
+
 We'll walk through the features of nmrmint by simulating a spectrum for tyrosine. First, you need to know, or have estimates for, the chemical shifts and coupling constants for the system of interest. In this case, we have the following first-order data reported for tyrosine in D\ :sub:`2`\ O:
 
-1H NMR (500 MHz, Deuterium Oxide) δ 7.18 (d, J = 8.5 Hz, 1H), 6.89 (d, J = 8.5 Hz, 1H), 3.93 (dd, J = 7.7, 5.1 Hz, 1H), 3.19 (dd, J = 14.7, 5.1 Hz, 1H), 3.05 (dd, J = 14.7, 7.8 Hz, 1H).
+   1H NMR (500 MHz, Deuterium Oxide) δ 7.18 (d, J = 8.5 Hz, 1H), 6.89 (d, J = 8.5 Hz, 1H), 3.93 (dd, J = 7.7, 5.1 Hz, 1H), 3.19 (dd, J = 14.7, 5.1 Hz, 1H), 3.05 (dd, J = 14.7, 7.8 Hz, 1H).
 
 Even if you had access to the original spectral data, it may not have been suitable for your purpose. In this specific case:
 
@@ -20,8 +24,8 @@ When you run nmrmint, the default toolbar at the top of the screen is for first-
 .. image:: _static/first_order_toolbar.png
 
 * **# of nuclei:** The number of nuclei giving rise to the signal (i.e. the integration for the signal)
-* **JAX, JBX, JCX, JDX:** The coupling constants between the current nuclei being simulated ('X') and groups of neigboring nuclei (A/B/C/D). Barring exotic systems with lots of long-range coupling, no more than four different types of coupled protons are expected, so nmrmint caps the number of groups at 4.
-* **#A/B/C/D:** The number of neighboring A protons that X is coupled to by coupling constant *J*\ :sub:`AX`\ .
+* **JAX, JBX, JCX, JDX:** The coupling constants, in Hz, between the current nuclei being simulated ("X") and groups of neigboring nuclei (A/B/C/D). Barring exotic systems with lots of long-range coupling, no more than four different types of coupled protons are expected, so nmrmint caps the number of groups at 4.
+* **#A/B/C/D:** The number of neighboring A protons that X is coupled to by coupling constant *J*\ :sub:`AX`\ . If all are set to 0, a singlet results. Changing "#A" to 1 would create a doublet, to 2 would create a triplet, and so on.
 * **Vcentr:** The frequency of the center of the multiplet, in ppm.
 * **width:** The linewidth at half-height, in Hz.
 
@@ -34,13 +38,13 @@ Let's start with the signal furthest upfield. Enter the following in the first-o
 * **#B:** 1
 * **Vcentr:** 3.05
 
-Check that ""#C" and ""#D" are 0, and leave width as 0.5. Note that you must commit a change in an entry (by hitting the Return/Enter or Tab keys, or by clicking on a different entry) in order for a change to take effect. You should see the following subspectrum simulation as the top plot:
+Check that "#C" and "#D" are 0, and leave width as 0.5. Note that you must commit a change in an entry (by hitting the Return/Enter or Tab keys, or by clicking on a different entry) in order for a change to take effect. You should see the following subspectrum simulation as the top plot:
 
 .. image:: _static/first_signal.png
 
 nmrmint selects an appropriate expansion for the subspectrum plot for you.
 
-The bottom plot is the total spectrum simulation. Currently there is only a simulated TMS peak, integrating to 0.05 H. To add the subspectrum to the total spectrum, click on the Add to Spectrum button, which acts as a toggle (a red button background indicates the subspectrum is not added to the total spectrum, and a green background indicates that it is.) Go ahead and toggle it a few times, and then leave it in the green 'added' state.
+The bottom plot is the total spectrum simulation. It's currently blank, except for a simulated TMS peak integrating to 0.05 H. To add the subspectrum to the total spectrum, click on the Add to Spectrum button, which acts as a toggle (a red button background indicates the subspectrum is not added to the total spectrum, and a green background indicates that it is.) [#]_ Go ahead and toggle it a few times, and then leave it in the green 'added' state.
 
 .. image:: _static/first_total_spectrum.png
 
@@ -90,7 +94,7 @@ Note that the text between the two arrows in the subspectrum navigation panel no
 Repeat the above steps for adding new subspectra and entering parameters. The third signal is entered as:
 
 * **# of nuclei:** 1
-* **JAX:** 7.7
+* **JAX:** 7.8
 * **#A:** 1
 * **JBX:** 5.1
 * **#B:** 1
@@ -112,13 +116,13 @@ Expand the window by changing "v min" to -0.1 ppm and "v max" to 10 ppm. Your in
 
 .. image:: _static/first_order_tyr_minus_hydroxyl.png
 
-To finish the first-order spectrum, let's add the broad signals for the phenol and ammonium protons. For the phenol, a chemical shift of about 9.8 ppm would be appropriate. Create another subspectrum, and adjust the following settings:
+To finish the first-order spectrum, let's add the broad signals for the phenol and ammonium protons. For the phenol, a chemical shift of about 9.8 ppm and a width of about 10 Hz would be appropriate. Create another subspectrum, and adjust the following settings:
 
 * **# of nuclei:** 1
 * **#A:** 0
 * **#B:** 0
 * **Vcentr:** 9.8
-* **width:** 10 (Hz)
+* **width:** 10
 
 Add the subspectrum to the total subspectrum:
 
@@ -130,7 +134,7 @@ Repeat the process to add a 3H broad singlet at 8.3 ppm for the ammonium group:
 * **#A:** 0
 * **#B:** 0
 * **Vcentr:** 8.3
-* **width:** 20 (Hz)
+* **width:** 20
 
 The final spectrum:
 
@@ -173,7 +177,7 @@ After entering the coupling constants in the pop-up window, and clicking the "Ad
 
 (If you lose the pop-up window behind the main application window, you can reposition windows or select them using your native operating system's standard commands. On Mac OSX, the "Window" menu at the top of your screen allows you to find and select the different windows in the app that's running.)
 
-Next, let's enter the AA'XX' simulation for the para-substituted benzene ring. We will assume that the ortho- JAX (and JA'X') coupling is 8.5 Hz (the same coupling as reported in the original data). We don't know the other coupling constants exactly, but we can estimate meta- couplings (JAA' and JXX') of ~2 Hz, and para- couplings (JAX' and JA'X) of ~ 0 Hz.
+Next, let's enter the AA'XX' simulation for the para-substituted benzene ring. We will assume that the ortho- JAX (and JA'X') coupling is 8.5 Hz (the same coupling as reported in the original data). We don't know the other coupling constants exactly, but we can estimate meta- couplings (JAA' and JXX') of about 2 Hz, and para- couplings (JAX' and JA'X) close to 0 Hz.
 
 Click on the "New Subspectrum" button, choose "Second-Order" in the Simulation panel, enter "4" for "Number of nuclei", and click "Enter Js" in the toolbar to get the popup window. Use the popup window to enter the following chemical shifts and frequencies:
 
@@ -210,5 +214,10 @@ Then, click the "Save as EPS" button in the left sidebar. Save the file in the s
 
 If you wish, you can also save an expansion for the AA'XX' system as well.
 
+An example of using nmrmint's output to create an NMR problem is shown below. Three EPS images (one full spectrum and two expansions) were imported into a ChemDraw window. Integration labels were added to the signals, and the question text was added at the top.
+
+.. image:: _static/tyr_sample_question.png
+
+.. [#] I apologise for any red/green color-blind users. A better visual indication for activity should be implemented in a future patch.
 
 .. [#]  Currently, there is also a toolbar in the bottom-left corner of the interface, provided by the interface's graphing utility, matplotlib. If you are familiar with matplotlib, or just want to experiment with using it to perform functions such as zooming in/out or saving screenshots of the plots, you may, but this tutorial will not use this toolbar because of the quirks it introduces to the application behavior.
