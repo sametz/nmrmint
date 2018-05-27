@@ -4,4 +4,4 @@ nmrmint/.cache/
 .cache
 /coverage/
 __pycache__/
-/development_notes.txt
+/docs/source/_static/cruft/
