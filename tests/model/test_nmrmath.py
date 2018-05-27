@@ -273,6 +273,7 @@ def test_convert_refspec():
     print(sum([y for x, y in new_refspec]))
     assert new_refspec == [(1, 0.25), (2, 0.75), (3, 0.75), (4, 0.25)]
 
+
 def test_AB():
     from nmrmint.windnmr_defaults import ABdict
     refspec = [(134.39531364385073, 0.3753049524455757),

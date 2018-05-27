@@ -25,11 +25,22 @@ class RadioFrame(Frame):
         Frame.__init__(self, parent, **options)
         Label(self, text=title).pack(side=TOP)
         self.var = StringVar()
+        self.buttons = []
         for button in buttons:
-            Radiobutton(self, text=button[0], command=button[1],
-                        variable=self.var,
-                        value=button[0]).pack(anchor=NW)
+            widget = Radiobutton(self, text=button[0], command=button[1],
+                                 variable=self.var,
+                                 value=button[0])
+            self.buttons.append(widget)
+            widget.pack(anchor=NW)
         self.var.set(buttons[0][0])  # turns the top button on
+
+    def click(self, i):
+        """Programatically 'click' a button.
+
+        :param: i (int): the index for the button in buttons to click.
+        """
+        button = self.buttons[i]
+        button.invoke()
 
 
 if __name__ == '__main__':
