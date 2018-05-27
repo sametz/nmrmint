@@ -3,6 +3,10 @@ nmrmint (version 0.3 beta)
 
 .. image:: docs/source/_static/screenshot.png
 
+`Documentation (.pdf)`_.
+
+.. _Documentation (.pdf): docs/nmrmint.pdf
+
 **nmrmint** is an application for creating simulated complete NMR spectra
 (currently \ :sup:`1`\ H NMR only) for use in chemical education. The
 application will

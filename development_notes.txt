@@ -1,0 +1,19 @@
+If MVC is properly implemented, it should be relatively easy to swap out the
+view for another, e.g. a Webpage view, or PyQt. Clear API design and separation
+of concerns is key.
+
+Logic in the View should be reduced to just that required for the View itself.
+It should not require any knowledge of the Model or Controller beyond knowing
+where to send a request and having the right API to handle a response.
+
+Where does the History and/or Subspectrum objects belong? Currently they have
+knowledge of view implementation (toolbars). What might this look like as a web
+app? It doesn't have to have the same layout, buttons, etc. Does the Controller
+"call the shots" and stipulate what form the View must take, or is the View
+allowed to choose its archetecture and only send/receive data requests to the
+Controller?
+
+Does History even require knowledge of toolbars? It only needs their model,
+vars_ data. The View could figure out from the data what toolbar is required.
+Storing a toolbar reference in History/Subspectrum is convenient, but possibly
+unneccessary entanglement of responsibilities.
