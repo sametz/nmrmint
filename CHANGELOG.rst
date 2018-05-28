@@ -20,7 +20,15 @@ The format is inspired by `Keep a Changelog <http://keepachangelog.com/en/0.3.0/
 
 * **Version 1.0.0 release**: a minimal app suitable for educational use and not requiring execution from the command line interface.
 
+0.3.1 - 2018-05-28
+------------------
 
+Fixed
+^^^^^
+
+* Second-order toolbars no longer are unresponsive after a refresh.
+
+* Updating a numerical entry no longer calls the recalculation of spectra twice, so updates now occur faster (this is especially noticeable with large second-order spin systems).
 
 0.3.0 - 2018-05-27 (beta release)
 ----------------------------------
