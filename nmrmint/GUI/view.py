@@ -508,6 +508,7 @@ class View(Frame):
         doing too many things. May be solved when history is refactored into
         Controller and out of View.
         """
+        print('Controller called for ', self._currentbar.vars)
         # Remove old current plot from total plot if necessary
         # TODO: maybe change to a Subspectrum.deactivate() method?
         active = history.current_subspectrum().active
