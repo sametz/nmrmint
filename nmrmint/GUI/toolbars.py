@@ -282,18 +282,27 @@ class SecondOrderBar(_ToolBar):
         TODO: factor out clunky use of 2D arrays for v and w, to 1D array and
         float.
         """
-        self._v_ppm = _vars['v']
+        print('before reset:')
+        print('_v_ppm: ', self._v_ppm)
+        print("_vars['v']", _vars['v'])
+        # self._v_ppm = _vars['v']
+        self._v_ppm[0] = _vars['v'][0]
+        print('after reset, _v_ppm: ', self._v_ppm)
+        print('_j replaced: ', _vars['j'])
         self._j = _vars['j']
-        self.w = _vars['w']
+        print('w before: ', self._w_array)
+        # self.w = _vars['w']
+        self._w_array[0][0] = _vars['w'][0][0]
+        print('w after:' , self._w_array)
 
         for i, freq in enumerate(self._v_ppm[0]):
             name = 'V' + str(i + 1)
             widget = self._fields[name]
             widget.set_value(freq)
-            widget.array = self._v_ppm
+            # widget.array = self._v_ppm
 
         width_widget = self._fields['W']
-        width = self.w[0][0]
+        width = self._w_array[0][0]
         width_widget.set_value(width)
 
         self.callback()
