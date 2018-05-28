@@ -134,7 +134,10 @@ class _BaseEntryFrame(Frame):
     # noinspection PyUnusedLocal
     def _on_return(self, event):
         """Refresh the view and shift focus when Return key is hit."""
-        self._refresh()
+
+        # Previously self._refresh() had to be called here, but since
+        # <FocusOut> triggers refresh, omitting it here avoids double calls
+        # to _callback
         self._find_next_entry(self._entry).focus()
 
     def _refresh(self):

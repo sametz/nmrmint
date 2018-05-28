@@ -1,4 +1,4 @@
-Introduction to nmrmint v0.3.0 (beta)
+Introduction to nmrmint v0.3.1 (beta)
 ======================================
 
 .. image:: _static/screenshot.png
