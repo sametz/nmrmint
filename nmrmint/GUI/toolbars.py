@@ -282,21 +282,24 @@ class SecondOrderBar(_ToolBar):
         TODO: factor out clunky use of 2D arrays for v and w, to 1D array and
         float.
         """
-        self._v_ppm = _vars['v']
+        # bug fix: ._v_ppm and ._w_array cannot be completely replaced with
+        # corresponding _vars array, because it will break links to widget
+        # arrays.
+        self._v_ppm[0] = _vars['v'][0]
+        # .j is only used in popup window, where ArrayBox widgets are created
+        #  fresh each time. So, OK for now to replace entire _j  array
+        # reference.
         self._j = _vars['j']
-        self.w = _vars['w']
+        self._w_array[0][0] = _vars['w'][0][0]
 
         for i, freq in enumerate(self._v_ppm[0]):
             name = 'V' + str(i + 1)
             widget = self._fields[name]
             widget.set_value(freq)
-            widget.array = self._v_ppm
 
         width_widget = self._fields['W']
-        width = self.w[0][0]
+        width = self._w_array[0][0]
         width_widget.set_value(width)
-
-        self.callback()
 
 
 # TODO: most recent changes have used SecondOrderBar. If SecondOrderSpinBar
