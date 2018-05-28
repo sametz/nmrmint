@@ -1,5 +1,5 @@
-nmrmint (version 0.3 beta)
-**************************
+nmrmint (version 0.3.1 beta)
+****************************
 
 .. image:: docs/source/_static/screenshot.png
 
