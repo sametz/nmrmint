@@ -4,6 +4,9 @@ Provides the View for the UW-DNMR Model-View-Controller.
 Provides the following class:
 * View: an extension of tkinter.Frame that provides the main GUI.
 """
+
+# import sys  # Uncomment if debugging with trace_calls
+
 from tkinter import *
 
 from nmrmint.GUI.backends import MPLplot, save_as_eps, save_as_pdf
@@ -554,9 +557,8 @@ class View(Frame):
 
 # Debugging routines:
 
+
 # following is taken from PyMOTW: https://pymotw.com/2/sys/tracing.html
-
-
 def trace_calls(frame, event, arg):
     if arg:
         print('arg passed to trace_calls')  # need to recheck why arg is needed
@@ -570,8 +572,15 @@ def trace_calls(frame, event, arg):
     func_line_no = frame.f_lineno
     func_filename = co.co_filename
 
-    if "/Users/geoffreysametz/Google Drive/Programming/NMR code/nmrmint" not \
-            in func_filename:
+    if "/Volumes/GoogleDrive/My Drive/Programming/NMR code/nmrmint" not in \
+            func_filename:
+        return
+
+    # use conditionals below to narrow focus
+    if "widgets.py" not in func_filename:
+        return
+
+    if func_name != "_on_return":
         return
 
     caller = frame.f_back
@@ -584,6 +593,8 @@ def trace_calls(frame, event, arg):
 
 
 if __name__ == '__main__':
+    # sys.settrace(trace_calls)  # for debugging
+
     # Create the main application window:
     from nmrmint.controller import controller
 
