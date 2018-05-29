@@ -125,7 +125,6 @@ class MPLplot(FigureCanvasTkAgg):
 
 def _create_figure(x, y, xlim, figsize):
     figure = Figure(figsize=figsize)
-    print('Figure width, height ', figsize, type(figsize))
     axes = figure.add_subplot(111)
     axes.plot(x, y, linewidth=0.3)
     axes.set_xlim(*xlim)
