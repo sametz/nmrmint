@@ -1,0 +1,27 @@
+This app froze without issues using PyInstaller's defaults on my Macbook Pro
+development computer.
+
+There were two problems freezing the PC version:
+
+1. tornado needed to be installed (this may have been solved with a more
+thorough requirements.txt). Apparently tornado is required by an unused
+matplotlib backend.
+
+2. The scipy DLLs could not be found. In https://github
+.com/pyinstaller/pyinstaller/issues/3235, xibili's trick worked. Note: on the
+Windows 10 development PC, pipenv was used, and the library could be found under
+ c:\Users\<username>\.virtualenvs\<project>\Lib\site-packages\scipi\extra-dll
+
+For debugging, the following arguments were used:
+    -- debug
+    -- console (not --windowed)
+
+and the following was added above the 'a = Analysis(...)' part of the appname
+.spec file:
+
+    options = [('v', None, 'OPTION')]
+
+The generated appname.exe file was run using a command line window (not
+powershell). Between the python errormessages in the pipenv shell, and the error
+ messages from running the .exe from the command line, the issues could be
+ tracked down and solved.

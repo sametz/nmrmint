@@ -637,6 +637,7 @@ def AABB(Vab, Jaa, Jbb, Jab, Jab_prime, Vcentr, **kwargs):
     return normalize_spectrum(nspinspec(freqlist, J), 4)
 
 
+# TODO: doesn't seem to be used; schedule for deletion? (plus associated test)
 def add_spectra(original, additional):
     original.extend(additional)
 
