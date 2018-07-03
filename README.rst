@@ -67,14 +67,14 @@ and in the longer term:
 Installation and Use
 ====================
 
+Stand-alone, one-file executable apps for Mac OSX and Windows 64-bit can be found under `releases`_.
+.. _releases: https://github.com/sametz/nmrmint/releases/tag/v0.3.1-beta
+
 The project is beta and subject to change. The master branch should
-maintain a functional program. If you're curious, and have a Python 3
+maintain the latest functional program. If you're curious, and have a Python 3
 installation (v3.6 was used for development), you can download the project
 folders, install the requirements in requirements.txt if necessary, and run
 main.py from the command line.
-
-Standalone, executable 1-file applications for Mac, Windows and Linux are
-planned for a future release.
 
 TODO
 ====

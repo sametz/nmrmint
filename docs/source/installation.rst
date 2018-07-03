@@ -1,9 +1,9 @@
 Installation and Execution
 ==========================
 
-Single-file, click-to-run executables for Windows, Mac OSX and Linux are anticipated but not available yet. See the `CHANGELOG <https://github.com/sametz/nmrmint/blob/master/CHANGELOG.rst>`_ for the map towards a Version 1 release.
+`Single-file, click-to-run executables <https://github.com/sametz/nmrmint/releases>`_ are available for Windows (64-bit) and Mac OSX. A Linux version is planned but not available yet. See the `CHANGELOG <https://github.com/sametz/nmrmint/blob/master/CHANGELOG.rst>`_ for the map towards a Version 1 release.
 
-The essential package components required to run the application are main.py plus the nmrmint subfolder and its contents. The project was developed with Python 3.6; older versions may work, but have not been tested yet.
+Alternatively, the Python code can be downloaded and executed. The essential package components required to run the application are main.py plus the nmrmint subfolder and its contents. The project was developed with Python 3.6; older versions may work, but have not been tested yet.
 
 The dependencies listed in requirements.txt are also required.
 If pip is installed, the following command should automatically install the required dependencies::
