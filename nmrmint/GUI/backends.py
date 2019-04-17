@@ -16,8 +16,13 @@ from tkinter.filedialog import asksaveasfilename
 import matplotlib
 matplotlib.use("TkAgg")  # must be invoked before the imports below
 
+# Some MPL backends were deprecated. See:
+# https://stackoverflow.com/questions/50330320/what-to-use-instead-of-navigationtoolbar2tkagg
+
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
-                                               NavigationToolbar2TkAgg)
+
+# So the following was changed to:
+                                               NavigationToolbar2Tk)
 from matplotlib.backends.backend_pdf import FigureCanvasPdf
 from matplotlib.backends.backend_ps import FigureCanvasPS
 from matplotlib.figure import Figure
@@ -54,7 +59,7 @@ class MPLplot(FigureCanvasTkAgg):
         self.x_min = -1  # ppm
         self.x_max = 12  # ppm
         self.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        self._toolbar = NavigationToolbar2TkAgg(self, master)
+        self._toolbar = NavigationToolbar2Tk(self, master)
         self._toolbar.update()
 
     def plot_current(self, x, y):
