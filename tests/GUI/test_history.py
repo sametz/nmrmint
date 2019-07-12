@@ -28,31 +28,31 @@ def vars_default():
 
 
 @pytest.fixture()
-def vars_1():
+def vars_1(vars_default):
     """Return the modified vars for the first custom subspectrum, where
     #C has been changed to 2."""
-    _vars = vars_default()
+    _vars = vars_default.copy()
     _vars['#C'] = 2
     return _vars
 
 
 @pytest.fixture()
-def vars_2():
+def vars_2(vars_default):
     """Return the modified vars for the second custom subspectrum, where
     #B has been changed to 0, and Vcentr to 1.0."""
-    _vars = vars_default()
+    _vars = vars_default.copy()
     _vars['#B'] = 0
     _vars['Vcentr'] = 1.0
     return _vars
 
 
 @pytest.fixture()
-def vars_3():
+def vars_3(vars_default):
     """Return modified vars for the third custom subspectrum, where #D has
     been changed to 3.
 
     Created for ss3 and update_all_spectra testing."""
-    _vars = vars_default()
+    _vars = vars_default.copy()
     _vars['#D'] = 3
     return _vars
 
